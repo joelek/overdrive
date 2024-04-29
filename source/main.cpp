@@ -223,6 +223,7 @@ int main(int argc, char** argv) {
 			while (true) {
 				ReadInfo.DiskOffset.QuadPart = sector_offset * 2048;
 				ReadInfo.SectorCount = last_sector - sector_offset - 1;
+				// This value is arbitrarily set to 50. Some drives cannot read 50 sectors at once.
 				if (ReadInfo.SectorCount > 50) {
 					ReadInfo.SectorCount = 50;
 				}
