@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cmath>
 #include <cstdlib>
 #include <cstddef>
 #include <vector>
@@ -738,6 +739,37 @@ auto save(int argc, char **argv)
 			fprintf(stderr, "Extracting %lu sectors from %lu (inclusive) to %lu (exclusive)\n", track_length_sectors, first_sector, last_sector);
 			auto current_track_type = get_track_type(current_track);
 			if (current_track_type == TrackType::AUDIO) {
+auto read_offset_correction_bytes = read_offset_correction * CDDA_STEREO_SAMPLE_LENGTH;
+auto start_offset_bytes = (first_sector * CD_SECTOR_LENGTH) + read_offset_correction_bytes;
+auto end_offset_bytes = (last_sector * CD_SECTOR_LENGTH) + read_offset_correction_bytes;
+auto adjusted_first_sector = (int)std::floor(start_offset_bytes / CD_SECTOR_LENGTH);
+auto adjusted_last_sector = (int)std::ceil(end_offset_bytes / CD_SECTOR_LENGTH);
+auto adjusted_track_length_sectors = adjusted_last_sector - adjusted_first_sector;
+fprintf(stderr, "Adjusting extraction to %lu sectors from %lu (inclusive) to %lu (exclusive)\n", adjusted_track_length_sectors, adjusted_first_sector, adjusted_last_sector);
+auto track_data = std::vector<uint8_t>(adjusted_track_length_sectors * CD_SECTOR_LENGTH);
+for (auto sector_index = adjusted_first_sector; sector_index < adjusted_last_sector; sector_index += 1) {
+	try {
+		read_raw_sector(handle, track_data.data() + (sector_index - adjusted_first_sector) * CD_SECTOR_LENGTH, sector_index);
+	} catch (...) {
+		fprintf(stderr, "Error reading sector %lu!\n", sector_index);
+		if (sector_index >= 0 && sector_index < sector_count) {
+			throw EXIT_FAILURE;
+		}
+	}
+}
+auto track_data_start_offset = read_offset_correction_bytes - (adjusted_first_sector * CD_SECTOR_LENGTH);
+for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
+	auto cd_sector = track_data.data() + track_data_start_offset + ((sector_index - first_sector) * CD_SECTOR_LENGTH);
+	auto outcome = write_cd_sector_to_file(*(CD_SECTOR_DATA*)cd_sector, target_handle_mdf, false);
+	if (!outcome) {
+		fprintf(stderr, "Error writing to file \"%s\"!\n", target_path_mdf.c_str());
+		throw EXIT_FAILURE;
+	}
+}
+
+
+
+
 				auto samples_to_add_before_track = read_offset_correction < 0 ? 0 - read_offset_correction : 0;
 				auto bytes_to_add_before_track = samples_to_add_before_track * CDDA_STEREO_SAMPLE_LENGTH;
 				auto sectors_to_add_before_track = (bytes_to_add_before_track + CD_SECTOR_LENGTH - 1) / CD_SECTOR_LENGTH;

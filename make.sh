@@ -20,7 +20,8 @@ if [ $1 = "release" ]; then
 fi
 
 SOURCES=(
-	cdb
+	cdb,
+	idiv
 )
 
 TARGETS=(
