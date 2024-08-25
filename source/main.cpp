@@ -13,6 +13,7 @@
 #include <io.h>
 #include <optional>
 
+#include "idiv.h"
 #include "cdb.h"
 
 #define APP_NAME "Disc Reader"
@@ -151,7 +152,7 @@ ULONG AddressToSectors(UCHAR Addr[4]) {
 	return Sectors - 150;
 }
 
-auto get_timestamp_ms()
+auto  get_timestamp_ms()
 -> uint64_t {
 	auto current_time_filetime = FILETIME();
 	SetLastError(ERROR_SUCCESS);
@@ -705,6 +706,8 @@ auto save(int argc, char **argv)
 			fprintf(stderr, "Failed opening file \"%s\"!\n", target_path_mds.c_str());
 			throw EXIT_FAILURE;
 		}
+		auto read_offset_correction_bytes = read_offset_correction * CDDA_STEREO_SAMPLE_LENGTH;
+		fprintf(stderr, "Read offset correction is set to %i samples (%i bytes)\n", read_offset_correction, read_offset_correction_bytes);
 		auto track_pregap_sectors_list = std::vector<unsigned int>();
 		track_pregap_sectors_list.push_back(2 * CD_SECTORS_PER_SECOND);
 		for (auto i = toc.FirstTrack + 1; i <= toc.LastTrack; i += 1) {
@@ -722,7 +725,7 @@ auto save(int argc, char **argv)
 		auto empty_cd_sector = CD_SECTOR_DATA();
 		auto cd_sector = CD_SECTOR_DATA();
 		auto start_ms = get_timestamp_ms();
-		for (auto i = 2; i <= 2; i += 1) {
+		for (auto i = toc.FirstTrack; i <= toc.LastTrack; i += 1) {
 			fprintf(stderr, "Processing track %u\n", i);
 			auto &current_track = toc.TrackData[i - 1];
 			auto &next_track = toc.TrackData[i + 1 - 1];
@@ -736,80 +739,37 @@ auto save(int argc, char **argv)
 			auto last_sector = next_track_lba - next_track_pregap_sectors;
 			auto track_length_sectors = last_sector - first_sector;
 			track_length_sectors_list.push_back(track_length_sectors);
-			fprintf(stderr, "Extracting %lu sectors from %lu (inclusive) to %lu (exclusive)\n", track_length_sectors, first_sector, last_sector);
 			auto current_track_type = get_track_type(current_track);
 			if (current_track_type == TrackType::AUDIO) {
-auto read_offset_correction_bytes = read_offset_correction * CDDA_STEREO_SAMPLE_LENGTH;
-auto start_offset_bytes = (first_sector * CD_SECTOR_LENGTH) + read_offset_correction_bytes;
-auto end_offset_bytes = (last_sector * CD_SECTOR_LENGTH) + read_offset_correction_bytes;
-auto adjusted_first_sector = (int)std::floor(start_offset_bytes / CD_SECTOR_LENGTH);
-auto adjusted_last_sector = (int)std::ceil(end_offset_bytes / CD_SECTOR_LENGTH);
-auto adjusted_track_length_sectors = adjusted_last_sector - adjusted_first_sector;
-fprintf(stderr, "Adjusting extraction to %lu sectors from %lu (inclusive) to %lu (exclusive)\n", adjusted_track_length_sectors, adjusted_first_sector, adjusted_last_sector);
-auto track_data = std::vector<uint8_t>(adjusted_track_length_sectors * CD_SECTOR_LENGTH);
-for (auto sector_index = adjusted_first_sector; sector_index < adjusted_last_sector; sector_index += 1) {
-	try {
-		read_raw_sector(handle, track_data.data() + (sector_index - adjusted_first_sector) * CD_SECTOR_LENGTH, sector_index);
-	} catch (...) {
-		fprintf(stderr, "Error reading sector %lu!\n", sector_index);
-		if (sector_index >= 0 && sector_index < sector_count) {
-			throw EXIT_FAILURE;
-		}
-	}
-}
-auto track_data_start_offset = read_offset_correction_bytes - (adjusted_first_sector * CD_SECTOR_LENGTH);
-for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
-	auto cd_sector = track_data.data() + track_data_start_offset + ((sector_index - first_sector) * CD_SECTOR_LENGTH);
-	auto outcome = write_cd_sector_to_file(*(CD_SECTOR_DATA*)cd_sector, target_handle_mdf, false);
-	if (!outcome) {
-		fprintf(stderr, "Error writing to file \"%s\"!\n", target_path_mdf.c_str());
-		throw EXIT_FAILURE;
-	}
-}
-
-
-
-
-				auto samples_to_add_before_track = read_offset_correction < 0 ? 0 - read_offset_correction : 0;
-				auto bytes_to_add_before_track = samples_to_add_before_track * CDDA_STEREO_SAMPLE_LENGTH;
-				auto sectors_to_add_before_track = (bytes_to_add_before_track + CD_SECTOR_LENGTH - 1) / CD_SECTOR_LENGTH;
-				auto bytes_to_read_before_track = i > toc.FirstTrack ? bytes_to_add_before_track : 0;
-				auto sectors_to_read_before_track = (bytes_to_read_before_track + CD_SECTOR_LENGTH - 1) / CD_SECTOR_LENGTH;
-				fprintf(stderr, "Extracting %i additional sectors before track to perform read offset correction\n", sectors_to_read_before_track);
-
-				auto samples_to_add_after_track = read_offset_correction > 0 ? read_offset_correction : 0;
-				auto bytes_to_add_after_track = samples_to_add_after_track * CDDA_STEREO_SAMPLE_LENGTH;
-				auto sectors_to_add_after_track = (bytes_to_add_after_track + CD_SECTOR_LENGTH - 1) / CD_SECTOR_LENGTH;
-				auto bytes_to_read_after_track = i < toc.LastTrack ? bytes_to_add_after_track : 0;
-				auto sectors_to_read_after_track = (bytes_to_read_after_track + CD_SECTOR_LENGTH - 1) / CD_SECTOR_LENGTH;
-				fprintf(stderr, "Extracting %i additional sectors after track to perform read offset correction\n", sectors_to_read_after_track);
-
-				auto adjusted_track_length_sectors = sectors_to_add_before_track + track_length_sectors + sectors_to_add_after_track;
+				auto start_offset_bytes = (first_sector * CD_SECTOR_LENGTH) + read_offset_correction_bytes;
+				auto end_offset_bytes = (last_sector * CD_SECTOR_LENGTH) + read_offset_correction_bytes;
+				auto adjusted_first_sector = idiv_floor(start_offset_bytes, CD_SECTOR_LENGTH);
+				auto adjusted_last_sector = idiv_ceil(end_offset_bytes, CD_SECTOR_LENGTH);
+				auto adjusted_track_length_sectors = adjusted_last_sector - adjusted_first_sector;
+				fprintf(stderr, "Extracting to %lu sectors from %lu (inclusive) to %lu (exclusive)\n", adjusted_track_length_sectors, adjusted_first_sector, adjusted_last_sector);
 				auto track_data = std::vector<uint8_t>(adjusted_track_length_sectors * CD_SECTOR_LENGTH);
-
-				auto sectors_to_skip_before_track = sectors_to_add_before_track - sectors_to_read_before_track;
-				auto sectors_to_skip_after_track = sectors_to_add_after_track - sectors_to_read_after_track;
-
-				auto first_sector_to_read = first_sector - sectors_to_read_before_track;
-				auto last_sector_to_read = last_sector + sectors_to_read_after_track;
-				for (auto sector_index = first_sector_to_read; sector_index < last_sector_to_read; sector_index += 1) {
+				for (auto sector_index = adjusted_first_sector; sector_index < adjusted_last_sector; sector_index += 1) {
 					try {
-						read_raw_sector(handle, track_data.data() + (sector_index - first_sector_to_read + sectors_to_skip_before_track) * CD_SECTOR_LENGTH, sector_index);
+						read_raw_sector(handle, track_data.data() + (sector_index - adjusted_first_sector) * CD_SECTOR_LENGTH, sector_index);
 					} catch (...) {
 						fprintf(stderr, "Error reading sector %lu!\n", sector_index);
-						throw EXIT_FAILURE;
+						if (sector_index >= 0 && sector_index < sector_count) {
+							throw EXIT_FAILURE;
+						}
 					}
 				}
-				auto track_data_start_offset = (sectors_to_add_before_track * CD_SECTOR_LENGTH) - bytes_to_add_before_track + bytes_to_add_after_track;
+				auto track_data_start_offset = read_offset_correction_bytes - ((adjusted_first_sector - first_sector) * CD_SECTOR_LENGTH);
+				fprintf(stderr, "Discarding the first %i bytes of sector %i and the last %i bytes of sector %i\n", track_data_start_offset, adjusted_first_sector, track_data_start_offset, adjusted_last_sector);
 				for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
 					auto cd_sector = track_data.data() + track_data_start_offset + ((sector_index - first_sector) * CD_SECTOR_LENGTH);
 					auto outcome = write_cd_sector_to_file(*(CD_SECTOR_DATA*)cd_sector, target_handle_mdf, false);
 					if (!outcome) {
-						fprintf(stderr, "Error writing to file \"%s\"!\n", target_path_mdf.c_str());
+						fprintf(stderr, "Error writing sector to file \"%s\"!\n", target_path_mdf.c_str());
 						throw EXIT_FAILURE;
 					}
 				}
 			} else {
+				fprintf(stderr, "Extracting %lu sectors from %lu (inclusive) to %lu (exclusive)\n", track_length_sectors, first_sector, last_sector);
 				for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
 					try {
 						read_sector_sptd(handle, cd_sector, sector_index);
@@ -823,7 +783,7 @@ for (auto sector_index = first_sector; sector_index < last_sector; sector_index 
 						bad_sector_numbers.push_back(sector_index);
 						auto outcome = write_cd_sector_to_file(empty_cd_sector, target_handle_mdf, subchannels);
 						if (!outcome) {
-							fprintf(stderr, "Error writing to file \"%s\"!\n", target_path_mdf.c_str());
+							fprintf(stderr, "Error writing sector to file \"%s\"!\n", target_path_mdf.c_str());
 							throw EXIT_FAILURE;
 						}
 					}
@@ -840,6 +800,7 @@ for (auto sector_index = first_sector; sector_index < last_sector; sector_index 
 		auto format_header = mds::FormatHeader();
 		format_header.absolute_offset_to_footer = bad_sector_numbers.size() == 0 ? 0 : absolute_offset_to_footer;
 		if (fwrite(&format_header, sizeof(format_header), 1, target_handle_mds) != 1) {
+			fprintf(stderr, "Error writing format header!\n");
 			throw EXIT_FAILURE;
 		}
 		auto disc_header = mds::DiscHeader();
@@ -848,6 +809,7 @@ for (auto sector_index = first_sector; sector_index < last_sector; sector_index 
 		disc_header.entry_count_type_a = 3;
 		disc_header.track_count = track_count;
 		if (fwrite(&disc_header, sizeof(disc_header), 1, target_handle_mds) != 1) {
+			fprintf(stderr, "Error writing disc header!\n");
 			throw EXIT_FAILURE;
 		}
 		auto first_track_entry = mds::EntryTypeA();
@@ -855,6 +817,7 @@ for (auto sector_index = first_sector; sector_index < last_sector; sector_index 
 		first_track_entry.track_number = mds::EntryTypeATrackNumber::FIRST_TRACK;
 		first_track_entry.address_m = toc.FirstTrack;
 		if (fwrite(&first_track_entry, sizeof(first_track_entry), 1, target_handle_mds) != 1) {
+			fprintf(stderr, "Error writing first track entry!\n");
 			throw EXIT_FAILURE;
 		}
 		auto last_track_entry = mds::EntryTypeA();
@@ -862,6 +825,7 @@ for (auto sector_index = first_sector; sector_index < last_sector; sector_index 
 		last_track_entry.track_number = mds::EntryTypeATrackNumber::LAST_TRACK;
 		last_track_entry.address_m = toc.LastTrack;
 		if (fwrite(&last_track_entry, sizeof(last_track_entry), 1, target_handle_mds) != 1) {
+			fprintf(stderr, "Error writing last track entry!\n");
 			throw EXIT_FAILURE;
 		}
 		auto lead_out_track_entry = mds::EntryTypeA();
@@ -872,6 +836,7 @@ for (auto sector_index = first_sector; sector_index < last_sector; sector_index 
 		lead_out_track_entry.address_s = lead_out_track.Address[2];
 		lead_out_track_entry.address_f = lead_out_track.Address[3];
 		if (fwrite(&lead_out_track_entry, sizeof(lead_out_track_entry), 1, target_handle_mds) != 1) {
+			fprintf(stderr, "Error writing lead out track entry!\n");
 			throw EXIT_FAILURE;
 		}
 		auto first_sector_on_disc = 0;
@@ -894,6 +859,7 @@ for (auto sector_index = first_sector; sector_index < last_sector; sector_index 
 			current_track_entry.absolute_offset_to_track_table_entry = absolute_offset_to_track_table_entry + (i - toc.FirstTrack) * sizeof(mds::TrackTableEntry);
 			current_track_entry.absolute_offset_to_file_table_header = absolute_offset_to_file_table_header;
 			if (fwrite(&current_track_entry, sizeof(current_track_entry), 1, target_handle_mds) != 1) {
+				fprintf(stderr, "Error writing current track entry!\n");
 				throw EXIT_FAILURE;
 			}
 			auto current_track_length_sectors = track_length_sectors_list.at(i - toc.FirstTrack);
@@ -903,6 +869,7 @@ for (auto sector_index = first_sector; sector_index < last_sector; sector_index 
 		}
 		auto track_table_header = mds::TrackTableHeader();
 		if (fwrite(&track_table_header, sizeof(track_table_header), 1, target_handle_mds) != 1) {
+			fprintf(stderr, "Error writing track table header!\n");
 			throw EXIT_FAILURE;
 		}
 		for (auto i = toc.FirstTrack; i <= toc.LastTrack; i += 1) {
@@ -910,33 +877,39 @@ for (auto sector_index = first_sector; sector_index < last_sector; sector_index 
 			track_table_entry.pregap_sectors = track_pregap_sectors_list.at(i - toc.FirstTrack);
 			track_table_entry.length_sectors = track_length_sectors_list.at(i - toc.FirstTrack);
 			if (fwrite(&track_table_entry, sizeof(track_table_entry), 1, target_handle_mds) != 1) {
+				fprintf(stderr, "Error writing track table entry!\n");
 				throw EXIT_FAILURE;
 			}
 		}
 		auto file_table_header = mds::FileTableHeader();
 		file_table_header.absolute_offset_to_file_table_entry = absolute_offset_to_file_table_entry;
 		if (fwrite(&file_table_header, sizeof(file_table_header), 1, target_handle_mds) != 1) {
+			fprintf(stderr, "Error writing file table header!\n");
 			throw EXIT_FAILURE;
 		}
 		auto file_table_entry = mds::FileTableEntry();
 		if (fwrite(&file_table_entry, sizeof(file_table_entry), 1, target_handle_mds) != 1) {
+			fprintf(stderr, "Error writing file table entry!\n");
 			throw EXIT_FAILURE;
 		}
 		if (bad_sector_numbers.size() > 0) {
 			auto footer = mds::Footer();
 			footer.absolute_offset_to_bad_sectors_table_header = absolute_offset_to_bad_sectors_table_header;
 			if (fwrite(&footer, sizeof(footer), 1, target_handle_mds) != 1) {
+				fprintf(stderr, "Error writing footer!\n");
 				throw EXIT_FAILURE;
 			}
 			auto bad_sector_table_header = mds::BadSectorTableHeader();
 			bad_sector_table_header.bad_sector_count = bad_sector_numbers.size();
 			if (fwrite(&bad_sector_table_header, sizeof(bad_sector_table_header), 1, target_handle_mds) != 1) {
+				fprintf(stderr, "Error writing bad sector table header!\n");
 				throw EXIT_FAILURE;
 			}
 			for (auto bad_sector_number : bad_sector_numbers) {
 				auto bad_sector_table_entry = mds::BadSectorTableEntry();
 				bad_sector_table_entry.bad_sector_number = bad_sector_number;
 				if (fwrite(&bad_sector_table_entry, sizeof(bad_sector_table_entry), 1, target_handle_mds) != 1) {
+					fprintf(stderr, "Error writing bad sector table entry!\n");
 					throw EXIT_FAILURE;
 				}
 			}

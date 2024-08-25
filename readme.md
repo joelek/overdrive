@@ -28,3 +28,12 @@ The [AccurateRip drive database](https://www.accuraterip.com/driveoffsets.htm) p
 * https://www.13thmonkey.org/documentation/SCSI/mmc3r10g.pdf
 * https://enos.itcollege.ee/~edmund/storage/loengud/varasem/SAN_IPSAN_NAS_CAS/SCSI-command-reference-manual.pdf
 * https://www.t10.org/ftp/t10/document.05/05-344r0.pdf
+
+
+offset -6: 00003652 (38 140 032 bytes)
+offset 0: 00003628 (38 140 032 bytes)
+offset +6: 00003604 (38 140 032 bytes)
+
+16216 sectors
+
+OK!
