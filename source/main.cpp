@@ -725,6 +725,7 @@ auto save(int argc, char **argv)
 			track_length_sectors_list.push_back(track_length_sectors);
 			auto current_track_type = get_track_type(current_track);
 			if (current_track_type == TrackType::AUDIO) {
+				fprintf(stderr, "Current track contains audio\n");
 				auto start_offset_bytes = (first_sector * CD_SECTOR_LENGTH) + read_offset_correction_bytes;
 				auto end_offset_bytes = (last_sector * CD_SECTOR_LENGTH) + read_offset_correction_bytes;
 				auto adjusted_first_sector = idiv_floor(start_offset_bytes, CD_SECTOR_LENGTH);
@@ -753,6 +754,7 @@ auto save(int argc, char **argv)
 					}
 				}
 			} else {
+				fprintf(stderr, "Current track contains data\n");
 				fprintf(stderr, "Extracting %lu sectors from %lu (inclusive) to %lu (exclusive)\n", track_length_sectors, first_sector, last_sector);
 				for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
 					try {
