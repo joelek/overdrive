@@ -111,5 +111,62 @@ namespace cdb {
 		uint16_t recovery_time_limit_be;
 	} ReadWriteErrorRecoveryModePage;
 
+	enum class ReadCD12ExpectedSectorType: uint8_t {
+		ANY = 0b000,
+		CD_DA = 0b001,
+		CD_ROM_MODE_1 = 0b010,
+		CD_ROM_MODE_2 = 0b011,
+		CD_XA_MODE_2_FORM_1 = 0b100,
+		CD_XA_MODE_2_FORM_2 = 0b101,
+		RESERVED_6  = 0b110,
+		RESERVED_7 = 0b111
+	};
+
+	enum class ReadCD12HeaderCodes: uint8_t {
+		NONE = 0b00,
+		HEADER_ONLY = 0b01,
+		SUBHEADER_ONLY  = 0b10,
+		ALL_HEADERS = 0b11
+	};
+
+	enum class ReadCD12Errors: uint8_t {
+		NONE = 0b00,
+		C2_ERROR_BLOCK_DATA = 0b01,
+		C2_AND_BLOCK_ERROR_BITS  = 0b10,
+		RESERVED_3 = 0b11
+	};
+
+	enum class ReadCD12SubchanelBits: uint8_t {
+		NONE = 0b000,
+		RAW = 0b001,
+		Q  = 0b010,
+		RESERVED_3 = 0b011,
+		P_TO_W = 0b100,
+		RESERVED_5 = 0b101,
+		RESERVED_6 = 0b110,
+		RESERVED_7 = 0b111,
+	};
+
+	typedef struct {
+		const uint8_t operation_code = 0xBE;
+		uint8_t real_adr: 1;
+		uint8_t: 1;
+		ReadCD12ExpectedSectorType expected_sector_type: 3;
+		uint8_t: 3;
+		uint32_t lba_be;
+		uint8_t transfer_length_hi;
+		uint8_t transfer_length_mi;
+		uint8_t transfer_length_lo;
+		uint8_t: 1;
+		ReadCD12Errors errors: 2;
+		uint8_t edc_and_ecc: 1;
+		uint8_t user_data: 1;
+		ReadCD12HeaderCodes header_codes: 2;
+		uint8_t sync: 1;
+		ReadCD12SubchanelBits subchannel_selection_bits: 3;
+		uint8_t: 5;
+		uint8_t control;
+	} ReadCD12;
+
 	#pragma pack(pop)
 }

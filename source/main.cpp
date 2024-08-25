@@ -43,6 +43,18 @@
 #define CDROM_MODE2_FORM_1_DATA_LENGTH (CD_SECTOR_LENGTH - CDROM_SYNC_HEADER_LENGTH - CDROM_XA_SUBHEADER_LENGTH - CDROM_XA_SUBHEADER_LENGTH - CDROM_EDC_LENGTH - CDROM_ECC_LENGTH)
 #define CDROM_MODE2_FORM_2_DATA_LENGTH (CD_SECTOR_LENGTH - CDROM_SYNC_HEADER_LENGTH - CDROM_XA_SUBHEADER_LENGTH - CDROM_XA_SUBHEADER_LENGTH- CDROM_EDC_LENGTH)
 
+auto byteswap16(uint16_t v)
+-> uint16_t {
+	auto pointer = (uint8_t*)&v;
+	return (pointer[0] << 8) | (pointer[1] << 0);
+}
+
+auto byteswap32(uint32_t v)
+-> uint32_t {
+	auto pointer = (uint8_t*)&v;
+	return (pointer[0] << 24) | (pointer[1] << 16) | (pointer[2] << 8) | (pointer[3] << 0);
+}
+
 auto ascii_dump(uint8_t* bytes, int size, const char* name)
 -> void {
 	fprintf(stderr, "\n");
@@ -282,21 +294,17 @@ typedef struct {
 auto read_sector_sptd(HANDLE handle, CD_SECTOR_DATA& sector, ULONG lba)
 -> bool {
 	memset(&sector, 0, sizeof(sector));
-	// TODO: Add struct.
-	UCHAR cdb[] = {
-		0xBE,
-		0b000 << 2,
-		static_cast<UCHAR>((lba >> 24) & 0xFF),
-		static_cast<UCHAR>((lba >> 16) & 0xFF),
-		static_cast<UCHAR>((lba >> 8) & 0xFF),
-		static_cast<UCHAR>((lba >> 0) & 0xFF),
-		0, 0, 1,
-		(1 << 7) | (0b11 << 5) | (1 << 4) | (1 << 3) | (0b00 << 1),
-		0b001,
-		0
-	};
 	auto data = SPTDWithSenseBuffer();
-	data.sptd.ScsiStatus = 0;
+	auto cdb = cdb::ReadCD12();
+	cdb.expected_sector_type = cdb::ReadCD12ExpectedSectorType::ANY;
+	cdb.lba_be = byteswap32(lba);
+	cdb.transfer_length_lo = 1;
+	cdb.errors = cdb::ReadCD12Errors::NONE;
+	cdb.edc_and_ecc = 1;
+	cdb.user_data = 1;
+	cdb.header_codes = cdb::ReadCD12HeaderCodes::ALL_HEADERS;
+	cdb.sync = 1;
+	cdb.subchannel_selection_bits = cdb::ReadCD12SubchanelBits::RAW;
 	data.sptd.Length = sizeof(data.sptd);
 	data.sptd.CdbLength = sizeof(cdb);
 	data.sptd.DataIn = SCSI_IOCTL_DATA_IN;
@@ -305,7 +313,7 @@ auto read_sector_sptd(HANDLE handle, CD_SECTOR_DATA& sector, ULONG lba)
 	data.sptd.DataTransferLength = sizeof(sector);
 	data.sptd.SenseInfoLength = sizeof(data.sense);
 	data.sptd.SenseInfoOffset = offsetof(SPTDWithSenseBuffer, sense);
-	memcpy(data.sptd.Cdb, cdb, sizeof(cdb));
+	memcpy(data.sptd.Cdb, &cdb, sizeof(cdb));
 	SetLastError(ERROR_SUCCESS);
 	auto bytes_returned = ULONG(0);
 	auto bytes_expected = ULONG(56);
@@ -313,12 +321,6 @@ auto read_sector_sptd(HANDLE handle, CD_SECTOR_DATA& sector, ULONG lba)
 	auto outcome = DeviceIoControl(handle, IOCTL_SCSI_PASS_THROUGH_DIRECT, &data, sizeof(data), &data, sizeof(data), &bytes_returned, nullptr);
 	WINAPI_CHECK_STATUS();
 	return outcome && bytes_returned == bytes_expected;
-}
-
-auto byteswap16(uint16_t v)
--> uint16_t {
-	auto pointer = (uint8_t*)&v;
-	return (pointer[0] << 8) | (pointer[1] << 0);
 }
 
 typedef struct {
