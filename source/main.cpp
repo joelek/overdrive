@@ -664,29 +664,13 @@ auto save(int argc, char **argv)
 		auto handle = get_cdrom_handle(drive_argument.value());
 		auto toc = get_cdrom_toc(handle);
 		validate_cdrom_toc(toc);
-/* {
-		auto mode_sense = ModeSense();
-		sptd_mode_sense(handle, mode_sense);
-		DUMP(mode_sense);
-		mode_sense.page_data.read_retry_count = max_read_retries;
-		sptd_mode_select(handle, mode_sense);
-		auto mode_sense2 = ModeSense();
-		sptd_mode_sense(handle, mode_sense2);
-		DUMP(mode_sense2);
-		auto first_audio_track = toc.TrackData[toc.FirstTrack + 1 - 1];
-		auto sector = CD_SECTOR_DATA();
-		auto lba = 163538; // CDDA
-		//lba = 841; // READ ERROR
-		auto start_ms = get_timestamp_ms();
-		read_sector_sptd(handle, sector, lba);
-		auto duration_ms = get_timestamp_ms() - start_ms;
-		fprintf(stderr, "Extraction took %llu milliseconds\n", duration_ms);
-		DUMP(sector);
-		auto k = deinterleave_subchannel_data(sector);
-		DUMP(k);
-		throw EXIT_FAILURE;
-}
- */
+		{
+			auto mode_sense = ModeSense();
+			sptd_mode_sense(handle, mode_sense);
+			DUMP(mode_sense);
+			mode_sense.page_data.read_retry_count = max_read_retries;
+			sptd_mode_select(handle, mode_sense);
+		}
 		auto &first_track = toc.TrackData[toc.FirstTrack - 1];
 		auto &last_track = toc.TrackData[toc.LastTrack - 1];
 		auto &lead_out_track = toc.TrackData[toc.LastTrack + 1 - 1];
@@ -746,20 +730,20 @@ auto save(int argc, char **argv)
 				auto adjusted_first_sector = idiv_floor(start_offset_bytes, CD_SECTOR_LENGTH);
 				auto adjusted_last_sector = idiv_ceil(end_offset_bytes, CD_SECTOR_LENGTH);
 				auto adjusted_track_length_sectors = adjusted_last_sector - adjusted_first_sector;
-				fprintf(stderr, "Extracting to %lu sectors from %lu (inclusive) to %lu (exclusive)\n", adjusted_track_length_sectors, adjusted_first_sector, adjusted_last_sector);
+				fprintf(stderr, "Extracting to %i sectors from %i (inclusive) to %i (exclusive)\n", adjusted_track_length_sectors, adjusted_first_sector, adjusted_last_sector);
 				auto track_data = std::vector<uint8_t>(adjusted_track_length_sectors * CD_SECTOR_LENGTH);
 				for (auto sector_index = adjusted_first_sector; sector_index < adjusted_last_sector; sector_index += 1) {
 					try {
 						read_raw_sector(handle, track_data.data() + (sector_index - adjusted_first_sector) * CD_SECTOR_LENGTH, sector_index);
 					} catch (...) {
-						fprintf(stderr, "Error reading sector %lu!\n", sector_index);
-						if (sector_index >= 0 && sector_index < sector_count) {
+						fprintf(stderr, "Error reading sector %i!\n", sector_index);
+						if (sector_index >= 0 && sector_index < (int)sector_count) {
 							throw EXIT_FAILURE;
 						}
 					}
 				}
 				auto track_data_start_offset = read_offset_correction_bytes - ((adjusted_first_sector - first_sector) * CD_SECTOR_LENGTH);
-				fprintf(stderr, "Discarding the first %i bytes of sector %i and the last %i bytes of sector %i\n", track_data_start_offset, adjusted_first_sector, track_data_start_offset, adjusted_last_sector);
+				fprintf(stderr, "Discarding the first %lu bytes of sector %i and the last %lu bytes of sector %i\n", track_data_start_offset, adjusted_first_sector, track_data_start_offset, adjusted_last_sector);
 				for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
 					auto cd_sector = track_data.data() + track_data_start_offset + ((sector_index - first_sector) * CD_SECTOR_LENGTH);
 					auto outcome = write_cd_sector_to_file(*(CD_SECTOR_DATA*)cd_sector, target_handle_mdf, false);

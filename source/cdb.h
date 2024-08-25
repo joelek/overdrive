@@ -8,7 +8,7 @@ namespace cdb {
 	typedef struct {
 		const uint8_t operation_code = 0x12;
 		uint8_t enable_vital_product_data: 1;
-		[[deprecated]] uint8_t command_support_data: 1;
+		uint8_t obsolete_a: 1;
 		uint8_t reserved_a: 6;
 		uint8_t page_code;
 		uint16_t allocation_length_be;
@@ -101,9 +101,9 @@ namespace cdb {
 		uint8_t automatic_read_reallocation_enabled: 1;
 		uint8_t automatic_write_reallocation_enabled: 1;
 		uint8_t read_retry_count;
-		[[deprecated]] uint8_t obsolete_a;
-		[[deprecated]] uint8_t obsolete_b;
-		[[deprecated]] uint8_t obsolete_c;
+		uint8_t obsolete_a;
+		uint8_t obsolete_b;
+		uint8_t obsolete_c;
 		uint8_t restricted_for_mmc_6: 2;
 		uint8_t reserved_a: 6;
 		uint8_t write_retry_count;
