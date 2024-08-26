@@ -762,7 +762,7 @@ auto save(int argc, char **argv)
 		auto empty_cd_sector = CD_SECTOR_DATA();
 		auto cd_sector = CD_SECTOR_DATA();
 		auto start_ms = get_timestamp_ms();
-		for (auto i = 16; i <= 16; i += 1) {
+		for (auto i = 2; i <= toc.LastTrack; i += 1) {
 			fprintf(stderr, "Processing track %u\n", i);
 			auto &current_track = toc.TrackData[i - 1];
 			auto &next_track = toc.TrackData[i + 1 - 1];
@@ -785,10 +785,10 @@ auto save(int argc, char **argv)
 				auto adjusted_first_sector = idiv_floor(start_offset_bytes, CD_SECTOR_LENGTH);
 				auto adjusted_last_sector = idiv_ceil(end_offset_bytes, CD_SECTOR_LENGTH);
 				auto adjusted_track_length_sectors = adjusted_last_sector - adjusted_first_sector;
-				fprintf(stderr, "Extracting to %i sectors from %i (inclusive) to %i (exclusive)\n", adjusted_track_length_sectors, adjusted_first_sector, adjusted_last_sector);
+				fprintf(stderr, "Extracting %i sectors from %i (inclusive) to %i (exclusive)\n", adjusted_track_length_sectors, adjusted_first_sector, adjusted_last_sector);
 				auto track_data = std::vector<uint8_t>(adjusted_track_length_sectors * CD_SECTOR_LENGTH);
 				auto track_data_start_offset = read_offset_correction_bytes - ((adjusted_first_sector - first_sector) * CD_SECTOR_LENGTH);
-				fprintf(stderr, "Discarding the first %lu bytes of sector %i and the last %lu bytes of sector %i\n", track_data_start_offset, adjusted_first_sector, track_data_start_offset, adjusted_last_sector);
+				fprintf(stderr, "The first %lu bytes will be discarded\n", track_data_start_offset);
 				auto extracted_cdda_sectors_list = std::vector<std::vector<ExtractedCDDASector>>(track_length_sectors);
 				for (auto audio_pass_index = 0; audio_pass_index < max_audio_read_passes; audio_pass_index += 1) {
 					fprintf(stderr, "Running audio extraction pass %i\n", audio_pass_index);
