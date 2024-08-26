@@ -166,7 +166,7 @@ namespace cdrom {
 	#pragma pack(pop)
 }
 
-ULONG AddressToSectors(UCHAR Addr[4]) {
+ULONG AddressToSectors(const UCHAR Addr[4]) {
 	ULONG Sectors = Addr[1]*75*60 + Addr[2]*75 + Addr[3];
 	return Sectors - 150;
 }
@@ -443,19 +443,13 @@ enum class TrackType {
 };
 
 enum class FileFormat {
-	MDF_MDS
+	MDF_MDS,
+	BIN_CUE
 };
 
-auto get_track_type(TRACK_DATA &track)
+auto get_track_type(const TRACK_DATA &track)
 -> TrackType {
 	return (track.Control & 0b0100) == 0 ? TrackType::AUDIO : TrackType::DATA;
-}
-
-auto write_cd_sector_to_file(CD_SECTOR_DATA &sector, FILE *target_handle, bool subchannels)
--> bool {
-	auto bytes_expected = (size_t)(subchannels ? CD_SECTOR_LENGTH + CD_SUBCHANNELS_LENGTH : CD_SECTOR_LENGTH);
-	auto bytes_returned = fwrite(&sector, 1, bytes_expected, target_handle);
-	return bytes_returned == bytes_expected;
 }
 
 auto deinterleave_subchannel_data(CD_SECTOR_DATA &sector)
@@ -598,273 +592,56 @@ namespace mds {
 	#pragma pack(pop)
 }
 
-auto save(int argc, char **argv)
--> void {
-	auto subchannels = false;
-	auto directory = ".\\";
-	auto filename = "image";
-	auto format = FileFormat::MDF_MDS;
-	auto drive_argument = std::optional<std::string>();
-	auto max_read_retries = 8;
-	auto read_offset_correction = 0;
-	auto max_audio_read_passes = 8;
-	auto unrecognized_arguments = std::vector<char*>();
-	auto positional_index = 0;
-	for (auto i = 2; i < argc; i += 1) {
-		auto argument = argv[i];
-		if (false) {
-		} else if (strstr(argument, "--subchannels=") == argument) {
-			auto value = argument + sizeof("--subchannels=") - 1;
-			if (false) {
-			} else if (strcmp(value, "false") == 0) {
-				subchannels = false;
-			} else if (strcmp(value, "true") == 0) {
-				subchannels = true;
-			} else {
-				unrecognized_arguments.push_back(argument);
-			}
-		} else if (strstr(argument, "--directory=") == argument) {
-			auto value = argument + sizeof("--directory=") - 1;
-			directory = value;
-		} else if (strstr(argument, "--filename=") == argument) {
-			auto value = argument + sizeof("--filename=") - 1;
-			// TODO: Strip extension and set format from .mds/.mdf.
-			filename = value;
-		} else if (strstr(argument, "--format=") == argument) {
-			auto value = argument + sizeof("--format=") - 1;
-			if (false) {
-			} else if (strcmp(value, "MDF/MDS") == 0) {
-				format = FileFormat::MDF_MDS;
-			} else {
-				unrecognized_arguments.push_back(argument);
-			}
-		} else if (strstr(argument, "--drive=") == argument) {
-			auto value = argument + sizeof("--drive=") - 1;
-			auto value_length = strlen(value);
-			if (false) {
-			} else if (value_length == 1 && value[0] > 'A' && value[0] < 'Z') {
-				drive_argument = std::string(value, 1);
-			} else if (value_length == 2 && value[1] == ':') {
-				drive_argument = std::string(value, 1);
-			} else {
-				unrecognized_arguments.push_back(argument);
-			}
-		} else if (strstr(argument, "--max-read-retries=") == argument) {
-			auto value = argument + sizeof("--max-read-retries=") - 1;
-			auto parsed_value = atoi(value);
-			if (false) {
-			} else if (parsed_value >= 0 && parsed_value <= 255) {
-				max_read_retries = parsed_value;
-			} else {
-				unrecognized_arguments.push_back(argument);
-			}
-		} else if (strstr(argument, "--read-offset-correction=") == argument) {
-			auto value = argument + sizeof("--read-offset-correction=") - 1;
-			auto parsed_value = atoi(value);
-			if (false) {
-			} else if (parsed_value >= 0 - (10 * CD_SECTOR_LENGTH) && parsed_value <= 0 + (10 * CD_SECTOR_LENGTH)) {
-				read_offset_correction = parsed_value;
-			} else {
-				unrecognized_arguments.push_back(argument);
-			}
-		} else if (positional_index == 0) {
-			auto value = argument;
-			auto value_length = strlen(value);
-			if (false) {
-			} else if (value_length == 1 && value[0] > 'A' && value[0] < 'Z') {
-				drive_argument = std::string(value, 1);
-			} else if (value_length == 2 && value[1] == ':') {
-				drive_argument = std::string(value, 1);
-			} else {
-				unrecognized_arguments.push_back(argument);
-			}
-			positional_index += 1;
-		} else {
-			unrecognized_arguments.push_back(argument);
-		}
-	}
-	auto missing_arguments = std::vector<std::string>();
-	if (!drive_argument) {
-		missing_arguments.push_back("drive");
-	}
-	if (unrecognized_arguments.size() > 0 || missing_arguments.size() > 0) {
-		fprintf(stderr, "%s v%s\n", APP_NAME, APP_VERSION);
-		fprintf(stderr, "\n");
-		for (auto &unrecognized_argument : unrecognized_arguments) {
-			fprintf(stderr, "Unrecognized argument \"%s\"!\n", unrecognized_argument);
-		}
-		for (auto &missing_argument : missing_arguments) {
-			fprintf(stderr, "Missing argument \"%s\"!\n", missing_argument.c_str());
-		}
-		fprintf(stderr, "\n");
-		fprintf(stderr, "Arguments:\n");
-		fprintf(stderr, "\t--subchannels=boolean\n");
-		fprintf(stderr, "\t\tSet subchannel extraction (false by default).\n");
-		fprintf(stderr, "\t--directory=string\n");
-		fprintf(stderr, "\t\tSet target directory (current working directory by default).\n");
-		fprintf(stderr, "\t--filename=string\n");
-		fprintf(stderr, "\t\tSet target filename (\"image\" by default).\n");
-		fprintf(stderr, "\t--format=enum\n");
-		fprintf(stderr, "\t\tSet target format (MDF/MDS by default).\n");
-		fprintf(stderr, "\t\ta) MDF/MDS.\n");
-		fprintf(stderr, "\t--drive=string\n");
-		fprintf(stderr, "\t\tSet optical drive letter.\n");
-		fprintf(stderr, "\t--max-read-retries=integer[0,255]\n");
-		fprintf(stderr, "\t\tSet max read retries made before producing a read error (8 by default).\n");
-		fprintf(stderr, "\t--read-offset-correction=integer[%i,%i]\n", 0 - (CD_SECTOR_LENGTH * 10), 0 + (CD_SECTOR_LENGTH * 10));
-		fprintf(stderr, "\t\tSet read offset correction (samples) for audio track extraction (0 by default).\n");
-		throw EXIT_FAILURE;
-	} else {
-		auto handle = get_cdrom_handle(drive_argument.value());
-		auto toc = get_cdrom_toc(handle);
-		validate_cdrom_toc(toc);
-		{
-			auto mode_sense = ModeSense();
-			sptd_mode_sense(handle, mode_sense);
-			mode_sense.page_data.read_retry_count = max_read_retries;
-			sptd_mode_select(handle, mode_sense);
-		}
-		auto &first_track = toc.TrackData[toc.FirstTrack - 1];
-		auto &last_track = toc.TrackData[toc.LastTrack - 1];
-		auto &lead_out_track = toc.TrackData[toc.LastTrack + 1 - 1];
-		auto track_count = toc.LastTrack - toc.FirstTrack + 1;
-		auto sector_count = AddressToSectors(lead_out_track.Address) - AddressToSectors(first_track.Address);
-		fprintf(stderr, "Disc contains %i tracks\n", track_count);
-		fprintf(stderr, "Disc length is %lu sectors\n", sector_count);
-		auto target_path_mdf = std::string(directory) + std::string(filename) + std::string(".mdf");
-			auto target_handle_mdf = fopen(target_path_mdf.c_str(), "wb+");
-		if (target_handle_mdf == nullptr) {
-			fprintf(stderr, "Failed opening file \"%s\"!\n", target_path_mdf.c_str());
-			throw EXIT_FAILURE;
-		}
-		auto target_path_mds = std::string(directory) + std::string(filename) + std::string(".mds");
+class ImageFormat {
+	public:
+
+	virtual ~ImageFormat() {}
+
+	virtual auto write_sector_data(const uint8_t* data) -> bool = 0;
+	virtual auto write_subchannel_data(const uint8_t* data) -> bool = 0;
+	virtual auto write_index(const CDROM_TOC& toc, bool subchannels, const std::vector<int>& bad_sector_numbers, const std::vector<unsigned int>& track_pregap_sectors_list, const std::vector<unsigned int>& track_length_sectors_list) -> void = 0;
+
+	protected:
+};
+
+class MDSImageFormat: ImageFormat {
+	public:
+
+	MDSImageFormat(const std::string& directory, const std::string& filename): ImageFormat() {
+		auto target_path_mds = directory + filename + ".mds";
 		auto target_handle_mds = fopen(target_path_mds.c_str(), "wb+");
 		if (target_handle_mds == nullptr) {
 			fprintf(stderr, "Failed opening file \"%s\"!\n", target_path_mds.c_str());
 			throw EXIT_FAILURE;
 		}
-		auto read_offset_correction_bytes = read_offset_correction * CDDA_STEREO_SAMPLE_LENGTH;
-		fprintf(stderr, "Read offset correction is set to %i samples (%i bytes)\n", read_offset_correction, read_offset_correction_bytes);
-		auto track_pregap_sectors_list = std::vector<unsigned int>();
-		track_pregap_sectors_list.push_back(2 * CD_SECTORS_PER_SECOND);
-		for (auto i = toc.FirstTrack + 1; i <= toc.LastTrack; i += 1) {
-			auto &last_track = toc.TrackData[i - 1 - 1];
-			auto &current_track = toc.TrackData[i - 1];
-			auto last_track_type = get_track_type(last_track);
-			auto current_track_type = get_track_type(current_track);
-			auto track_type_change = current_track_type != last_track_type;
-			auto track_pregap_seconds = track_type_change ? 2 : 0;
-			auto track_pregap_sectors = track_pregap_seconds * CD_SECTORS_PER_SECOND;
-			track_pregap_sectors_list.push_back(track_pregap_sectors);
+		auto target_path_mdf = directory + filename + ".mdf";
+		auto target_handle_mdf = fopen(target_path_mdf.c_str(), "wb+");
+		if (target_handle_mdf == nullptr) {
+			fprintf(stderr, "Failed opening file \"%s\"!\n", target_path_mdf.c_str());
+			throw EXIT_FAILURE;
 		}
-		auto track_length_sectors_list = std::vector<unsigned int>();
-		auto bad_sector_numbers = std::vector<int>();
-		auto empty_cd_sector = CD_SECTOR_DATA();
-		auto cd_sector = CD_SECTOR_DATA();
-		auto start_ms = get_timestamp_ms();
-		for (auto i = toc.FirstTrack; i <= toc.LastTrack; i += 1) {
-			fprintf(stderr, "Processing track %u\n", i);
-			auto &current_track = toc.TrackData[i - 1];
-			auto &next_track = toc.TrackData[i + 1 - 1];
-			auto current_track_lba = AddressToSectors(current_track.Address);
-			auto next_track_lba = AddressToSectors(next_track.Address);
-			fprintf(stderr, "Current track starts at sector %lu\n", current_track_lba);
-			fprintf(stderr, "Next track starts at sector %lu\n", next_track_lba);
-			auto next_track_pregap_sectors = i == toc.LastTrack ? 0 : track_pregap_sectors_list.at(i + 1 -  toc.FirstTrack);
-			fprintf(stderr, "Next track has a pregap of %i sectors\n", next_track_pregap_sectors);
-			auto first_sector = current_track_lba;
-			auto last_sector = next_track_lba - next_track_pregap_sectors;
-			auto track_length_sectors = last_sector - first_sector;
-			fprintf(stderr, "Track length is %lu sectors\n", track_length_sectors);
-			track_length_sectors_list.push_back(track_length_sectors);
-			auto current_track_type = get_track_type(current_track);
-			if (current_track_type == TrackType::AUDIO) {
-				fprintf(stderr, "Current track contains audio\n");
-				auto start_offset_bytes = (first_sector * CD_SECTOR_LENGTH) + read_offset_correction_bytes;
-				auto end_offset_bytes = (last_sector * CD_SECTOR_LENGTH) + read_offset_correction_bytes;
-				auto adjusted_first_sector = idiv_floor(start_offset_bytes, CD_SECTOR_LENGTH);
-				auto adjusted_last_sector = idiv_ceil(end_offset_bytes, CD_SECTOR_LENGTH);
-				auto adjusted_track_length_sectors = adjusted_last_sector - adjusted_first_sector;
-				fprintf(stderr, "Extracting %i sectors from %i to %i\n", adjusted_track_length_sectors, adjusted_first_sector, adjusted_last_sector - 1);
-				auto track_data = std::vector<uint8_t>(adjusted_track_length_sectors * CD_SECTOR_LENGTH);
-				auto track_data_start_offset = read_offset_correction_bytes - ((adjusted_first_sector - first_sector) * CD_SECTOR_LENGTH);
-				fprintf(stderr, "The first %lu bytes will be discarded\n", track_data_start_offset);
-				auto extracted_cdda_sectors_list = std::vector<std::vector<ExtractedCDDASector>>(track_length_sectors);
-				for (auto audio_pass_index = 0; audio_pass_index < max_audio_read_passes; audio_pass_index += 1) {
-					fprintf(stderr, "Running audio extraction pass %i\n", audio_pass_index);
-					for (auto sector_index = adjusted_first_sector; sector_index < adjusted_last_sector; sector_index += 1) {
-						try {
-							read_raw_sector(handle, track_data.data() + (sector_index - adjusted_first_sector) * CD_SECTOR_LENGTH, sector_index);
-						} catch (...) {
-							fprintf(stderr, "Error reading sector %i!\n", sector_index);
-							if (sector_index >= 0 && sector_index < (int)sector_count) {
-								throw EXIT_FAILURE;
-							}
-						}
-					}
-					auto identical_sectors_with_counter_list = std::vector<unsigned int>(max_audio_read_passes);
-					for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
-						auto cd_sector = track_data.data() + track_data_start_offset + ((sector_index - first_sector) * CD_SECTOR_LENGTH);
-						auto &extracted_cdda_sectors = extracted_cdda_sectors_list.at(sector_index - first_sector);
-						auto found = false;
-						for (auto &extracted_cdda_sector : extracted_cdda_sectors) {
-							if (std::memcmp(cd_sector, extracted_cdda_sector.data, CD_SECTOR_LENGTH) == 0) {
-								extracted_cdda_sector.counter += 1;
-								found = true;
-								break;
-							}
-						}
-						if (!found) {
-							auto extracted_cdda_sector = ExtractedCDDASector();
-							std::memcpy(extracted_cdda_sector.data, cd_sector, CD_SECTOR_LENGTH);
-							extracted_cdda_sector.counter += 1;
-							extracted_cdda_sectors.push_back(extracted_cdda_sector);
-						}
-						// Sort in decreasing order.
-						std::sort(extracted_cdda_sectors.begin(), extracted_cdda_sectors.end(), [](const ExtractedCDDASector& one, const ExtractedCDDASector& two) -> bool {
-							return two.counter < one.counter;
-						});
-						auto &extracted_cdda_sector = extracted_cdda_sectors.at(0);
-						identical_sectors_with_counter_list.at(extracted_cdda_sector.counter - 1) += 1;
-					}
-					if (audio_pass_index > 0 && identical_sectors_with_counter_list.at(audio_pass_index) == track_length_sectors) {
-						fprintf(stderr, "Got %i identical copies of %lu sectors\n", audio_pass_index + 1, track_length_sectors);
-						break;
-					}
-				}
-				for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
-					auto cd_sector = extracted_cdda_sectors_list.at(sector_index - first_sector).at(0);
-					auto outcome = write_cd_sector_to_file(*(CD_SECTOR_DATA*)cd_sector.data, target_handle_mdf, false);
-					if (!outcome) {
-						fprintf(stderr, "Error writing sector %lu to file \"%s\"!\n", sector_index, target_path_mdf.c_str());
-						throw EXIT_FAILURE;
-					}
-				}
-			} else {
-				fprintf(stderr, "Current track contains data\n");
-				fprintf(stderr, "Extracting %lu sectors from %lu to %lu\n", track_length_sectors, first_sector, last_sector - 1);
-				for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
-					try {
-						read_sector_sptd(handle, cd_sector, sector_index);
-						auto outcome = write_cd_sector_to_file(cd_sector, target_handle_mdf, subchannels);
-						if (!outcome) {
-							fprintf(stderr, "Error writing sector %lu to file \"%s\"!\n", sector_index, target_path_mdf.c_str());
-							throw EXIT_FAILURE;
-						}
-					} catch (...) {
-						fprintf(stderr, "Error reading sector %lu!\n", sector_index);
-						bad_sector_numbers.push_back(sector_index);
-						auto outcome = write_cd_sector_to_file(empty_cd_sector, target_handle_mdf, subchannels);
-						if (!outcome) {
-							fprintf(stderr, "Error writing sector %lu to file \"%s\"!\n", sector_index, target_path_mdf.c_str());
-							throw EXIT_FAILURE;
-						}
-					}
-				}
-			}
-		}
-		auto duration_ms = get_timestamp_ms() - start_ms;
-		fprintf(stderr, "Extraction took %llu seconds\n", duration_ms / 1000);
+		this->target_handle_mds = target_handle_mds;
+		this->target_handle_mdf = target_handle_mdf;
+	}
+
+	auto write_sector_data(const uint8_t* data) -> bool {
+		auto bytes_expected = (size_t)CD_SECTOR_LENGTH;
+		auto bytes_returned = fwrite(data, 1, bytes_expected, this->target_handle_mdf);
+		return bytes_returned == bytes_expected;
+	}
+
+	auto write_subchannel_data(const uint8_t* data) -> bool {
+		auto bytes_expected = (size_t)CD_SUBCHANNELS_LENGTH;
+		auto bytes_returned = fwrite(data, 1, bytes_expected, this->target_handle_mdf);
+		return bytes_returned == bytes_expected;
+	}
+
+	auto write_index(const CDROM_TOC& toc, bool subchannels, const std::vector<int>& bad_sector_numbers, const std::vector<unsigned int>& track_pregap_sectors_list, const std::vector<unsigned int>& track_length_sectors_list) -> void {
+		auto &first_track = toc.TrackData[toc.FirstTrack - 1];
+		auto &last_track = toc.TrackData[toc.LastTrack - 1];
+		auto &lead_out_track = toc.TrackData[toc.LastTrack + 1 - 1];
+		auto track_count = toc.LastTrack - toc.FirstTrack + 1;
+		auto sector_count = AddressToSectors(lead_out_track.Address) - AddressToSectors(first_track.Address);
 		auto absolute_offset_to_track_table_entry = sizeof(mds::FormatHeader) + sizeof(mds::DiscHeader) + 3 * sizeof(mds::EntryTypeA) + track_count * sizeof(mds::EntryTypeB) + sizeof(mds::TrackTableHeader);
 		auto absolute_offset_to_file_table_header = absolute_offset_to_track_table_entry + track_count * sizeof(mds::TrackTableEntry);
 		auto absolute_offset_to_file_table_entry = absolute_offset_to_file_table_header + sizeof(mds::FileTableHeader);
@@ -987,6 +764,287 @@ auto save(int argc, char **argv)
 				}
 			}
 		}
+	}
+
+	protected:
+
+	FILE* target_handle_mds;
+	FILE* target_handle_mdf;
+};
+
+auto save(int argc, char **argv)
+-> void {
+	auto subchannels = false;
+	auto directory = ".\\";
+	auto filename = "image";
+	auto format = FileFormat::MDF_MDS;
+	auto drive_argument = std::optional<std::string>();
+	auto max_read_retries = 8;
+	auto read_offset_correction = 0;
+	auto max_audio_read_passes = 8;
+	auto unrecognized_arguments = std::vector<char*>();
+	auto positional_index = 0;
+	for (auto i = 2; i < argc; i += 1) {
+		auto argument = argv[i];
+		if (false) {
+		} else if (strstr(argument, "--subchannels=") == argument) {
+			auto value = argument + sizeof("--subchannels=") - 1;
+			if (false) {
+			} else if (strcmp(value, "false") == 0) {
+				subchannels = false;
+			} else if (strcmp(value, "true") == 0) {
+				subchannels = true;
+			} else {
+				unrecognized_arguments.push_back(argument);
+			}
+		} else if (strstr(argument, "--directory=") == argument) {
+			auto value = argument + sizeof("--directory=") - 1;
+			directory = value;
+		} else if (strstr(argument, "--filename=") == argument) {
+			auto value = argument + sizeof("--filename=") - 1;
+			// TODO: Strip extension and set format from extensions.
+			filename = value;
+		} else if (strstr(argument, "--format=") == argument) {
+			auto value = argument + sizeof("--format=") - 1;
+			if (false) {
+			} else if (strcmp(value, "MDF/MDS") == 0) {
+				format = FileFormat::MDF_MDS;
+			} else if (strcmp(value, "BIN/CUE") == 0) {
+				format = FileFormat::BIN_CUE;
+			} else {
+				unrecognized_arguments.push_back(argument);
+			}
+		} else if (strstr(argument, "--drive=") == argument) {
+			auto value = argument + sizeof("--drive=") - 1;
+			auto value_length = strlen(value);
+			if (false) {
+			} else if (value_length == 1 && value[0] > 'A' && value[0] < 'Z') {
+				drive_argument = std::string(value, 1);
+			} else if (value_length == 2 && value[1] == ':') {
+				drive_argument = std::string(value, 1);
+			} else {
+				unrecognized_arguments.push_back(argument);
+			}
+		} else if (strstr(argument, "--max-read-retries=") == argument) {
+			auto value = argument + sizeof("--max-read-retries=") - 1;
+			auto parsed_value = atoi(value);
+			if (false) {
+			} else if (parsed_value >= 0 && parsed_value <= 255) {
+				max_read_retries = parsed_value;
+			} else {
+				unrecognized_arguments.push_back(argument);
+			}
+		} else if (strstr(argument, "--read-offset-correction=") == argument) {
+			auto value = argument + sizeof("--read-offset-correction=") - 1;
+			auto parsed_value = atoi(value);
+			if (false) {
+			} else if (parsed_value >= 0 - (10 * CD_SECTOR_LENGTH) && parsed_value <= 0 + (10 * CD_SECTOR_LENGTH)) {
+				read_offset_correction = parsed_value;
+			} else {
+				unrecognized_arguments.push_back(argument);
+			}
+		} else if (positional_index == 0) {
+			auto value = argument;
+			auto value_length = strlen(value);
+			if (false) {
+			} else if (value_length == 1 && value[0] > 'A' && value[0] < 'Z') {
+				drive_argument = std::string(value, 1);
+			} else if (value_length == 2 && value[1] == ':') {
+				drive_argument = std::string(value, 1);
+			} else {
+				unrecognized_arguments.push_back(argument);
+			}
+			positional_index += 1;
+		} else {
+			unrecognized_arguments.push_back(argument);
+		}
+	}
+	auto missing_arguments = std::vector<std::string>();
+	if (!drive_argument) {
+		missing_arguments.push_back("drive");
+	}
+	if (unrecognized_arguments.size() > 0 || missing_arguments.size() > 0) {
+		fprintf(stderr, "%s v%s\n", APP_NAME, APP_VERSION);
+		fprintf(stderr, "\n");
+		for (auto &unrecognized_argument : unrecognized_arguments) {
+			fprintf(stderr, "Unrecognized argument \"%s\"!\n", unrecognized_argument);
+		}
+		for (auto &missing_argument : missing_arguments) {
+			fprintf(stderr, "Missing argument \"%s\"!\n", missing_argument.c_str());
+		}
+		fprintf(stderr, "\n");
+		fprintf(stderr, "Arguments:\n");
+		fprintf(stderr, "\t--subchannels=boolean\n");
+		fprintf(stderr, "\t\tSet subchannel extraction (false by default).\n");
+		fprintf(stderr, "\t--directory=string\n");
+		fprintf(stderr, "\t\tSet target directory (current working directory by default).\n");
+		fprintf(stderr, "\t--filename=string\n");
+		fprintf(stderr, "\t\tSet target filename (\"image\" by default).\n");
+		fprintf(stderr, "\t--format=enum\n");
+		fprintf(stderr, "\t\tSet target format (MDF/MDS by default).\n");
+		fprintf(stderr, "\t\t\tMDF/MDS.\n");
+		fprintf(stderr, "\t\t\tBIN/CUE.\n");
+		fprintf(stderr, "\t--drive=string\n");
+		fprintf(stderr, "\t\tSet optical drive letter.\n");
+		fprintf(stderr, "\t--max-read-retries=integer[0,255]\n");
+		fprintf(stderr, "\t\tSet max read retries made before producing a read error (8 by default).\n");
+		fprintf(stderr, "\t--read-offset-correction=integer[%i,%i]\n", 0 - (CD_SECTOR_LENGTH * 10), 0 + (CD_SECTOR_LENGTH * 10));
+		fprintf(stderr, "\t\tSet read offset correction (samples) for audio track extraction (0 by default).\n");
+		throw EXIT_FAILURE;
+	} else {
+		auto handle = get_cdrom_handle(drive_argument.value());
+		auto toc = get_cdrom_toc(handle);
+		validate_cdrom_toc(toc);
+		{
+			auto mode_sense = ModeSense();
+			sptd_mode_sense(handle, mode_sense);
+			mode_sense.page_data.read_retry_count = max_read_retries;
+			sptd_mode_select(handle, mode_sense);
+		}
+		auto image_format = MDSImageFormat(std::string(directory), std::string(filename));
+		auto &first_track = toc.TrackData[toc.FirstTrack - 1];
+		auto &lead_out_track = toc.TrackData[toc.LastTrack + 1 - 1];
+		auto track_count = toc.LastTrack - toc.FirstTrack + 1;
+		auto sector_count = AddressToSectors(lead_out_track.Address) - AddressToSectors(first_track.Address);
+		fprintf(stderr, "Disc contains %i tracks\n", track_count);
+		fprintf(stderr, "Disc length is %lu sectors\n", sector_count);
+		auto read_offset_correction_bytes = read_offset_correction * CDDA_STEREO_SAMPLE_LENGTH;
+		fprintf(stderr, "Read offset correction is set to %i samples (%i bytes)\n", read_offset_correction, read_offset_correction_bytes);
+		auto track_pregap_sectors_list = std::vector<unsigned int>();
+		track_pregap_sectors_list.push_back(2 * CD_SECTORS_PER_SECOND);
+		for (auto i = toc.FirstTrack + 1; i <= toc.LastTrack; i += 1) {
+			auto &last_track = toc.TrackData[i - 1 - 1];
+			auto &current_track = toc.TrackData[i - 1];
+			auto last_track_type = get_track_type(last_track);
+			auto current_track_type = get_track_type(current_track);
+			auto track_type_change = current_track_type != last_track_type;
+			auto track_pregap_seconds = track_type_change ? 2 : 0;
+			auto track_pregap_sectors = track_pregap_seconds * CD_SECTORS_PER_SECOND;
+			track_pregap_sectors_list.push_back(track_pregap_sectors);
+		}
+		auto track_length_sectors_list = std::vector<unsigned int>();
+		auto bad_sector_numbers = std::vector<int>();
+		auto empty_cd_sector = CD_SECTOR_DATA();
+		auto cd_sector = CD_SECTOR_DATA();
+		auto start_ms = get_timestamp_ms();
+		for (auto i = toc.FirstTrack; i <= toc.LastTrack; i += 1) {
+			fprintf(stderr, "Processing track %u\n", i);
+			auto &current_track = toc.TrackData[i - 1];
+			auto &next_track = toc.TrackData[i + 1 - 1];
+			auto current_track_lba = AddressToSectors(current_track.Address);
+			auto next_track_lba = AddressToSectors(next_track.Address);
+			fprintf(stderr, "Current track starts at sector %lu\n", current_track_lba);
+			fprintf(stderr, "Next track starts at sector %lu\n", next_track_lba);
+			auto next_track_pregap_sectors = i == toc.LastTrack ? 0 : track_pregap_sectors_list.at(i + 1 -  toc.FirstTrack);
+			fprintf(stderr, "Next track has a pregap of %i sectors\n", next_track_pregap_sectors);
+			auto first_sector = current_track_lba;
+			auto last_sector = next_track_lba - next_track_pregap_sectors;
+			auto track_length_sectors = last_sector - first_sector;
+			fprintf(stderr, "Track length is %lu sectors\n", track_length_sectors);
+			track_length_sectors_list.push_back(track_length_sectors);
+			auto current_track_type = get_track_type(current_track);
+			if (current_track_type == TrackType::AUDIO) {
+				fprintf(stderr, "Current track contains audio\n");
+				auto start_offset_bytes = (first_sector * CD_SECTOR_LENGTH) + read_offset_correction_bytes;
+				auto end_offset_bytes = (last_sector * CD_SECTOR_LENGTH) + read_offset_correction_bytes;
+				auto adjusted_first_sector = idiv_floor(start_offset_bytes, CD_SECTOR_LENGTH);
+				auto adjusted_last_sector = idiv_ceil(end_offset_bytes, CD_SECTOR_LENGTH);
+				auto adjusted_track_length_sectors = adjusted_last_sector - adjusted_first_sector;
+				fprintf(stderr, "Extracting %i sectors from %i to %i\n", adjusted_track_length_sectors, adjusted_first_sector, adjusted_last_sector - 1);
+				auto track_data = std::vector<uint8_t>(adjusted_track_length_sectors * CD_SECTOR_LENGTH);
+				auto track_data_start_offset = read_offset_correction_bytes - ((adjusted_first_sector - first_sector) * CD_SECTOR_LENGTH);
+				fprintf(stderr, "The first %lu bytes will be discarded\n", track_data_start_offset);
+				auto extracted_cdda_sectors_list = std::vector<std::vector<ExtractedCDDASector>>(track_length_sectors);
+				for (auto audio_pass_index = 0; audio_pass_index < max_audio_read_passes; audio_pass_index += 1) {
+					fprintf(stderr, "Running audio extraction pass %i\n", audio_pass_index);
+					for (auto sector_index = adjusted_first_sector; sector_index < adjusted_last_sector; sector_index += 1) {
+						try {
+							read_raw_sector(handle, track_data.data() + (sector_index - adjusted_first_sector) * CD_SECTOR_LENGTH, sector_index);
+						} catch (...) {
+							fprintf(stderr, "Error reading sector %i!\n", sector_index);
+							if (sector_index >= 0 && sector_index < (int)sector_count) {
+								throw EXIT_FAILURE;
+							}
+						}
+					}
+					auto identical_sectors_with_counter_list = std::vector<unsigned int>(max_audio_read_passes);
+					for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
+						auto cd_sector = track_data.data() + track_data_start_offset + ((sector_index - first_sector) * CD_SECTOR_LENGTH);
+						auto &extracted_cdda_sectors = extracted_cdda_sectors_list.at(sector_index - first_sector);
+						auto found = false;
+						for (auto &extracted_cdda_sector : extracted_cdda_sectors) {
+							if (std::memcmp(cd_sector, extracted_cdda_sector.data, CD_SECTOR_LENGTH) == 0) {
+								extracted_cdda_sector.counter += 1;
+								found = true;
+								break;
+							}
+						}
+						if (!found) {
+							auto extracted_cdda_sector = ExtractedCDDASector();
+							std::memcpy(extracted_cdda_sector.data, cd_sector, CD_SECTOR_LENGTH);
+							extracted_cdda_sector.counter += 1;
+							extracted_cdda_sectors.push_back(extracted_cdda_sector);
+						}
+						// Sort in decreasing order.
+						std::sort(extracted_cdda_sectors.begin(), extracted_cdda_sectors.end(), [](const ExtractedCDDASector& one, const ExtractedCDDASector& two) -> bool {
+							return two.counter < one.counter;
+						});
+						auto &extracted_cdda_sector = extracted_cdda_sectors.at(0);
+						identical_sectors_with_counter_list.at(extracted_cdda_sector.counter - 1) += 1;
+					}
+					if (audio_pass_index > 0 && identical_sectors_with_counter_list.at(audio_pass_index) == track_length_sectors) {
+						fprintf(stderr, "Got %i identical copies of %lu sectors\n", audio_pass_index + 1, track_length_sectors);
+						break;
+					}
+				}
+				for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
+					auto cd_sector = extracted_cdda_sectors_list.at(sector_index - first_sector).at(0);
+					auto outcome = image_format.write_sector_data(cd_sector.data);
+					if (!outcome) {
+						fprintf(stderr, "Error writing sector data %lu to file!\n", sector_index);
+						throw EXIT_FAILURE;
+					}
+				}
+			} else {
+				fprintf(stderr, "Current track contains data\n");
+				fprintf(stderr, "Extracting %lu sectors from %lu to %lu\n", track_length_sectors, first_sector, last_sector - 1);
+				for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
+					try {
+						read_sector_sptd(handle, cd_sector, sector_index);
+						auto outcome = image_format.write_sector_data(cd_sector.data);
+						if (!outcome) {
+							fprintf(stderr, "Error writing sector data %lu to file!\n", sector_index);
+							throw EXIT_FAILURE;
+						}
+						if (subchannels) {
+							auto outcome2 = image_format.write_subchannel_data(cd_sector.subchannel_data);
+							if (!outcome2) {
+								fprintf(stderr, "Error writing subchannel data %lu to file!\n", sector_index);
+								throw EXIT_FAILURE;
+							}
+						}
+					} catch (...) {
+						fprintf(stderr, "Error reading sector %lu!\n", sector_index);
+						bad_sector_numbers.push_back(sector_index);
+						auto outcome = image_format.write_sector_data(empty_cd_sector.data);
+						if (!outcome) {
+							fprintf(stderr, "Error writing sector data %lu to file!\n", sector_index);
+							throw EXIT_FAILURE;
+						}
+						if (subchannels) {
+							auto outcome2 = image_format.write_subchannel_data(empty_cd_sector.subchannel_data);
+							if (!outcome2) {
+								fprintf(stderr, "Error writing subchannel data %lu to file!\n", sector_index);
+								throw EXIT_FAILURE;
+							}
+						}
+					}
+				}
+			}
+		}
+		auto duration_ms = get_timestamp_ms() - start_ms;
+		fprintf(stderr, "Extraction took %llu seconds\n", duration_ms / 1000);
+		image_format.write_index(toc, subchannels, bad_sector_numbers, track_pregap_sectors_list, track_length_sectors_list);
 	}
 }
 
@@ -1129,3 +1187,31 @@ auto main(int argc, char **argv)
 	}
 	return EXIT_FAILURE;
 }
+
+
+/*
+FILE "image.bin" BINARY
+  TRACK 01 MODE1/2352
+    INDEX 01 00:00:00
+  TRACK 02 AUDIO
+    PREGAP 00:02:00
+    INDEX 01 35:17:41
+  TRACK 03 AUDIO
+    INDEX 01 37:37:70
+
+vs
+
+
+FILE "track01.bin" BINARY
+  TRACK 01 MODE1/2352
+    INDEX 01 00:00:00
+FILE "track02.wav" WAVE
+  TRACK 02 AUDIO
+    PREGAP 00:02:00
+    INDEX 01 00:02:00
+FILE "track03.wav" WAVE
+  TRACK 03 AUDIO
+    INDEX 01 00:00:00
+
+
+*/
