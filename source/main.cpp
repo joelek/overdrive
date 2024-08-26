@@ -762,7 +762,7 @@ auto save(int argc, char **argv)
 		auto empty_cd_sector = CD_SECTOR_DATA();
 		auto cd_sector = CD_SECTOR_DATA();
 		auto start_ms = get_timestamp_ms();
-		for (auto i = 2; i <= toc.LastTrack; i += 1) {
+		for (auto i = toc.FirstTrack; i <= toc.LastTrack; i += 1) {
 			fprintf(stderr, "Processing track %u\n", i);
 			auto &current_track = toc.TrackData[i - 1];
 			auto &next_track = toc.TrackData[i + 1 - 1];
@@ -785,7 +785,7 @@ auto save(int argc, char **argv)
 				auto adjusted_first_sector = idiv_floor(start_offset_bytes, CD_SECTOR_LENGTH);
 				auto adjusted_last_sector = idiv_ceil(end_offset_bytes, CD_SECTOR_LENGTH);
 				auto adjusted_track_length_sectors = adjusted_last_sector - adjusted_first_sector;
-				fprintf(stderr, "Extracting %i sectors from %i (inclusive) to %i (exclusive)\n", adjusted_track_length_sectors, adjusted_first_sector, adjusted_last_sector);
+				fprintf(stderr, "Extracting %i sectors from %i to %i\n", adjusted_track_length_sectors, adjusted_first_sector, adjusted_last_sector - 1);
 				auto track_data = std::vector<uint8_t>(adjusted_track_length_sectors * CD_SECTOR_LENGTH);
 				auto track_data_start_offset = read_offset_correction_bytes - ((adjusted_first_sector - first_sector) * CD_SECTOR_LENGTH);
 				fprintf(stderr, "The first %lu bytes will be discarded\n", track_data_start_offset);
@@ -842,7 +842,7 @@ auto save(int argc, char **argv)
 				}
 			} else {
 				fprintf(stderr, "Current track contains data\n");
-				fprintf(stderr, "Extracting %lu sectors from %lu (inclusive) to %lu (exclusive)\n", track_length_sectors, first_sector, last_sector);
+				fprintf(stderr, "Extracting %lu sectors from %lu to %lu\n", track_length_sectors, first_sector, last_sector - 1);
 				for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
 					try {
 						read_sector_sptd(handle, cd_sector, sector_index);
