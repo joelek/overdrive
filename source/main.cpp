@@ -607,6 +607,7 @@ auto save(int argc, char **argv)
 	auto drive_argument = std::optional<std::string>();
 	auto max_read_retries = 8;
 	auto read_offset_correction = 0;
+	auto max_audio_read_passes = 8;
 	auto unrecognized_arguments = std::vector<char*>();
 	auto positional_index = 0;
 	for (auto i = 2; i < argc; i += 1) {
@@ -761,7 +762,7 @@ auto save(int argc, char **argv)
 		auto empty_cd_sector = CD_SECTOR_DATA();
 		auto cd_sector = CD_SECTOR_DATA();
 		auto start_ms = get_timestamp_ms();
-		for (auto i = 2; i <= 2; i += 1) {
+		for (auto i = 16; i <= 16; i += 1) {
 			fprintf(stderr, "Processing track %u\n", i);
 			auto &current_track = toc.TrackData[i - 1];
 			auto &next_track = toc.TrackData[i + 1 - 1];
@@ -774,6 +775,7 @@ auto save(int argc, char **argv)
 			auto first_sector = current_track_lba;
 			auto last_sector = next_track_lba - next_track_pregap_sectors;
 			auto track_length_sectors = last_sector - first_sector;
+			fprintf(stderr, "Track length is %lu sectors\n", track_length_sectors);
 			track_length_sectors_list.push_back(track_length_sectors);
 			auto current_track_type = get_track_type(current_track);
 			if (current_track_type == TrackType::AUDIO) {
@@ -788,8 +790,8 @@ auto save(int argc, char **argv)
 				auto track_data_start_offset = read_offset_correction_bytes - ((adjusted_first_sector - first_sector) * CD_SECTOR_LENGTH);
 				fprintf(stderr, "Discarding the first %lu bytes of sector %i and the last %lu bytes of sector %i\n", track_data_start_offset, adjusted_first_sector, track_data_start_offset, adjusted_last_sector);
 				auto extracted_cdda_sectors_list = std::vector<std::vector<ExtractedCDDASector>>(track_length_sectors);
-				for (auto pass_index = 0; pass_index < 2; pass_index += 1) {
-					fprintf(stderr, "Running extraction pass %i\n", pass_index);
+				for (auto audio_pass_index = 0; audio_pass_index < max_audio_read_passes; audio_pass_index += 1) {
+					fprintf(stderr, "Running audio extraction pass %i\n", audio_pass_index);
 					for (auto sector_index = adjusted_first_sector; sector_index < adjusted_last_sector; sector_index += 1) {
 						try {
 							read_raw_sector(handle, track_data.data() + (sector_index - adjusted_first_sector) * CD_SECTOR_LENGTH, sector_index);
@@ -800,6 +802,7 @@ auto save(int argc, char **argv)
 							}
 						}
 					}
+					auto identical_sectors_with_counter_list = std::vector<unsigned int>(max_audio_read_passes);
 					for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
 						auto cd_sector = track_data.data() + track_data_start_offset + ((sector_index - first_sector) * CD_SECTOR_LENGTH);
 						auto &extracted_cdda_sectors = extracted_cdda_sectors_list.at(sector_index - first_sector);
@@ -817,14 +820,17 @@ auto save(int argc, char **argv)
 							extracted_cdda_sector.counter += 1;
 							extracted_cdda_sectors.push_back(extracted_cdda_sector);
 						}
+						// Sort in decreasing order.
+						std::sort(extracted_cdda_sectors.begin(), extracted_cdda_sectors.end(), [](const ExtractedCDDASector& one, const ExtractedCDDASector& two) -> bool {
+							return two.counter < one.counter;
+						});
+						auto &extracted_cdda_sector = extracted_cdda_sectors.at(0);
+						identical_sectors_with_counter_list.at(extracted_cdda_sector.counter - 1) += 1;
 					}
-					// TODO: Add early exit.
-				}
-				for (auto &extracted_cdda_sectors : extracted_cdda_sectors_list) {
-					// Sort in decreasing order.
-					std::sort(extracted_cdda_sectors.begin(), extracted_cdda_sectors.end(), [](const ExtractedCDDASector& one, const ExtractedCDDASector& two) -> bool {
-						return two.counter < one.counter;
-					});
+					if (audio_pass_index > 0 && identical_sectors_with_counter_list.at(audio_pass_index) == track_length_sectors) {
+						fprintf(stderr, "Got %i identical copies of %lu sectors\n", audio_pass_index + 1, track_length_sectors);
+						break;
+					}
 				}
 				for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
 					auto cd_sector = extracted_cdda_sectors_list.at(sector_index - first_sector).at(0);
