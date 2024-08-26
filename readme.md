@@ -6,7 +6,6 @@ Utility for interfacing with optical drives. Written for the Windows platform.
 
 * Investigate possibility of disabling read cache.
 	Can be done by issuing normal READ SCSI command.
-* Implement support for the BIN/CUE format.
 * Decide on strategy for storing unreadable sectors.
 * Extract full TOC.
 
