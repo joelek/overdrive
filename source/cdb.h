@@ -144,7 +144,7 @@ namespace cdb {
 		P_TO_W = 0b100,
 		RESERVED_5 = 0b101,
 		RESERVED_6 = 0b110,
-		RESERVED_7 = 0b111,
+		RESERVED_7 = 0b111
 	};
 
 	typedef struct {
@@ -154,9 +154,7 @@ namespace cdb {
 		ReadCD12ExpectedSectorType expected_sector_type: 3;
 		uint8_t: 3;
 		uint32_t lba_be;
-		uint8_t transfer_length_hi;
-		uint8_t transfer_length_mi;
-		uint8_t transfer_length_lo;
+		uint8_t transfer_length_be[3];
 		uint8_t: 1;
 		ReadCD12Errors errors: 2;
 		uint8_t edc_and_ecc: 1;

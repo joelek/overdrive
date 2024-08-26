@@ -298,7 +298,7 @@ auto read_sector_sptd(HANDLE handle, CD_SECTOR_DATA& sector, ULONG lba)
 	auto cdb = cdb::ReadCD12();
 	cdb.expected_sector_type = cdb::ReadCD12ExpectedSectorType::ANY;
 	cdb.lba_be = byteswap32(lba);
-	cdb.transfer_length_lo = 1;
+	cdb.transfer_length_be[2] = 1;
 	cdb.errors = cdb::ReadCD12Errors::NONE;
 	cdb.edc_and_ecc = 1;
 	cdb.user_data = 1;
