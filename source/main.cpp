@@ -808,17 +808,11 @@ class BINCUEImageFormat: ImageFormat {
 			fprintf(stderr, "Failed opening file \"%s\"!\n", target_path_cue.c_str());
 			throw EXIT_FAILURE;
 		}
-		auto target_path_bin = directory + filename + ".bin";
-		auto target_handle_bin = fopen(target_path_bin.c_str(), "wb+");
-		if (target_handle_bin == nullptr) {
-			fprintf(stderr, "Failed opening file \"%s\"!\n", target_path_bin.c_str());
-			throw EXIT_FAILURE;
-		}
 		this->split_tracks = split_tracks;
 		this->directory = directory;
 		this->filename = filename;
 		this->target_handle_cue = target_handle_cue;
-		this->target_handle_bin = target_handle_bin;
+		this->target_handle_bin = nullptr;
 	}
 
 	~BINCUEImageFormat() {
@@ -897,6 +891,15 @@ class BINCUEImageFormat: ImageFormat {
 			return handle;
 		} else {
 			auto handle = this->target_handle_bin;
+			if (handle == nullptr) {
+				auto target_path_bin = this->directory + this->filename + ".bin";
+				auto target_handle_bin = fopen(target_path_bin.c_str(), "wb+");
+				if (target_handle_bin == nullptr) {
+					fprintf(stderr, "Failed opening file \"%s\"!\n", target_path_bin.c_str());
+					throw EXIT_FAILURE;
+				}
+				handle = this->target_handle_bin = target_handle_bin;
+			}
 			return handle;
 		}
 	}
