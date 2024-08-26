@@ -8,7 +8,6 @@ Utility for interfacing with optical drives. Written for the Windows platform.
 	Can be done by issuing normal READ SCSI command.
 * Implement support for the BIN/CUE format.
 * Decide on strategy for storing unreadable sectors.
-* Implement read passes for audio tracks.
 * Extract full TOC.
 
 ## Read offset correction
