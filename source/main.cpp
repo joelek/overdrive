@@ -618,8 +618,8 @@ class ImageFormat {
 
 	virtual ~ImageFormat() {}
 
-	virtual auto write_sector_data(const uint8_t* data) -> bool = 0;
-	virtual auto write_subchannel_data(const uint8_t* data) -> bool = 0;
+	virtual auto write_sector_data(int track_number, const uint8_t* data) -> bool = 0;
+	virtual auto write_subchannel_data(int track_number, const uint8_t* data) -> bool = 0;
 	virtual auto write_index(const CDROM_TOC& toc, bool subchannels, const std::vector<int>& bad_sector_numbers, const std::vector<unsigned int>& track_pregap_sectors_list, const std::vector<unsigned int>& track_length_sectors_list) -> void = 0;
 
 	protected:
@@ -650,13 +650,13 @@ class MDSImageFormat: ImageFormat {
 		fclose(this->target_handle_mdf);
 	}
 
-	auto write_sector_data(const uint8_t* data) -> bool {
+	auto write_sector_data(int track_number, const uint8_t* data) -> bool {
 		auto bytes_expected = (size_t)CD_SECTOR_LENGTH;
 		auto bytes_returned = fwrite(data, 1, bytes_expected, this->target_handle_mdf);
 		return bytes_returned == bytes_expected;
 	}
 
-	auto write_subchannel_data(const uint8_t* data) -> bool {
+	auto write_subchannel_data(int track_number, const uint8_t* data) -> bool {
 		auto bytes_expected = (size_t)CD_SUBCHANNELS_LENGTH;
 		auto bytes_returned = fwrite(data, 1, bytes_expected, this->target_handle_mdf);
 		return bytes_returned == bytes_expected;
@@ -801,7 +801,7 @@ class MDSImageFormat: ImageFormat {
 class BINCUEImageFormat: ImageFormat {
 	public:
 
-	BINCUEImageFormat(const std::string& directory, const std::string& filename): ImageFormat() {
+	BINCUEImageFormat(const std::string& directory, const std::string& filename, bool split_tracks): ImageFormat() {
 		auto target_path_cue = directory + filename + ".cue";
 		auto target_handle_cue = fopen(target_path_cue.c_str(), "wb+");
 		if (target_handle_cue == nullptr) {
@@ -814,6 +814,9 @@ class BINCUEImageFormat: ImageFormat {
 			fprintf(stderr, "Failed opening file \"%s\"!\n", target_path_bin.c_str());
 			throw EXIT_FAILURE;
 		}
+		this->split_tracks = split_tracks;
+		this->directory = directory;
+		this->filename = filename;
 		this->target_handle_cue = target_handle_cue;
 		this->target_handle_bin = target_handle_bin;
 	}
@@ -821,50 +824,97 @@ class BINCUEImageFormat: ImageFormat {
 	~BINCUEImageFormat() {
 		fclose(this->target_handle_cue);
 		fclose(this->target_handle_bin);
+		for (auto track_target_handle : this->track_target_handles) {
+			fclose(track_target_handle);
+		}
 	}
 
-	auto write_sector_data(const uint8_t* data) -> bool {
+	auto write_sector_data(int track_number, const uint8_t* data) -> bool {
 		auto bytes_expected = (size_t)CD_SECTOR_LENGTH;
-		auto bytes_returned = fwrite(data, 1, bytes_expected, this->target_handle_bin);
+		auto bytes_returned = fwrite(data, 1, bytes_expected, this->get_track_handle(track_number));
 		return bytes_returned == bytes_expected;
 	}
 
-	auto write_subchannel_data(const uint8_t* data) -> bool {
+	auto write_subchannel_data(int track_number, const uint8_t* data) -> bool {
+		fprintf(stderr, "Subchannel data cannot be stored using the BIN/CUE format!\n");
+		throw EXIT_FAILURE;
 		auto bytes_expected = (size_t)CD_SUBCHANNELS_LENGTH;
-		auto bytes_returned = fwrite(data, 1, bytes_expected, this->target_handle_bin);
+		auto bytes_returned = fwrite(data, 1, bytes_expected, this->get_track_handle(track_number));
 		return bytes_returned == bytes_expected;
 	}
 
 	auto write_index(const CDROM_TOC& toc, bool subchannels, const std::vector<int>& bad_sector_numbers, const std::vector<unsigned int>& track_pregap_sectors_list, const std::vector<unsigned int>& track_length_sectors_list) -> void {
-		fprintf(this->target_handle_cue, "FILE \"image.bin\" BINARY\n");
-		auto offset = 0;
-		for (auto track_number = toc.FirstTrack; track_number <= toc.LastTrack; track_number += 1) {
-			auto &current_track = toc.TrackData[track_number - 1];
-			auto current_track_type = get_track_type(current_track);
-			fprintf(this->target_handle_cue, "\tTRACK %.2i %s\n", track_number, current_track_type == TrackType::AUDIO ? "AUDIO" : "MODE1/2352");
-			auto track_pregap_sectors = track_pregap_sectors_list.at(track_number - 1);
-			auto track_length_sectors = track_length_sectors_list.at(track_number - 1);
-			auto track_pregap_sectors_in_image = track_number == toc.FirstTrack ? 0 : track_pregap_sectors;
-			auto pregap_address = get_address_for_sector(track_pregap_sectors_in_image);
-			fprintf(this->target_handle_cue, "\t\tPREGAP %.2i:%.2i:%.2i\n", pregap_address.m, pregap_address.s, pregap_address.f);
-			auto offset_address = get_address_for_sector(offset);
-			fprintf(this->target_handle_cue, "\t\tINDEX %.2i %.2i:%.2i:%.2i\n", 1, offset_address.m, offset_address.s, offset_address.f);
-			offset += track_length_sectors;
+		if (this->split_tracks) {
+			auto offset = 0;
+			for (auto track_number = toc.FirstTrack; track_number <= toc.LastTrack; track_number += 1) {
+				auto &current_track = toc.TrackData[track_number - 1];
+				auto current_track_type = get_track_type(current_track);
+				fprintf(this->target_handle_cue, "FILE \"%s_%.2i.bin\" BINARY\n", this->filename.c_str(), track_number);
+				fprintf(this->target_handle_cue, "\tTRACK %.2i %s\n", track_number, current_track_type == TrackType::AUDIO ? "AUDIO" : "MODE1/2352");
+				auto track_pregap_sectors = track_pregap_sectors_list.at(track_number - 1);
+				auto track_length_sectors = track_length_sectors_list.at(track_number - 1);
+				auto track_pregap_sectors_to_write = track_number == toc.FirstTrack ? 0 : track_pregap_sectors;
+				auto pregap_address = get_address_for_sector(track_pregap_sectors_to_write);
+				fprintf(this->target_handle_cue, "\t\tPREGAP %.2i:%.2i:%.2i\n", pregap_address.m, pregap_address.s, pregap_address.f);
+				auto offset_address = get_address_for_sector(offset);
+				fprintf(this->target_handle_cue, "\t\tINDEX %.2i %.2i:%.2i:%.2i\n", 1, offset_address.m, offset_address.s, offset_address.f);
+			}
+		} else {
+			fprintf(this->target_handle_cue, "FILE \"%s\" BINARY\n", this->filename.c_str());
+			auto offset = 0;
+			for (auto track_number = toc.FirstTrack; track_number <= toc.LastTrack; track_number += 1) {
+				auto &current_track = toc.TrackData[track_number - 1];
+				auto current_track_type = get_track_type(current_track);
+				fprintf(this->target_handle_cue, "\tTRACK %.2i %s\n", track_number, current_track_type == TrackType::AUDIO ? "AUDIO" : "MODE1/2352");
+				auto track_pregap_sectors = track_pregap_sectors_list.at(track_number - 1);
+				auto track_length_sectors = track_length_sectors_list.at(track_number - 1);
+				auto track_pregap_sectors_to_write = track_number == toc.FirstTrack ? 0 : track_pregap_sectors;
+				auto pregap_address = get_address_for_sector(track_pregap_sectors_to_write);
+				fprintf(this->target_handle_cue, "\t\tPREGAP %.2i:%.2i:%.2i\n", pregap_address.m, pregap_address.s, pregap_address.f);
+				auto offset_address = get_address_for_sector(offset);
+				fprintf(this->target_handle_cue, "\t\tINDEX %.2i %.2i:%.2i:%.2i\n", 1, offset_address.m, offset_address.s, offset_address.f);
+				offset += track_length_sectors;
+			}
 		}
 	}
 
 	protected:
 
+	auto get_track_handle(int track_number) -> FILE* {
+		if (this->split_tracks) {
+			for (auto i = (int)this->track_target_handles.size(); i <= track_number - 1; i += 1) {
+				char buffer[3] = {};
+				snprintf(buffer, sizeof(buffer), "%.2u", i + 1);
+				auto target_path_bin = this->directory + this->filename + "_" + buffer + ".bin";
+				auto target_handle_bin = fopen(target_path_bin.c_str(), "wb+");
+				if (target_handle_bin == nullptr) {
+					fprintf(stderr, "Failed opening file \"%s\"!\n", target_path_bin.c_str());
+					throw EXIT_FAILURE;
+				}
+				this->track_target_handles.push_back(target_handle_bin);
+			}
+			auto handle = this->track_target_handles.at(track_number - 1);
+			return handle;
+		} else {
+			auto handle = this->target_handle_bin;
+			return handle;
+		}
+	}
+
+	bool split_tracks;
+	std::string directory;
+	std::string filename;
 	FILE* target_handle_cue;
 	FILE* target_handle_bin;
+	std::vector<FILE*> track_target_handles;
 };
 
-auto get_image_format(FileFormat format, const std::string& directory, const std::string& filename)
+auto get_image_format(FileFormat format, const std::string& directory, const std::string& filename, bool split_tracks)
 -> std::shared_ptr<ImageFormat> {
 	if (format == FileFormat::MDF_MDS) {
 		return std::shared_ptr<ImageFormat>((ImageFormat*)new MDSImageFormat(directory, filename));
 	}
-	return std::shared_ptr<ImageFormat>((ImageFormat*)new BINCUEImageFormat(std::string(directory), std::string(filename)));
+	return std::shared_ptr<ImageFormat>((ImageFormat*)new BINCUEImageFormat(std::string(directory), std::string(filename), split_tracks));
 }
 
 auto save(int argc, char **argv)
@@ -996,7 +1046,7 @@ auto save(int argc, char **argv)
 			mode_sense.page_data.read_retry_count = max_read_retries;
 			sptd_mode_select(handle, mode_sense);
 		}
-		auto image_format = get_image_format(format, directory, filename);
+		auto image_format = get_image_format(format, directory, filename, true);
 		auto &first_track = toc.TrackData[toc.FirstTrack - 1];
 		auto &lead_out_track = toc.TrackData[toc.LastTrack + 1 - 1];
 		auto track_count = toc.LastTrack - toc.FirstTrack + 1;
@@ -1040,7 +1090,7 @@ auto save(int argc, char **argv)
 			auto current_track_type = get_track_type(current_track);
 			if (current_track_type == TrackType::AUDIO) {
 				fprintf(stderr, "Current track contains audio\n");
-				auto start_offset_bytes = (first_sector * CD_SECTOR_LENGTH) + read_offset_correction_bytes;
+/* 				auto start_offset_bytes = (first_sector * CD_SECTOR_LENGTH) + read_offset_correction_bytes;
 				auto end_offset_bytes = (last_sector * CD_SECTOR_LENGTH) + read_offset_correction_bytes;
 				auto adjusted_first_sector = idiv_floor(start_offset_bytes, CD_SECTOR_LENGTH);
 				auto adjusted_last_sector = idiv_ceil(end_offset_bytes, CD_SECTOR_LENGTH);
@@ -1094,25 +1144,25 @@ auto save(int argc, char **argv)
 				}
 				for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
 					auto cd_sector = extracted_cdda_sectors_list.at(sector_index - first_sector).at(0);
-					auto outcome = image_format->write_sector_data(cd_sector.data);
+					auto outcome = image_format->write_sector_data(i, cd_sector.data);
 					if (!outcome) {
 						fprintf(stderr, "Error writing sector data %lu to file!\n", sector_index);
 						throw EXIT_FAILURE;
 					}
-				}
+				} */
 			} else {
 				fprintf(stderr, "Current track contains data\n");
-				fprintf(stderr, "Extracting %lu sectors from %lu to %lu\n", track_length_sectors, first_sector, last_sector - 1);
+/* 				fprintf(stderr, "Extracting %lu sectors from %lu to %lu\n", track_length_sectors, first_sector, last_sector - 1);
 				for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
 					try {
 						read_sector_sptd(handle, cd_sector, sector_index);
-						auto outcome = image_format->write_sector_data(cd_sector.data);
+						auto outcome = image_format->write_sector_data(i, cd_sector.data);
 						if (!outcome) {
 							fprintf(stderr, "Error writing sector data %lu to file!\n", sector_index);
 							throw EXIT_FAILURE;
 						}
 						if (subchannels) {
-							auto outcome2 = image_format->write_subchannel_data(cd_sector.subchannel_data);
+							auto outcome2 = image_format->write_subchannel_data(i, cd_sector.subchannel_data);
 							if (!outcome2) {
 								fprintf(stderr, "Error writing subchannel data %lu to file!\n", sector_index);
 								throw EXIT_FAILURE;
@@ -1121,20 +1171,20 @@ auto save(int argc, char **argv)
 					} catch (...) {
 						fprintf(stderr, "Error reading sector %lu!\n", sector_index);
 						bad_sector_numbers.push_back(sector_index);
-						auto outcome = image_format->write_sector_data(empty_cd_sector.data);
+						auto outcome = image_format->write_sector_data(i, empty_cd_sector.data);
 						if (!outcome) {
 							fprintf(stderr, "Error writing sector data %lu to file!\n", sector_index);
 							throw EXIT_FAILURE;
 						}
 						if (subchannels) {
-							auto outcome2 = image_format->write_subchannel_data(empty_cd_sector.subchannel_data);
+							auto outcome2 = image_format->write_subchannel_data(i, empty_cd_sector.subchannel_data);
 							if (!outcome2) {
 								fprintf(stderr, "Error writing subchannel data %lu to file!\n", sector_index);
 								throw EXIT_FAILURE;
 							}
 						}
 					}
-				}
+				} */
 			}
 		}
 		auto duration_ms = get_timestamp_ms() - start_ms;
