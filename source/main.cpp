@@ -868,7 +868,7 @@ class BINCUEImageFormat: ImageFormat {
 				auto current_track_type = get_track_type(current_track);
 				auto extension = this->add_wav_headers && current_track_type == TrackType::AUDIO ? ".wav" : ".bin";
 				auto tag = this->add_wav_headers && current_track_type == TrackType::AUDIO ? "WAVE" : "BINARY";
-				fprintf(this->target_handle_cue, "FILE \"%s_%.2i.%s\" %s\n", this->filename.c_str(), track_number, extension, tag);
+				fprintf(this->target_handle_cue, "FILE \"%s_%.2i%s\" %s\n", this->filename.c_str(), track_number, extension, tag);
 				fprintf(this->target_handle_cue, "\tTRACK %.2i %s\n", track_number, current_track_type == TrackType::AUDIO ? "AUDIO" : "MODE1/2352");
 				auto track_pregap_sectors = track_pregap_sectors_list.at(track_number - 1);
 				auto track_length_sectors = track_length_sectors_list.at(track_number - 1);
