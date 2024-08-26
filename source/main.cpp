@@ -114,7 +114,7 @@ namespace cdrom {
 	typedef struct {
 		uint8_t file_number;
 		uint8_t channel_number;
-		uint8_t submode; // Bit 5 indicates form1 when set to 0 and form2 when set to 1.
+		uint8_t submode;
 		uint8_t coding_info;
 	} XASubheader;
 
@@ -164,7 +164,7 @@ ULONG AddressToSectors(UCHAR Addr[4]) {
 	return Sectors - 150;
 }
 
-auto  get_timestamp_ms()
+auto get_timestamp_ms()
 -> uint64_t {
 	auto current_time_filetime = FILETIME();
 	SetLastError(ERROR_SUCCESS);
@@ -192,7 +192,7 @@ auto  get_timestamp_ms()
 	auto current_time_ms = (current_time_integer.QuadPart - epoch_start_integer.QuadPart) / 10000;
 	return current_time_ms;
 }
-
+/*
 char *strdup(const char *s) {
 	size_t slen = strlen(s);
 	char *result = (char*)malloc(slen + 1);
@@ -236,13 +236,11 @@ namespace libjson {
 
 	}
 }
-
+ */
 typedef struct {
 	UCHAR data[CD_SECTOR_LENGTH];
 	UCHAR subchannel_data[CD_SUBCHANNELS_LENGTH];
 } CD_SECTOR_DATA;
-
-
 
 auto get_cdrom_handle(std::string &drive)
 -> HANDLE {
