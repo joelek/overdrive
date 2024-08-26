@@ -877,7 +877,7 @@ class BINCUEImageFormat: ImageFormat {
 				fprintf(this->target_handle_cue, "\t\tPREGAP %.2i:%.2i:%.2i\n", pregap_address.m, pregap_address.s, pregap_address.f);
 				auto offset_address = get_address_for_sector(offset);
 				fprintf(this->target_handle_cue, "\t\tINDEX %.2i %.2i:%.2i:%.2i\n", 1, offset_address.m, offset_address.s, offset_address.f);
-				if (this->add_wav_headers) {
+				if (this->add_wav_headers && current_track_type == TrackType::AUDIO) {
 					auto header = wave::Header();
 					auto handle = this->get_track_handle(current_track);
 					auto file_size = ftell(handle);
@@ -934,7 +934,7 @@ class BINCUEImageFormat: ImageFormat {
 					auto bytes_expected = sizeof(wave_header);
 					auto bytes_returned = fwrite(&wave_header, 1, bytes_expected, target_handle_bin);
 					if (bytes_returned != bytes_expected) {
-						fprintf(stderr, "Failed writing to file \"%s\"!\n", target_path_bin.c_str());
+						fprintf(stderr, "Failed writing WAV header to file \"%s\"!\n", target_path_bin.c_str());
 						throw EXIT_FAILURE;
 					}
 				}
