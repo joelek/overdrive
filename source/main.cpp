@@ -291,8 +291,11 @@ typedef struct {
 	UCHAR sense[255];
 } SPTDWithSenseBuffer;
 
-auto read_sector_sptd(HANDLE handle, CD_SECTOR_DATA& sector, ULONG lba)
--> bool {
+auto read_sector_sptd(
+	HANDLE handle,
+	CD_SECTOR_DATA& sector,
+	ULONG lba
+) -> void {
 	memset(&sector, 0, sizeof(sector));
 	auto data = SPTDWithSenseBuffer();
 	auto cdb = cdb::ReadCD12();
@@ -314,13 +317,14 @@ auto read_sector_sptd(HANDLE handle, CD_SECTOR_DATA& sector, ULONG lba)
 	data.sptd.SenseInfoLength = sizeof(data.sense);
 	data.sptd.SenseInfoOffset = offsetof(SPTDWithSenseBuffer, sense);
 	memcpy(data.sptd.Cdb, &cdb, sizeof(cdb));
-	SetLastError(ERROR_SUCCESS);
 	auto bytes_returned = ULONG(0);
-	auto bytes_expected = ULONG(56);
+	auto bytes_expected = ULONG(sizeof(data.sptd));
 	SetLastError(ERROR_SUCCESS);
 	auto outcome = DeviceIoControl(handle, IOCTL_SCSI_PASS_THROUGH_DIRECT, &data, sizeof(data), &data, sizeof(data), &bytes_returned, nullptr);
 	WINAPI_CHECK_STATUS();
-	return outcome && bytes_returned == bytes_expected;
+	if (!outcome || (bytes_returned != bytes_expected)) {
+		throw EXIT_FAILURE;
+	}
 }
 
 typedef struct {
@@ -328,8 +332,10 @@ typedef struct {
 	cdb::ReadWriteErrorRecoveryModePage page_data;
 } ModeSense;
 
-auto sptd_mode_sense(HANDLE handle, ModeSense& mode_sense)
--> void {
+auto sptd_mode_sense(
+	HANDLE handle,
+	ModeSense& mode_sense
+) -> void {
 	auto data = SPTDWithSenseBuffer();
 	auto cdb = cdb::ModeSense10();
 	cdb.page_code = cdb::SensePage::ReadWriteErrorRecoveryModePage;
@@ -344,14 +350,28 @@ auto sptd_mode_sense(HANDLE handle, ModeSense& mode_sense)
 	data.sptd.SenseInfoOffset = offsetof(SPTDWithSenseBuffer, sense);
 	memcpy(data.sptd.Cdb, &cdb, sizeof(cdb));
 	auto bytes_returned = ULONG(0);
+	auto bytes_expected = ULONG(sizeof(data.sptd));
 	SetLastError(ERROR_SUCCESS);
-	DeviceIoControl(handle, IOCTL_SCSI_PASS_THROUGH_DIRECT, &data, sizeof(data), &data, sizeof(data), &bytes_returned, nullptr);
+	auto outcome = DeviceIoControl(
+		handle,
+		IOCTL_SCSI_PASS_THROUGH_DIRECT,
+		&data,
+		sizeof(data),
+		&data,
+		sizeof(data),
+		&bytes_returned,
+		nullptr
+	);
 	WINAPI_CHECK_STATUS();
-	fprintf(stderr, "%lu\n", bytes_returned);
+	if (!outcome || (bytes_returned != bytes_expected)) {
+		throw EXIT_FAILURE;
+	}
 }
 
-auto sptd_mode_select(HANDLE handle, ModeSense& mode_sense)
--> void {
+auto sptd_mode_select(
+	HANDLE handle,
+	ModeSense& mode_sense
+) -> void {
 	auto data = SPTDWithSenseBuffer();
 	auto cdb = cdb::ModeSelect10();
 	cdb.page_format = 1;
@@ -366,24 +386,50 @@ auto sptd_mode_select(HANDLE handle, ModeSense& mode_sense)
 	data.sptd.SenseInfoOffset = offsetof(SPTDWithSenseBuffer, sense);
 	memcpy(data.sptd.Cdb, &cdb, sizeof(cdb));
 	auto bytes_returned = ULONG();
+	auto bytes_expected = ULONG(sizeof(data.sptd));
 	SetLastError(ERROR_SUCCESS);
-	DeviceIoControl(handle, IOCTL_SCSI_PASS_THROUGH_DIRECT, &data, sizeof(data), &data, sizeof(data), &bytes_returned, nullptr);
+	auto outcome = DeviceIoControl(
+		handle,
+		IOCTL_SCSI_PASS_THROUGH_DIRECT,
+		&data,
+		sizeof(data),
+		&data,
+		sizeof(data),
+		&bytes_returned,
+		nullptr
+	);
 	WINAPI_CHECK_STATUS();
-	fprintf(stderr, "%lu\n", bytes_returned);
+	if (!outcome || (bytes_returned != bytes_expected)) {
+		throw EXIT_FAILURE;
+	}
 }
 
-auto read_raw_sector(HANDLE handle, uint8_t *data, ULONG lba)
--> bool {
-	RAW_READ_INFO read_info;
+auto read_raw_sector(
+	HANDLE handle,
+	uint8_t* data,
+	ULONG lba
+) -> void {
+	auto read_info = RAW_READ_INFO();
 	read_info.TrackMode = TRACK_MODE_TYPE::CDDA;
 	read_info.SectorCount = 1;
-	read_info.DiskOffset.QuadPart = lba * 2048;
+	read_info.DiskOffset.QuadPart = lba * CDROM_MODE1_DATA_LENGTH;
 	auto bytes_returned = ULONG(0);
-	auto bytes_expected = ULONG(2352);
+	auto bytes_expected = ULONG(CD_SECTOR_LENGTH);
 	SetLastError(ERROR_SUCCESS);
-	auto outcome = DeviceIoControl(handle, IOCTL_CDROM_RAW_READ, &read_info, sizeof(read_info), data, 2352, &bytes_returned, nullptr);
+	auto outcome = DeviceIoControl(
+		handle,
+		IOCTL_CDROM_RAW_READ,
+		&read_info,
+		sizeof(read_info),
+		data,
+		CD_SECTOR_LENGTH,
+		&bytes_returned,
+		nullptr
+	);
 	WINAPI_CHECK_STATUS();
-	return outcome && bytes_returned == bytes_expected;
+	if (!outcome || (bytes_returned != bytes_expected)) {
+		throw EXIT_FAILURE;
+	}
 }
 
 enum class TrackType {
@@ -669,7 +715,6 @@ auto save(int argc, char **argv)
 		{
 			auto mode_sense = ModeSense();
 			sptd_mode_sense(handle, mode_sense);
-			DUMP(mode_sense);
 			mode_sense.page_data.read_retry_count = max_read_retries;
 			sptd_mode_select(handle, mode_sense);
 		}
@@ -751,7 +796,7 @@ auto save(int argc, char **argv)
 					auto cd_sector = track_data.data() + track_data_start_offset + ((sector_index - first_sector) * CD_SECTOR_LENGTH);
 					auto outcome = write_cd_sector_to_file(*(CD_SECTOR_DATA*)cd_sector, target_handle_mdf, false);
 					if (!outcome) {
-						fprintf(stderr, "Error writing sector to file \"%s\"!\n", target_path_mdf.c_str());
+						fprintf(stderr, "Error writing sector %lu to file \"%s\"!\n", sector_index, target_path_mdf.c_str());
 						throw EXIT_FAILURE;
 					}
 				}
@@ -763,7 +808,7 @@ auto save(int argc, char **argv)
 						read_sector_sptd(handle, cd_sector, sector_index);
 						auto outcome = write_cd_sector_to_file(cd_sector, target_handle_mdf, subchannels);
 						if (!outcome) {
-							fprintf(stderr, "Error writing to file \"%s\"!\n", target_path_mdf.c_str());
+							fprintf(stderr, "Error writing sector %lu to file \"%s\"!\n", sector_index, target_path_mdf.c_str());
 							throw EXIT_FAILURE;
 						}
 					} catch (...) {
@@ -771,7 +816,7 @@ auto save(int argc, char **argv)
 						bad_sector_numbers.push_back(sector_index);
 						auto outcome = write_cd_sector_to_file(empty_cd_sector, target_handle_mdf, subchannels);
 						if (!outcome) {
-							fprintf(stderr, "Error writing sector to file \"%s\"!\n", target_path_mdf.c_str());
+							fprintf(stderr, "Error writing sector %lu to file \"%s\"!\n", sector_index, target_path_mdf.c_str());
 							throw EXIT_FAILURE;
 						}
 					}
