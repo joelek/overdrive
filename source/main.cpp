@@ -25,6 +25,7 @@
 #define CD_SECTOR_LENGTH 2352
 #define CD_SECTORS_PER_SECOND 75
 #define CD_SUBCHANNELS_LENGTH 96
+#define CD_C2_ERROR_POINTERS_LENGTH (CD_SECTOR_LENGTH / 8)
 
 #define CDDA_STEREO_SAMPLE_LENGTH 4
 #define CDDA_STEREO_SAMPLES_PER_FRAME 6
@@ -279,8 +280,10 @@ namespace libjson {
 	}
 }
  */
+
 typedef struct {
 	UCHAR data[CD_SECTOR_LENGTH];
+	UCHAR c2_data[CD_C2_ERROR_POINTERS_LENGTH];
 	UCHAR subchannel_data[CD_SUBCHANNELS_LENGTH];
 } CD_SECTOR_DATA;
 
@@ -342,7 +345,7 @@ auto read_sector_sptd(
 	cdb.expected_sector_type = cdb::ReadCD12ExpectedSectorType::ANY;
 	cdb.lba_be = byteswap32(lba);
 	cdb.transfer_length_be[2] = 1;
-	cdb.errors = cdb::ReadCD12Errors::NONE;
+	cdb.errors = cdb::ReadCD12Errors::C2_ERROR_BLOCK_DATA;
 	cdb.edc_and_ecc = 1;
 	cdb.user_data = 1;
 	cdb.header_codes = cdb::ReadCD12HeaderCodes::ALL_HEADERS;
@@ -1269,15 +1272,27 @@ auto save(int argc, char **argv)
 				auto extracted_cdda_sectors_list = std::vector<std::vector<ExtractedCDDASector>>(track_length_sectors);
 				for (auto audio_pass_index = 0; audio_pass_index < max_audio_read_passes; audio_pass_index += 1) {
 					fprintf(stderr, "Running audio extraction pass %i\n", audio_pass_index);
+					auto c2_errors = false;
 					for (auto sector_index = adjusted_first_sector; sector_index < adjusted_last_sector; sector_index += 1) {
 						try {
-							read_raw_sector(handle, track_data.data() + (sector_index - adjusted_first_sector) * CD_SECTOR_LENGTH, sector_index);
+							read_sector_sptd(handle, cd_sector, sector_index);
+							for (auto i = 0; i < (int)sizeof(cd_sector.c2_data); i++) {
+								if (cd_sector.c2_data[i] != 0) {
+									c2_errors = true;
+									break;
+								}
+							}
+							auto target = track_data.data() + (sector_index - adjusted_first_sector) * CD_SECTOR_LENGTH;
+							std::memcpy(target, cd_sector.data, sizeof(cd_sector.data));
 						} catch (...) {
 							fprintf(stderr, "Error reading sector %i!\n", sector_index);
 							if (sector_index >= 0 && sector_index < (int)sector_count) {
 								throw EXIT_FAILURE;
 							}
 						}
+					}
+					if (c2_errors) {
+						fprintf(stderr, "C2 errors occured during pass\n");
 					}
 					auto identical_sectors_with_counter_list = std::vector<unsigned int>(max_audio_read_passes);
 					for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
