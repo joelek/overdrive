@@ -9,6 +9,7 @@ Utility for interfacing with optical drives. Written for the Windows platform.
 * Decide on strategy for storing unreadable sectors.
 * Extract full TOC.
 * Add AccurateRip data and use automatically.
+* Implement C2-based refinement.
 
 ## Read offset correction
 
