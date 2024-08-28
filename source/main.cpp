@@ -444,6 +444,47 @@ auto sptd_mode_select(
 	}
 }
 
+typedef struct {
+	cdb::ModeParameterHeader10 parameter_header;
+	cdb::CapabilitiesAndMechanicalStatusPage page_data;
+} ModeSense2;
+
+auto sptd_mode_sense2(
+	HANDLE handle,
+	ModeSense2& mode_sense
+) -> void {
+	auto data = SPTDWithSenseBuffer();
+	auto cdb = cdb::ModeSense10();
+	cdb.page_code = cdb::SensePage::CapabilitiesAndMechanicalStatusPage;
+	cdb.allocation_length_be = byteswap16(sizeof(mode_sense));
+	data.sptd.Length = sizeof(data.sptd);
+	data.sptd.CdbLength = sizeof(cdb);
+	data.sptd.DataIn = SCSI_IOCTL_DATA_IN;
+	data.sptd.TimeOutValue = 10;
+	data.sptd.DataBuffer = &mode_sense;
+	data.sptd.DataTransferLength = sizeof(mode_sense);
+	data.sptd.SenseInfoLength = sizeof(data.sense);
+	data.sptd.SenseInfoOffset = offsetof(SPTDWithSenseBuffer, sense);
+	memcpy(data.sptd.Cdb, &cdb, sizeof(cdb));
+	auto bytes_returned = ULONG(0);
+	auto bytes_expected = ULONG(sizeof(data.sptd));
+	SetLastError(ERROR_SUCCESS);
+	auto outcome = DeviceIoControl(
+		handle,
+		IOCTL_SCSI_PASS_THROUGH_DIRECT,
+		&data,
+		sizeof(data),
+		&data,
+		sizeof(data),
+		&bytes_returned,
+		nullptr
+	);
+	WINAPI_CHECK_STATUS();
+	if (!outcome || (bytes_returned != bytes_expected)) {
+		throw EXIT_FAILURE;
+	}
+}
+
 auto read_raw_sector(
 	HANDLE handle,
 	uint8_t* data,
@@ -1161,6 +1202,16 @@ auto save(int argc, char **argv)
 			sptd_mode_sense(handle, mode_sense);
 			mode_sense.page_data.read_retry_count = max_read_retries;
 			sptd_mode_select(handle, mode_sense);
+		}
+		{
+			auto mode_sense = ModeSense2();
+			sptd_mode_sense2(handle, mode_sense);
+			fprintf(stderr, "Drive has a read cache size of %u kB\n", byteswap16(mode_sense.page_data.buffer_size_supported_be));
+			fprintf(stderr, "Drive %s read audio streams accurately\n", mode_sense.page_data.cdda_stream_is_accurate ? "can" : "cannot");
+			fprintf(stderr, "Drive %s support for reading C2 error pointers\n", mode_sense.page_data.c2_pointers_supported ? "has" : "lacks");
+			if (!mode_sense.page_data.cdda_stream_is_accurate) {
+				throw EXIT_FAILURE;
+			}
 		}
 		auto image_format = get_image_format(format, directory, filename, split_tracks, add_wave_headers);
 		auto &first_track = toc.TrackData[toc.FirstTrack - 1];

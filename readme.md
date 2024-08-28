@@ -9,7 +9,6 @@ Utility for interfacing with optical drives. Written for the Windows platform.
 * Decide on strategy for storing unreadable sectors.
 * Extract full TOC.
 * Add AccurateRip data and use automatically.
-* Read mode page 0x2A "CD/DVD Capabilities and Mechanical Status Page".
 
 ## Read offset correction
 

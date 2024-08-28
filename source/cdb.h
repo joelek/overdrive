@@ -16,7 +16,8 @@ namespace cdb {
 	} Inquiry6;
 
 	enum class SensePage: uint8_t {
-		ReadWriteErrorRecoveryModePage = 0x01
+		ReadWriteErrorRecoveryModePage = 0x01,
+		CapabilitiesAndMechanicalStatusPage = 0x2A
 	};
 
 	enum class ModeSensePageControl: uint8_t {
@@ -110,6 +111,93 @@ namespace cdb {
 		uint8_t reserved_b;
 		uint16_t recovery_time_limit_be;
 	} ReadWriteErrorRecoveryModePage;
+
+	typedef struct {
+		uint8_t page_code: 6;
+		uint8_t : 1;
+		uint8_t parameters_savable: 1;
+
+		uint8_t page_length: 8;
+
+		uint8_t cdr_read: 1;
+		uint8_t cdrw_read: 1;
+		uint8_t method_2: 1;
+		uint8_t dvd_rom_read: 1;
+		uint8_t dvd_r_read: 1;
+		uint8_t dvd_ram_read: 1;
+		uint8_t : 2;
+
+		uint8_t cdr_write: 1;
+		uint8_t cdrw_write: 1;
+		uint8_t test_write: 1;
+		uint8_t : 1;
+		uint8_t dvd_r_write: 1;
+		uint8_t dvd_ram_write: 1;
+		uint8_t : 2;
+
+		uint8_t audio_play: 1;
+		uint8_t composite: 1;
+		uint8_t digital_port_1: 1;
+		uint8_t digital_port_2: 1;
+		uint8_t mode_2_form_1: 1;
+		uint8_t mode_2_form_2: 1;
+		uint8_t multi_session: 1;
+		uint8_t buf: 1;
+
+		uint8_t cdda_commands_supported: 1;
+		uint8_t cdda_stream_is_accurate: 1;
+		uint8_t subchannels_rw_supported: 1;
+		uint8_t subchannels_rw_deinterleaved_and_corrected: 1;
+		uint8_t c2_pointers_supported: 1;
+		uint8_t isrc: 1;
+		uint8_t upc: 1;
+		uint8_t read_bar_code: 1;
+
+		uint8_t lock: 1;
+		uint8_t lock_state: 1;
+		uint8_t prevent_jumper: 1;
+		uint8_t eject: 1;
+		uint8_t : 1;
+		uint8_t loading_mechanism_type: 3;
+
+		uint8_t separate_volume_levels: 1;
+		uint8_t separate_channel_mute: 1;
+		uint8_t changer_supports_disc_present: 1;
+		uint8_t sw_slot_selection: 1;
+		uint8_t side_change_capable: 1;
+		uint8_t rw_in_lead_in: 1;
+		uint8_t : 2;
+
+		uint8_t : 8;
+		uint8_t : 8;
+		uint16_t number_of_volume_levels_supported_be: 16;
+		uint16_t buffer_size_supported_be: 16;
+		uint8_t : 8;
+		uint8_t : 8;
+		uint8_t : 8;
+
+		uint8_t : 1;
+		uint8_t bckf: 1;
+		uint8_t rck: 1;
+		uint8_t lsfbf: 1;
+		uint8_t length: 2;
+		uint8_t : 2;
+
+		uint8_t : 8;
+		uint8_t : 8;
+		uint8_t : 8;
+		uint8_t : 8;
+		uint16_t copy_management_revision_supported_be: 16;
+		uint8_t : 8;
+		uint8_t : 8;
+		uint8_t : 8;
+
+		uint8_t rotation_control_selected: 2;
+		uint8_t : 6;
+
+		uint16_t current_write_speed_selected_be: 16;
+		uint16_t number_of_logical_write_speed_performance_descriptor_tables_be: 16;
+	} CapabilitiesAndMechanicalStatusPage;
 
 	enum class ReadCD12ExpectedSectorType: uint8_t {
 		ANY = 0b000,
