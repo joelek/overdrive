@@ -10,6 +10,7 @@ Utility for interfacing with optical drives. Written for the Windows platform.
 * Extract full TOC.
 * Add AccurateRip data and use automatically.
 * Implement C2-based refinement.
+* Implement field order detection for CD_SECTOR_DATA.
 
 ## Read offset correction
 
