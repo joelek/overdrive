@@ -894,14 +894,13 @@ class BINCUEImageFormat: ImageFormat {
 		this->filename = filename;
 		this->target_handle_cue = target_handle_cue;
 		this->target_handle_bin = nullptr;
+		this->current_track = TRACK_DATA();
 	}
 
 	~BINCUEImageFormat() {
+		this->update_wave_header();
 		fclose(this->target_handle_cue);
 		fclose(this->target_handle_bin);
-		for (auto track_target_handle : this->track_target_handles) {
-			fclose(track_target_handle);
-		}
 	}
 
 	auto write_sector_data(const TRACK_DATA& track, const uint8_t* data) -> bool {
@@ -934,23 +933,6 @@ class BINCUEImageFormat: ImageFormat {
 				fprintf(this->target_handle_cue, "\t\tPREGAP %.2i:%.2i:%.2i\n", pregap_address.m, pregap_address.s, pregap_address.f);
 				auto offset_address = get_address_for_sector(offset);
 				fprintf(this->target_handle_cue, "\t\tINDEX %.2i %.2i:%.2i:%.2i\n", 1, offset_address.m, offset_address.s, offset_address.f);
-				if (this->add_wave_headers && current_track_type == TrackType::AUDIO) {
-					auto header = wave::Header();
-					auto handle = this->get_track_handle(current_track);
-					auto file_size = ftell(handle);
-					fseek(handle, 0, SEEK_SET);
-					if (fread(&header, sizeof(header), 1, handle) != 1) {
-						fprintf(stderr, "Failed reading WAV header from file!\n");
-						throw EXIT_FAILURE;
-					}
-					fseek(handle, 0, SEEK_SET);
-					header.file_size_minus_8 = file_size - 8;
-					header.data_length = file_size - sizeof(header);
-					if (fwrite(&header, sizeof(header), 1, handle) != 1) {
-						fprintf(stderr, "Failed writing WAV header to file!\n");
-						throw EXIT_FAILURE;
-					}
-				}
 			}
 		} else {
 			fprintf(this->target_handle_cue, "FILE \"%s\" BINARY\n", this->filename.c_str());
@@ -973,12 +955,39 @@ class BINCUEImageFormat: ImageFormat {
 
 	protected:
 
+	auto update_wave_header() -> void {
+		if (this->target_handle_bin != nullptr && this->add_wave_headers && get_track_type(this->current_track) == TrackType::AUDIO) {
+			auto header = wave::Header();
+			auto file_size = ftell(this->target_handle_bin);
+			fseek(this->target_handle_bin, 0, SEEK_SET);
+			if (fread(&header, sizeof(header), 1, this->target_handle_bin) != 1) {
+				fprintf(stderr, "Failed reading WAV header from file!\n");
+				throw EXIT_FAILURE;
+			}
+			fseek(this->target_handle_bin, 0, SEEK_SET);
+			header.file_size_minus_8 = file_size - 8;
+			header.data_length = file_size - sizeof(header);
+			if (fwrite(&header, sizeof(header), 1, this->target_handle_bin) != 1) {
+				fprintf(stderr, "Failed writing WAV header to file!\n");
+				throw EXIT_FAILURE;
+			}
+			fseek(this->target_handle_bin, file_size, SEEK_SET);
+		}
+	}
+
 	auto get_track_handle(const TRACK_DATA& track) -> FILE* {
 		if (this->split_tracks) {
-			auto track_type = get_track_type(track);
-			for (auto i = (int)this->track_target_handles.size(); i <= track.TrackNumber - 1; i += 1) {
+			if (this->current_track.TrackNumber != track.TrackNumber) {
+				this->update_wave_header();
+				fclose(this->target_handle_bin);
+				this->target_handle_bin = nullptr;
+			}
+			if (this->target_handle_bin != nullptr) {
+				return this->target_handle_bin;
+			} else {
+				auto track_type = get_track_type(track);
 				char buffer[3] = {};
-				snprintf(buffer, sizeof(buffer), "%.2u", i + 1);
+				snprintf(buffer, sizeof(buffer), "%.2u", track.TrackNumber);
 				auto extension = this->add_wave_headers && track_type == TrackType::AUDIO ? ".wav" : ".bin";
 				auto target_path_bin = this->directory + this->filename + "_" + buffer + extension;
 				auto target_handle_bin = fopen(target_path_bin.c_str(), "wb+");
@@ -995,20 +1004,20 @@ class BINCUEImageFormat: ImageFormat {
 						throw EXIT_FAILURE;
 					}
 				}
-				this->track_target_handles.push_back(target_handle_bin);
+				this->target_handle_bin = target_handle_bin;
+				this->current_track = track;
+				return this->target_handle_bin;
 			}
-			auto handle = this->track_target_handles.at(track.TrackNumber - 1);
-			return handle;
 		} else {
 			auto handle = this->target_handle_bin;
 			if (handle == nullptr) {
 				auto target_path_bin = this->directory + this->filename + ".bin";
-				auto target_handle_bin = fopen(target_path_bin.c_str(), "wb+");
-				if (target_handle_bin == nullptr) {
+				handle = fopen(target_path_bin.c_str(), "wb+");
+				if (handle == nullptr) {
 					fprintf(stderr, "Failed opening file \"%s\"!\n", target_path_bin.c_str());
 					throw EXIT_FAILURE;
 				}
-				handle = this->target_handle_bin = target_handle_bin;
+				this->target_handle_bin = handle;
 			}
 			return handle;
 		}
@@ -1020,7 +1029,7 @@ class BINCUEImageFormat: ImageFormat {
 	std::string filename;
 	FILE* target_handle_cue;
 	FILE* target_handle_bin;
-	std::vector<FILE*> track_target_handles;
+	TRACK_DATA current_track;
 };
 
 auto get_image_format(FileFormat format, const std::string& directory, const std::string& filename, bool split_tracks, bool add_wave_headers)
