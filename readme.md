@@ -12,6 +12,7 @@ Utility for interfacing with optical drives. Written for the Windows platform.
 * Implement C2-based refinement.
 * Implement field order detection for CD_SECTOR_DATA.
 * Handle read errors during audio track extraction.
+* Add separate retry count for audio tracks.
 
 ## Read offset correction
 
