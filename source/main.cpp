@@ -220,6 +220,20 @@ auto get_timestamp_ms()
 	auto current_time_ms = (current_time_integer.QuadPart - epoch_start_integer.QuadPart) / 10000;
 	return current_time_ms;
 }
+
+auto rstrstr(const char * haystack, const char * needle)
+-> const char * {
+	auto substring = strstr(haystack, needle);
+	while (substring != nullptr) {
+		auto next_substring = strstr(substring + 1, needle);
+		if (next_substring == nullptr) {
+			break;
+		}
+		substring = next_substring;
+	}
+	return substring;
+}
+
 /*
 char *strdup(const char *s) {
 	size_t slen = strlen(s);
@@ -823,7 +837,7 @@ namespace wave {
 class BINCUEImageFormat: ImageFormat {
 	public:
 
-	BINCUEImageFormat(const std::string& directory, const std::string& filename, bool split_tracks, bool add_wav_headers): ImageFormat() {
+	BINCUEImageFormat(const std::string& directory, const std::string& filename, bool split_tracks, bool add_wave_headers): ImageFormat() {
 		auto target_path_cue = directory + filename + ".cue";
 		auto target_handle_cue = fopen(target_path_cue.c_str(), "wb+");
 		if (target_handle_cue == nullptr) {
@@ -831,7 +845,7 @@ class BINCUEImageFormat: ImageFormat {
 			throw EXIT_FAILURE;
 		}
 		this->split_tracks = split_tracks;
-		this->add_wav_headers = add_wav_headers;
+		this->add_wave_headers = add_wave_headers;
 		this->directory = directory;
 		this->filename = filename;
 		this->target_handle_cue = target_handle_cue;
@@ -866,18 +880,17 @@ class BINCUEImageFormat: ImageFormat {
 			for (auto track_number = toc.FirstTrack; track_number <= toc.LastTrack; track_number += 1) {
 				auto &current_track = toc.TrackData[track_number - 1];
 				auto current_track_type = get_track_type(current_track);
-				auto extension = this->add_wav_headers && current_track_type == TrackType::AUDIO ? ".wav" : ".bin";
-				auto tag = this->add_wav_headers && current_track_type == TrackType::AUDIO ? "WAVE" : "BINARY";
+				auto extension = this->add_wave_headers && current_track_type == TrackType::AUDIO ? ".wav" : ".bin";
+				auto tag = this->add_wave_headers && current_track_type == TrackType::AUDIO ? "WAVE" : "BINARY";
 				fprintf(this->target_handle_cue, "FILE \"%s_%.2i%s\" %s\n", this->filename.c_str(), track_number, extension, tag);
 				fprintf(this->target_handle_cue, "\tTRACK %.2i %s\n", track_number, current_track_type == TrackType::AUDIO ? "AUDIO" : "MODE1/2352");
 				auto track_pregap_sectors = track_pregap_sectors_list.at(track_number - 1);
-				auto track_length_sectors = track_length_sectors_list.at(track_number - 1);
 				auto track_pregap_sectors_to_write = track_number == toc.FirstTrack ? 0 : track_pregap_sectors;
 				auto pregap_address = get_address_for_sector(track_pregap_sectors_to_write);
 				fprintf(this->target_handle_cue, "\t\tPREGAP %.2i:%.2i:%.2i\n", pregap_address.m, pregap_address.s, pregap_address.f);
 				auto offset_address = get_address_for_sector(offset);
 				fprintf(this->target_handle_cue, "\t\tINDEX %.2i %.2i:%.2i:%.2i\n", 1, offset_address.m, offset_address.s, offset_address.f);
-				if (this->add_wav_headers && current_track_type == TrackType::AUDIO) {
+				if (this->add_wave_headers && current_track_type == TrackType::AUDIO) {
 					auto header = wave::Header();
 					auto handle = this->get_track_handle(current_track);
 					auto file_size = ftell(handle);
@@ -922,14 +935,14 @@ class BINCUEImageFormat: ImageFormat {
 			for (auto i = (int)this->track_target_handles.size(); i <= track.TrackNumber - 1; i += 1) {
 				char buffer[3] = {};
 				snprintf(buffer, sizeof(buffer), "%.2u", i + 1);
-				auto extension = this->add_wav_headers && track_type == TrackType::AUDIO ? ".wav" : ".bin";
+				auto extension = this->add_wave_headers && track_type == TrackType::AUDIO ? ".wav" : ".bin";
 				auto target_path_bin = this->directory + this->filename + "_" + buffer + extension;
 				auto target_handle_bin = fopen(target_path_bin.c_str(), "wb+");
 				if (target_handle_bin == nullptr) {
 					fprintf(stderr, "Failed opening file \"%s\"!\n", target_path_bin.c_str());
 					throw EXIT_FAILURE;
 				}
-				if (this->add_wav_headers && track_type == TrackType::AUDIO) {
+				if (this->add_wave_headers && track_type == TrackType::AUDIO) {
 					auto wave_header = wave::Header();
 					auto bytes_expected = sizeof(wave_header);
 					auto bytes_returned = fwrite(&wave_header, 1, bytes_expected, target_handle_bin);
@@ -958,7 +971,7 @@ class BINCUEImageFormat: ImageFormat {
 	}
 
 	bool split_tracks;
-	bool add_wav_headers;
+	bool add_wave_headers;
 	std::string directory;
 	std::string filename;
 	FILE* target_handle_cue;
@@ -966,24 +979,26 @@ class BINCUEImageFormat: ImageFormat {
 	std::vector<FILE*> track_target_handles;
 };
 
-auto get_image_format(FileFormat format, const std::string& directory, const std::string& filename, bool split_tracks, bool add_wav_headers)
+auto get_image_format(FileFormat format, const std::string& directory, const std::string& filename, bool split_tracks, bool add_wave_headers)
 -> std::shared_ptr<ImageFormat> {
 	if (format == FileFormat::MDF_MDS) {
 		return std::shared_ptr<ImageFormat>((ImageFormat*)new MDSImageFormat(directory, filename));
 	}
-	return std::shared_ptr<ImageFormat>((ImageFormat*)new BINCUEImageFormat(std::string(directory), std::string(filename), split_tracks, add_wav_headers));
+	return std::shared_ptr<ImageFormat>((ImageFormat*)new BINCUEImageFormat(std::string(directory), std::string(filename), split_tracks, add_wave_headers));
 }
 
 auto save(int argc, char **argv)
 -> void {
 	auto subchannels = false;
-	auto directory = ".\\";
-	auto filename = "image";
+	auto directory = std::string(".\\");
+	auto filename = std::string("image");
 	auto format = FileFormat::MDF_MDS;
 	auto drive_argument = std::optional<std::string>();
 	auto max_read_retries = 8;
 	auto read_offset_correction = 0;
 	auto max_audio_read_passes = 8;
+	auto split_tracks = false;
+	auto add_wave_headers = false;
 	auto unrecognized_arguments = std::vector<char*>();
 	auto positional_index = 0;
 	for (auto i = 2; i < argc; i += 1) {
@@ -1004,8 +1019,17 @@ auto save(int argc, char **argv)
 			directory = value;
 		} else if (strstr(argument, "--filename=") == argument) {
 			auto value = argument + sizeof("--filename=") - 1;
-			// TODO: Strip extension and set format from extensions.
-			filename = value;
+			auto extension = strstr(value, ".");
+			if (extension != nullptr) {
+				if (strstr(extension, ".mds") == extension || strstr(extension, ".mdf") == extension) {
+					format = FileFormat::MDF_MDS;
+				} else if (strstr(extension, ".cue") == extension || strstr(extension, ".bin") == extension) {
+					format = FileFormat::BIN_CUE;
+				}
+				filename = std::string(value, extension - value);
+			} else {
+				filename = value;
+			}
 		} else if (strstr(argument, "--format=") == argument) {
 			auto value = argument + sizeof("--format=") - 1;
 			if (false) {
@@ -1042,6 +1066,35 @@ auto save(int argc, char **argv)
 			if (false) {
 			} else if (parsed_value >= 0 - (10 * CD_SECTOR_LENGTH) && parsed_value <= 0 + (10 * CD_SECTOR_LENGTH)) {
 				read_offset_correction = parsed_value;
+			} else {
+				unrecognized_arguments.push_back(argument);
+			}
+		} else if (strstr(argument, "--max-audio-read-passes=") == argument) {
+			auto value = argument + sizeof("--max-audio-read-passes=") - 1;
+			auto parsed_value = atoi(value);
+			if (false) {
+			} else if (parsed_value >= 1 && parsed_value <= 16) {
+				max_audio_read_passes = parsed_value;
+			} else {
+				unrecognized_arguments.push_back(argument);
+			}
+		} else if (strstr(argument, "--split-tracks=") == argument) {
+			auto value = argument + sizeof("--split-tracks=") - 1;
+			if (false) {
+			} else if (strcmp(value, "false") == 0) {
+				split_tracks = false;
+			} else if (strcmp(value, "true") == 0) {
+				split_tracks = true;
+			} else {
+				unrecognized_arguments.push_back(argument);
+			}
+		} else if (strstr(argument, "--add-wave-headers=") == argument) {
+			auto value = argument + sizeof("--add-wave-headers=") - 1;
+			if (false) {
+			} else if (strcmp(value, "false") == 0) {
+				add_wave_headers = false;
+			} else if (strcmp(value, "true") == 0) {
+				add_wave_headers = true;
 			} else {
 				unrecognized_arguments.push_back(argument);
 			}
@@ -1092,6 +1145,12 @@ auto save(int argc, char **argv)
 		fprintf(stderr, "\t\tSet max read retries made before producing a read error (8 by default).\n");
 		fprintf(stderr, "\t--read-offset-correction=integer[%i,%i]\n", 0 - (CD_SECTOR_LENGTH * 10), 0 + (CD_SECTOR_LENGTH * 10));
 		fprintf(stderr, "\t\tSet read offset correction (samples) for audio track extraction (0 by default).\n");
+		fprintf(stderr, "\t--max-audio-read-passes=integer[1,16]\n");
+		fprintf(stderr, "\t\tSet maximum number of audio read passes made (8 by default).\n");
+		fprintf(stderr, "\t--split-tracks=boolean\n");
+		fprintf(stderr, "\t\tStore tracks as separate files when format is BIN/CUE (false by default).\n");
+		fprintf(stderr, "\t--add-wave-headers=boolean\n");
+		fprintf(stderr, "\t\tAdd wave headers to audio tracks when format is BIN/CUE (false by default).\n");
 		throw EXIT_FAILURE;
 	} else {
 		auto handle = get_cdrom_handle(drive_argument.value());
@@ -1103,7 +1162,7 @@ auto save(int argc, char **argv)
 			mode_sense.page_data.read_retry_count = max_read_retries;
 			sptd_mode_select(handle, mode_sense);
 		}
-		auto image_format = get_image_format(format, directory, filename, true, true);
+		auto image_format = get_image_format(format, directory, filename, split_tracks, add_wave_headers);
 		auto &first_track = toc.TrackData[toc.FirstTrack - 1];
 		auto &lead_out_track = toc.TrackData[toc.LastTrack + 1 - 1];
 		auto track_count = toc.LastTrack - toc.FirstTrack + 1;
