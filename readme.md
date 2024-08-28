@@ -11,6 +11,7 @@ Utility for interfacing with optical drives. Written for the Windows platform.
 * Add AccurateRip data and use automatically.
 * Implement C2-based refinement.
 * Implement field order detection for CD_SECTOR_DATA.
+* Handle read errors during audio track extraction.
 
 ## Read offset correction
 
