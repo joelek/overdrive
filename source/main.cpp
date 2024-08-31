@@ -26,6 +26,8 @@
 #define CD_SECTORS_PER_SECOND 75
 #define CD_SUBCHANNELS_LENGTH 96
 #define CD_C2_ERROR_POINTERS_LENGTH (CD_SECTOR_LENGTH / 8)
+#define CD_SUBCHANNEL_P_INDEX 0
+#define CD_SUBCHANNEL_Q_INDEX 1
 
 #define CDDA_STEREO_SAMPLE_LENGTH 4
 #define CDDA_STEREO_SAMPLES_PER_FRAME 6
@@ -173,6 +175,11 @@ ULONG AddressToSectors(const UCHAR Addr[4]) {
 	return Sectors - 150;
 }
 
+ULONG AddressToSectors2(UCHAR m, UCHAR s, UCHAR f) {
+	ULONG Sectors = m*75*60 + s*75 + f;
+	return Sectors - 150;
+}
+
 typedef struct {
 	uint8_t m;
 	uint8_t s;
@@ -286,6 +293,12 @@ typedef struct {
 	UCHAR c2_data[CD_C2_ERROR_POINTERS_LENGTH];
 	UCHAR subchannel_data[CD_SUBCHANNELS_LENGTH];
 } CD_SECTOR_DATA;
+
+typedef struct {
+	UCHAR data[CD_SECTOR_LENGTH];
+	UCHAR subchannel_data[CD_SUBCHANNELS_LENGTH];
+	UCHAR c2_data[CD_C2_ERROR_POINTERS_LENGTH];
+} CD_SECTOR_DATA_ALT;
 
 auto get_cdrom_handle(std::string &drive)
 -> HANDLE {
@@ -531,7 +544,7 @@ auto get_track_type(const TRACK_DATA &track)
 	return (track.Control & 0b0100) == 0 ? TrackType::AUDIO : TrackType::DATA;
 }
 
-auto deinterleave_subchannel_data(CD_SECTOR_DATA &sector)
+auto deinterleave_subchannel_data(const UCHAR* sector_subchannel_data)
 -> cdrom::SubchannelData {
 	auto subchannel_data = cdrom::SubchannelData();
 	for (auto subchannel_index = 7; subchannel_index >= 0; subchannel_index -= 1) {
@@ -540,7 +553,7 @@ auto deinterleave_subchannel_data(CD_SECTOR_DATA &sector)
 		for (auto byte_index = 0; byte_index < 12; byte_index += 1) {
 			auto byte = 0;
 			for (auto bit_index = 0; bit_index < 8; bit_index += 1) {
-				auto subchannel_byte = sector.subchannel_data[offset];
+				auto subchannel_byte = sector_subchannel_data[offset];
 				auto subchannel_bit = (subchannel_byte >> channel_right_shift) & 1;
 				byte <<= 1;
 				byte |= subchannel_bit;
@@ -1040,6 +1053,49 @@ auto get_image_format(FileFormat format, const std::string& directory, const std
 	return std::shared_ptr<ImageFormat>((ImageFormat*)new BINCUEImageFormat(std::string(directory), std::string(filename), split_tracks, add_wave_headers));
 }
 
+auto from_bcd(UCHAR byte)
+-> unsigned int {
+	auto hi = (byte & 0xF0) >> 4;
+	auto lo = (byte & 0x0F) >> 0;
+	if (hi >= 10) {
+		throw EXIT_FAILURE;
+	}
+	if (lo >= 10) {
+		throw EXIT_FAILURE;
+	}
+	return (hi << 3) + hi + hi + lo;
+}
+
+auto get_subchannel_offset(HANDLE handle)
+-> unsigned int {
+	auto sector = CD_SECTOR_DATA();
+	auto target_lba = 0u;
+	read_sector_sptd(handle, sector, target_lba);
+	{
+		auto sector_data = *(CD_SECTOR_DATA*)&sector;
+		auto subchannel_data = deinterleave_subchannel_data(sector_data.subchannel_data);
+		auto q = (cdrom::SubchannelQ*)subchannel_data.channels[CD_SUBCHANNEL_Q_INDEX];
+		if (q->adr == 1) {
+			auto actual_lba = AddressToSectors2(from_bcd(q->mode1.absolute_m_bcd), from_bcd(q->mode1.absolute_s_bcd), from_bcd(q->mode1.absolute_f_bcd));
+			if (actual_lba == target_lba) {
+				return offsetof(CD_SECTOR_DATA, subchannel_data);
+			}
+		}
+	}
+	{
+		auto sector_data = *(CD_SECTOR_DATA_ALT*)&sector;
+		auto subchannel_data = deinterleave_subchannel_data(sector_data.subchannel_data);
+		auto q = (cdrom::SubchannelQ*)subchannel_data.channels[CD_SUBCHANNEL_Q_INDEX];
+		if (q->adr == 1) {
+			auto actual_lba = AddressToSectors2(from_bcd(q->mode1.absolute_m_bcd), from_bcd(q->mode1.absolute_s_bcd), from_bcd(q->mode1.absolute_f_bcd));
+			if (actual_lba == target_lba) {
+				return offsetof(CD_SECTOR_DATA_ALT, subchannel_data);
+			}
+		}
+	}
+	throw EXIT_FAILURE;
+}
+
 auto save(int argc, char **argv)
 -> void {
 	auto subchannels = false;
@@ -1207,6 +1263,8 @@ auto save(int argc, char **argv)
 		throw EXIT_FAILURE;
 	} else {
 		auto handle = get_cdrom_handle(drive_argument.value());
+		auto subchannel_offset = get_subchannel_offset(handle);
+		fprintf(stderr, "Subchannel data offset is %u\n", subchannel_offset);
 		auto toc = get_cdrom_toc(handle);
 		validate_cdrom_toc(toc);
 		{
