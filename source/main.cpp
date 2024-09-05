@@ -1427,7 +1427,7 @@ auto save(int argc, char **argv)
 							throw EXIT_FAILURE;
 						}
 						if (subchannels) {
-							auto outcome2 = image_format->write_subchannel_data(current_track, cd_sector.subchannel_data);
+							auto outcome2 = image_format->write_subchannel_data(current_track, (UCHAR*)&cd_sector + subchannel_offset);
 							if (!outcome2) {
 								fprintf(stderr, "Error writing subchannel data %lu to file!\n", sector_index);
 								throw EXIT_FAILURE;
@@ -1442,7 +1442,7 @@ auto save(int argc, char **argv)
 							throw EXIT_FAILURE;
 						}
 						if (subchannels) {
-							auto outcome2 = image_format->write_subchannel_data(current_track, empty_cd_sector.subchannel_data);
+							auto outcome2 = image_format->write_subchannel_data(current_track, (UCHAR*)&cd_sector + subchannel_offset);
 							if (!outcome2) {
 								fprintf(stderr, "Error writing subchannel data %lu to file!\n", sector_index);
 								throw EXIT_FAILURE;

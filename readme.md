@@ -9,7 +9,6 @@ Utility for interfacing with optical drives. Written for the Windows platform.
 * Decide on strategy for storing unreadable sectors.
 * Add AccurateRip data and use automatically.
 * Implement C2-based refinement.
-* Use field order for CD_SECTOR_DATA.
 * Handle read errors during audio track extraction.
 * Add separate retry count for audio tracks.
 
