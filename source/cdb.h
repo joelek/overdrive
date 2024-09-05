@@ -6,6 +6,22 @@ namespace cdb {
 	#pragma pack(push, 1)
 
 	typedef struct {
+		const uint8_t operation_code = 0x43;
+		uint8_t : 1;
+		uint8_t time: 1;
+		uint8_t : 3;
+		uint8_t : 3;
+		uint8_t format: 4;
+		uint8_t : 4;
+		uint8_t : 8;
+		uint8_t : 8;
+		uint8_t : 8;
+		uint8_t track_or_session_number: 8;
+		uint16_t allocation_length_be: 16;
+		uint8_t control: 8;
+	} ReadTOC;
+
+	typedef struct {
 		const uint8_t operation_code = 0x12;
 		uint8_t enable_vital_product_data: 1;
 		uint8_t obsolete_a: 1;
