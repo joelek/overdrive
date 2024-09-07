@@ -49,6 +49,20 @@
 #define CDROM_MODE2_FORM_1_DATA_LENGTH (CD_SECTOR_LENGTH - CDROM_SYNC_HEADER_LENGTH - CDROM_XA_SUBHEADER_LENGTH - CDROM_XA_SUBHEADER_LENGTH - CDROM_EDC_LENGTH - CDROM_ECC_LENGTH)
 #define CDROM_MODE2_FORM_2_DATA_LENGTH (CD_SECTOR_LENGTH - CDROM_SYNC_HEADER_LENGTH - CDROM_XA_SUBHEADER_LENGTH - CDROM_XA_SUBHEADER_LENGTH- CDROM_EDC_LENGTH)
 
+namespace cdda {
+	#pragma pack(push, 1)
+
+	typedef struct {
+		uint8_t samples[CDDA_STEREO_SAMPLES_PER_FRAME][CDDA_STEREO_SAMPLE_LENGTH];
+	} StereoFrame;
+
+	typedef struct {
+		StereoFrame frames[CDDA_STEREO_FRAMES_PER_SECTOR];
+	} StereoSector;
+
+	#pragma pack(pop)
+};
+
 auto byteswap16(uint16_t v)
 -> uint16_t {
 	auto pointer = (uint8_t*)&v;
@@ -183,11 +197,28 @@ namespace cdrom {
 	typedef struct {
 		uint8_t sync[12] = { 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
 		Address absolute_address_bcd;
+		uint8_t mode = 1;
+		uint8_t user_data[CDROM_MODE1_DATA_LENGTH];
+		uint8_t edc[CDROM_EDC_LENGTH];
+		uint8_t padding[CDROM_PAD_LENGTH];
+		uint8_t ecc[CDROM_ECC_LENGTH];
+	} Mode1Sector;
+
+	typedef struct {
+		uint8_t sync[12] = { 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
+		Address absolute_address_bcd;
+		uint8_t mode = 2;
+		uint8_t user_data[CDROM_MODE2_DATA_LENGTH];
+	} Mode2Sector;
+
+	typedef struct {
+		uint8_t sync[12] = { 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
+		Address absolute_address_bcd;
 		uint8_t mode = 2;
 		XASubheader header_1;
 		XASubheader header_2;
 		uint8_t user_data[CDROM_MODE2_FORM_1_DATA_LENGTH];
-		uint8_t optional_crc[4];
+		uint8_t optional_edc[CDROM_EDC_LENGTH];
 	} Mode2Form1Sector;
 
 	typedef struct {
@@ -801,9 +832,7 @@ class MDSImageFormat: ImageFormat {
 	}
 
 	auto write_index(const CDROM_TOC& toc, const CDROM_TOC_FULL& toc_ex, bool subchannels, const std::vector<int>& bad_sector_numbers, const std::vector<unsigned int>& track_pregap_sectors_list, const std::vector<unsigned int>& track_length_sectors_list) -> void {
-		(void)subchannels;
 		auto &first_track = toc.TrackData[toc.FirstTrack - 1];
-		// auto &last_track = toc.TrackData[toc.LastTrack - 1];
 		auto &lead_out_track = toc.TrackData[toc.LastTrack + 1 - 1];
 		auto track_count = toc.LastTrack - toc.FirstTrack + 1;
 		auto sector_count = AddressToSectors(lead_out_track.Address) - AddressToSectors(first_track.Address);
@@ -828,10 +857,10 @@ class MDSImageFormat: ImageFormat {
 			throw EXIT_FAILURE;
 		}
 		auto toc_ex_length = (toc_ex.Length[0] << 8) | (toc_ex.Length[1] << 0);
-		auto toc_ex_tracks = (toc_ex_length - 2) / 11;
+		auto toc_ex_tracks = (toc_ex_length - sizeof(toc_ex.Length)) / sizeof(CDROM_TOC_FULL_TOC_DATA_BLOCK);
 		auto first_sector_on_disc = 0;
 		auto mdf_byte_offset = 0;
-		auto track_number = 1;
+		auto track_number = toc.FirstTrack;
 		for (auto toc_ex_track_index = 0; toc_ex_track_index < toc_ex_tracks; toc_ex_track_index += 1) {
 			auto &current_track = toc_ex.TrackDescriptors[toc_ex_track_index];
 			if (current_track.Point >= 0xA0) {
