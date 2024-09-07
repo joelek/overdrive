@@ -49,6 +49,18 @@
 #define CDROM_MODE2_FORM_1_DATA_LENGTH (CD_SECTOR_LENGTH - CDROM_SYNC_HEADER_LENGTH - CDROM_XA_SUBHEADER_LENGTH - CDROM_XA_SUBHEADER_LENGTH - CDROM_EDC_LENGTH - CDROM_ECC_LENGTH)
 #define CDROM_MODE2_FORM_2_DATA_LENGTH (CD_SECTOR_LENGTH - CDROM_SYNC_HEADER_LENGTH - CDROM_XA_SUBHEADER_LENGTH - CDROM_XA_SUBHEADER_LENGTH- CDROM_EDC_LENGTH)
 
+namespace cd {
+	#pragma pack(push, 1)
+
+	enum class SessionType: uint8_t {
+		CDDA_OR_CDROM = 0x00,
+		CDI = 0x10,
+		CDROMXA_OR_DDCD = 0x20
+	};
+
+	#pragma pack(pop)
+};
+
 namespace cdda {
 	#pragma pack(push, 1)
 
@@ -197,7 +209,11 @@ namespace cdrom {
 	typedef struct {
 		uint8_t sync[12] = { 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
 		Address absolute_address_bcd;
-		uint8_t mode = 1;
+		uint8_t mode;
+	} Header;
+
+	typedef struct {
+		Header header;
 		uint8_t user_data[CDROM_MODE1_DATA_LENGTH];
 		uint8_t edc[CDROM_EDC_LENGTH];
 		uint8_t padding[CDROM_PAD_LENGTH];
@@ -205,16 +221,12 @@ namespace cdrom {
 	} Mode1Sector;
 
 	typedef struct {
-		uint8_t sync[12] = { 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
-		Address absolute_address_bcd;
-		uint8_t mode = 2;
+		Header header;
 		uint8_t user_data[CDROM_MODE2_DATA_LENGTH];
 	} Mode2Sector;
 
 	typedef struct {
-		uint8_t sync[12] = { 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
-		Address absolute_address_bcd;
-		uint8_t mode = 2;
+		Header header;
 		XASubheader header_1;
 		XASubheader header_2;
 		uint8_t user_data[CDROM_MODE2_FORM_1_DATA_LENGTH];
@@ -222,9 +234,7 @@ namespace cdrom {
 	} Mode2Form1Sector;
 
 	typedef struct {
-		uint8_t sync[12] = { 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
-		Address absolute_address_bcd;
-		uint8_t mode = 2;
+		Header header;
 		XASubheader header_1;
 		XASubheader header_2;
 		uint8_t user_data[CDROM_MODE2_FORM_2_DATA_LENGTH];
@@ -232,6 +242,16 @@ namespace cdrom {
 		uint8_t p_parity[CDROM_P_PARITY_LENGTH];
 		uint8_t q_parity[CDROM_Q_PARITY_LENGTH];
 	} Mode2Form2Sector;
+
+	typedef struct {
+		Header header;
+	} CDROMSector;
+
+	typedef struct {
+		Header header;
+		XASubheader header_1;
+		XASubheader header_2;
+	} CDXASector;
 
 	#pragma pack(pop)
 }
@@ -391,6 +411,19 @@ typedef struct {
 	UCHAR LastCompleteSession;
 	CDROM_TOC_FULL_TOC_DATA_BLOCK TrackDescriptors[100];
 } CDROM_TOC_FULL;
+
+auto get_session_type(const CDROM_TOC_FULL& toc)
+-> cd::SessionType {
+	auto toc_length = (toc.Length[0] << 8) | (toc.Length[1] << 0);
+	auto track_count = (toc_length - sizeof(toc.Length)) / sizeof(CDROM_TOC_FULL_TOC_DATA_BLOCK);
+	for (auto track_index = 0u; track_index < track_count; track_index += 1) {
+		auto &track = toc.TrackDescriptors[track_index];
+		if (track.Point == 0xA0) {
+			return (cd::SessionType)track.Msf[1];
+		}
+	}
+	throw EXIT_FAILURE;
+};
 
 auto get_cdrom_full_toc(HANDLE handle)
 -> CDROM_TOC_FULL {
@@ -629,9 +662,52 @@ auto get_track_type(const TRACK_DATA &track)
 	return (track.Control & 0b0100) == 0 ? TrackType::AUDIO : TrackType::DATA;
 }
 
-auto get_track_type_ex(const CDROM_TOC_FULL_TOC_DATA_BLOCK &track)
--> TrackType {
-	return (track.Control & 0b0100) == 0 ? TrackType::AUDIO : TrackType::DATA;
+enum class TrackTypeEx {
+	AUDIO,
+	DATA_MODE_0,
+	DATA_MODE_1,
+	DATA_MODE_2,
+	DATA_MODE_2_FORM_1,
+	DATA_MODE_2_FORM_2
+};
+
+namespace iso9660 {
+	const unsigned int PrimaryVolumeDescriptorSector = 16;
+};
+
+auto get_track_type_ex(HANDLE handle, const CDROM_TOC_FULL &toc, int index)
+-> TrackTypeEx {
+	auto &track = toc.TrackDescriptors[index];
+	auto session_type = get_session_type(toc);
+	if (session_type == cd::SessionType::CDDA_OR_CDROM) {
+		auto is_audio = (track.Control & 0b0100) == 0;
+		if (is_audio) {
+			return TrackTypeEx::AUDIO;
+		} else {
+			auto sector = CD_SECTOR_DATA();
+			read_sector_sptd(handle, sector, iso9660::PrimaryVolumeDescriptorSector);
+			auto &cdrom_sector = *(cdrom::CDROMSector*)(void*)&sector.data;
+			if (cdrom_sector.header.mode == 0) {
+				return TrackTypeEx::DATA_MODE_0;
+			} else if (cdrom_sector.header.mode == 1) {
+				return TrackTypeEx::DATA_MODE_1;
+			} else if (cdrom_sector.header.mode == 2) {
+				return TrackTypeEx::DATA_MODE_2;
+			}
+		}
+	} else if (session_type == cd::SessionType::CDROMXA_OR_DDCD) {
+		auto sector = CD_SECTOR_DATA();
+		read_sector_sptd(handle, sector, iso9660::PrimaryVolumeDescriptorSector);
+		auto &cdxa_sector = *(cdrom::CDXASector*)(void*)&sector.data;
+		if (cdxa_sector.header.mode == 2) {
+			if (cdxa_sector.header_1.form_2 == 0) {
+				return TrackTypeEx::DATA_MODE_2_FORM_1;
+			} else {
+				return TrackTypeEx::DATA_MODE_2_FORM_2;
+			}
+		}
+	}
+	throw EXIT_FAILURE;
 }
 
 auto deinterleave_subchannel_data(const UCHAR* sector_subchannel_data)
@@ -659,12 +735,41 @@ namespace mds {
 	#pragma pack(push, 1)
 
 	enum class TrackMode: uint8_t {
-		UNKNOWN = 0x00,
-		AUDIO = 0xA9,
-		MODE1 = 0xAA,
-		MODE2 = 0xAB,
-		MODE2_FORM1 = 0xEC,
-		MODE2_FORM2 = 0xED
+		NONE = 0x0,
+		UNKNOWN_1 = 0x1,
+		DVD = 0x2,
+		UNKNOWN_3 = 0x3,
+		UNKNOWN_4 = 0x4,
+		UNKNOWN_5 = 0x5,
+		UNKNOWN_6 = 0x6,
+		UNKNOWN_7 = 0x7,
+		UNKNOWN_8 = 0x8,
+		AUDIO = 0x9,
+		MODE1 = 0xA,
+		MODE2 = 0xB,
+		MODE2_FORM1 = 0xC,
+		MODE2_FORM2 = 0xD,
+		UNKNOWN_E = 0xE,
+		UNKNOWN_F = 0xF
+	};
+
+	enum class TrackModeFlags: uint8_t {
+		UNKNOWN_0 = 0x0,
+		UNKNOWN_1 = 0x1,
+		UNKNOWN_2 = 0x2,
+		UNKNOWN_3 = 0x3,
+		UNKNOWN_4 = 0x4,
+		UNKNOWN_5 = 0x5,
+		UNKNOWN_6 = 0x6,
+		UNKNOWN_7 = 0x7,
+		UNKNOWN_8 = 0x8,
+		UNKNOWN_9 = 0x9,
+		UNKNOWN_A = 0xA,
+		UNKNOWN_B = 0xB,
+		UNKNOWN_C = 0xC,
+		UNKNOWN_D = 0xD,
+		UNKNOWN_E = 0xE,
+		UNKNOWN_F = 0xF
 	};
 
 	enum class EntryTypeATrackNumber: uint8_t {
@@ -707,21 +812,23 @@ namespace mds {
 	} DiscHeader;
 
 	typedef struct {
-		TrackMode track_mode;
+		TrackMode track_mode : 4;
+		TrackModeFlags track_mode_flags: 4;
 		SubchannelMode subchannel_mode;
 		uint8_t flags;
 		uint8_t __b[1] = {};
 		EntryTypeATrackNumber track_number;
 		uint8_t __c[3] = {};
 		uint8_t address_p = 0;
-		uint8_t address_m = 0; // Set to track number for A0 and A1.
+		uint8_t address_m = 0;
 		uint8_t address_s = 0;
 		uint8_t address_f = 0;
 		uint8_t __d[68] = {};
 	} EntryTypeA;
 
 	typedef struct {
-		TrackMode track_mode;
+		TrackMode track_mode : 4;
+		TrackModeFlags track_mode_flags: 4;
 		SubchannelMode subchannel_mode;
 		uint8_t flags;
 		uint8_t __b[1] = {};
@@ -787,7 +894,7 @@ class ImageFormat {
 
 	virtual auto write_sector_data(const TRACK_DATA& track, const uint8_t* data) -> bool = 0;
 	virtual auto write_subchannel_data(const TRACK_DATA& track, const uint8_t* data) -> bool = 0;
-	virtual auto write_index(const CDROM_TOC& toc, const CDROM_TOC_FULL& toc_ex, bool subchannels, const std::vector<int>& bad_sector_numbers, const std::vector<unsigned int>& track_pregap_sectors_list, const std::vector<unsigned int>& track_length_sectors_list) -> void = 0;
+	virtual auto write_index(HANDLE handle, const CDROM_TOC& toc, const CDROM_TOC_FULL& toc_ex, bool subchannels, const std::vector<int>& bad_sector_numbers, const std::vector<unsigned int>& track_pregap_sectors_list, const std::vector<unsigned int>& track_length_sectors_list) -> void = 0;
 
 	protected:
 };
@@ -831,7 +938,7 @@ class MDSImageFormat: ImageFormat {
 		return bytes_returned == bytes_expected;
 	}
 
-	auto write_index(const CDROM_TOC& toc, const CDROM_TOC_FULL& toc_ex, bool subchannels, const std::vector<int>& bad_sector_numbers, const std::vector<unsigned int>& track_pregap_sectors_list, const std::vector<unsigned int>& track_length_sectors_list) -> void {
+	auto write_index(HANDLE handle, const CDROM_TOC& toc, const CDROM_TOC_FULL& toc_ex, bool subchannels, const std::vector<int>& bad_sector_numbers, const std::vector<unsigned int>& track_pregap_sectors_list, const std::vector<unsigned int>& track_length_sectors_list) -> void {
 		auto &first_track = toc.TrackData[toc.FirstTrack - 1];
 		auto &lead_out_track = toc.TrackData[toc.LastTrack + 1 - 1];
 		auto track_count = toc.LastTrack - toc.FirstTrack + 1;
@@ -861,11 +968,12 @@ class MDSImageFormat: ImageFormat {
 		auto first_sector_on_disc = 0;
 		auto mdf_byte_offset = 0;
 		auto track_number = toc.FirstTrack;
-		for (auto toc_ex_track_index = 0; toc_ex_track_index < toc_ex_tracks; toc_ex_track_index += 1) {
+		for (auto toc_ex_track_index = 0u; toc_ex_track_index < toc_ex_tracks; toc_ex_track_index += 1) {
 			auto &current_track = toc_ex.TrackDescriptors[toc_ex_track_index];
 			if (current_track.Point >= 0xA0) {
 				auto current_track_entry = mds::EntryTypeA();
-				current_track_entry.track_mode = mds::TrackMode::UNKNOWN;
+				current_track_entry.track_mode = mds::TrackMode::NONE;
+				current_track_entry.track_mode_flags = mds::TrackModeFlags::UNKNOWN_0;
 				std::memcpy((UCHAR*)&current_track_entry + offsetof(mds::EntryTypeA, subchannel_mode), &current_track, sizeof(current_track));
 				current_track_entry.subchannel_mode = subchannels ? mds::SubchannelMode::INTERLEAVED_96 : mds::SubchannelMode::NONE;
 				if (fwrite(&current_track_entry, sizeof(current_track_entry), 1, target_handle_mds) != 1) {
@@ -874,9 +982,10 @@ class MDSImageFormat: ImageFormat {
 				}
 			} else {
 				auto current_track_entry = mds::EntryTypeB();
-				auto current_track_type = get_track_type_ex(current_track);
-				// TODO: Improve mode detection.
-				current_track_entry.track_mode = current_track_type == TrackType::AUDIO ? mds::TrackMode::AUDIO : mds::TrackMode::MODE1;
+				auto current_track_type = get_track_type_ex(handle, toc_ex, toc_ex_track_index);
+				auto current_track_mode = this->get_track_mode(current_track_type);
+				current_track_entry.track_mode = current_track_mode;
+				current_track_entry.track_mode_flags = current_track_mode == mds::TrackMode::MODE2_FORM1 || current_track_mode == mds::TrackMode::MODE2_FORM2 ? mds::TrackModeFlags::UNKNOWN_E : mds::TrackModeFlags::UNKNOWN_A;
 				std::memcpy((UCHAR*)&current_track_entry + offsetof(mds::EntryTypeA, subchannel_mode), &current_track, sizeof(current_track));
 				current_track_entry.subchannel_mode = subchannels ? mds::SubchannelMode::INTERLEAVED_96 : mds::SubchannelMode::NONE;
 				current_track_entry.sector_length = subchannels ? CD_SECTOR_LENGTH + CD_SUBCHANNELS_LENGTH : CD_SECTOR_LENGTH;
@@ -946,6 +1055,28 @@ class MDSImageFormat: ImageFormat {
 
 	protected:
 
+	auto get_track_mode(TrackTypeEx track_type) -> mds::TrackMode {
+		if (track_type == TrackTypeEx::AUDIO) {
+			return mds::TrackMode::AUDIO;
+		}
+		if (track_type == TrackTypeEx::DATA_MODE_0) {
+			return mds::TrackMode::NONE;
+		}
+		if (track_type == TrackTypeEx::DATA_MODE_1) {
+			return mds::TrackMode::MODE1;
+		}
+		if (track_type == TrackTypeEx::DATA_MODE_2) {
+			return mds::TrackMode::MODE2;
+		}
+		if (track_type == TrackTypeEx::DATA_MODE_2_FORM_1) {
+			return mds::TrackMode::MODE2_FORM1;
+		}
+		if (track_type == TrackTypeEx::DATA_MODE_2_FORM_2) {
+			return mds::TrackMode::MODE2_FORM2;
+		}
+		throw EXIT_FAILURE;
+	}
+
 	FILE* target_handle_mds;
 	FILE* target_handle_mdf;
 };
@@ -1011,7 +1142,8 @@ class BINCUEImageFormat: ImageFormat {
 		return bytes_returned == bytes_expected;
 	}
 
-	auto write_index(const CDROM_TOC& toc, const CDROM_TOC_FULL& toc_ex, bool subchannels, const std::vector<int>& bad_sector_numbers, const std::vector<unsigned int>& track_pregap_sectors_list, const std::vector<unsigned int>& track_length_sectors_list) -> void {
+	auto write_index(HANDLE handle, const CDROM_TOC& toc, const CDROM_TOC_FULL& toc_ex, bool subchannels, const std::vector<int>& bad_sector_numbers, const std::vector<unsigned int>& track_pregap_sectors_list, const std::vector<unsigned int>& track_length_sectors_list) -> void {
+		(void)handle;
 		(void)toc_ex;
 		(void)subchannels;
 		(void)bad_sector_numbers;
@@ -1533,7 +1665,7 @@ auto save(int argc, char **argv)
 		}
 		auto duration_ms = get_timestamp_ms() - start_ms;
 		fprintf(stderr, "Extraction took %llu seconds\n", duration_ms / 1000);
-		image_format->write_index(toc, toc_ex, subchannels, bad_sector_numbers, track_pregap_sectors_list, track_length_sectors_list);
+		image_format->write_index(handle, toc, toc_ex, subchannels, bad_sector_numbers, track_pregap_sectors_list, track_length_sectors_list);
 	}
 }
 
