@@ -228,7 +228,7 @@ namespace cdrom {
 		XASubheader header_1;
 		XASubheader header_2;
 		uint8_t user_data[CDROM_MODE2_FORM_2_DATA_LENGTH];
-		uint8_t crc[4];
+		uint8_t edc[CDROM_EDC_LENGTH];
 		uint8_t p_parity[CDROM_P_PARITY_LENGTH];
 		uint8_t q_parity[CDROM_Q_PARITY_LENGTH];
 	} Mode2Form2Sector;
