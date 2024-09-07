@@ -39,9 +39,9 @@
 #define CDROM_SYNC_HEADER_LENGTH (CDROM_SYNC_LENGTH + CDROM_HEADER_LENGTH)
 #define CDROM_EDC_LENGTH 4
 #define CDROM_PAD_LENGTH 8
-#define CDROM_P_PARTIY_LENGTH 172
+#define CDROM_P_PARITY_LENGTH 172
 #define CDROM_Q_PARITY_LENGTH 104
-#define CDROM_ECC_LENGTH (CDROM_P_PARTIY_LENGTH + CDROM_Q_PARITY_LENGTH)
+#define CDROM_ECC_LENGTH (CDROM_P_PARITY_LENGTH + CDROM_Q_PARITY_LENGTH)
 #define CDROM_EDC_PAD_ECC_LENGTH (CDROM_EDC_LENGTH + CDROM_PAD_LENGTH + CDROM_ECC_LENGTH)
 #define CDROM_XA_SUBHEADER_LENGTH 4
 #define CDROM_MODE1_DATA_LENGTH (CD_SECTOR_LENGTH - CDROM_SYNC_HEADER_LENGTH - CDROM_EDC_PAD_ECC_LENGTH)
@@ -123,10 +123,17 @@ namespace cdrom {
 	#pragma pack(push, 1)
 
 	typedef struct {
-		uint8_t file_number;
-		uint8_t channel_number;
-		uint8_t submode;
-		uint8_t coding_info;
+		uint8_t file_number: 8;
+		uint8_t channel_number: 8;
+		uint8_t end_of_record: 1;
+		uint8_t video_block: 1;
+		uint8_t audio_block: 1;
+		uint8_t data_block: 1;
+		uint8_t trigger_block: 1;
+		uint8_t form_2: 1;
+		uint8_t real_time_block: 1;
+		uint8_t end_of_file: 1;
+		uint8_t coding_info: 8;
 	} XASubheader;
 
 	typedef struct {
@@ -166,6 +173,34 @@ namespace cdrom {
 		};
 		uint16_t crc_be;
 	} SubchannelQ;
+
+	typedef struct {
+		uint8_t m;
+		uint8_t s;
+		uint8_t f;
+	} Address;
+
+	typedef struct {
+		uint8_t sync[12] = { 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
+		Address absolute_address_bcd;
+		uint8_t mode = 2;
+		XASubheader header_1;
+		XASubheader header_2;
+		uint8_t user_data[CDROM_MODE2_FORM_1_DATA_LENGTH];
+		uint8_t optional_crc[4];
+	} Mode2Form1Sector;
+
+	typedef struct {
+		uint8_t sync[12] = { 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
+		Address absolute_address_bcd;
+		uint8_t mode = 2;
+		XASubheader header_1;
+		XASubheader header_2;
+		uint8_t user_data[CDROM_MODE2_FORM_2_DATA_LENGTH];
+		uint8_t crc[4];
+		uint8_t p_parity[CDROM_P_PARITY_LENGTH];
+		uint8_t q_parity[CDROM_Q_PARITY_LENGTH];
+	} Mode2Form2Sector;
 
 	#pragma pack(pop)
 }
@@ -597,8 +632,8 @@ namespace mds {
 		AUDIO = 0xA9,
 		MODE1 = 0xAA,
 		MODE2 = 0xAB,
-		MODE2_FORM1 = 0xAC,
-		MODE2_FORM2 = 0xAD
+		MODE2_FORM1 = 0xEC,
+		MODE2_FORM2 = 0xED
 	};
 
 	enum class EntryTypeATrackNumber: uint8_t {
@@ -606,6 +641,11 @@ namespace mds {
 		FIRST_TRACK = 0xA0,
 		LAST_TRACK = 0xA1,
 		LEAD_OUT_TRACK = 0xA2
+	};
+
+	enum class SubchannelMode: uint8_t {
+		NONE = 0x00,
+		INTERLEAVED_96 = 0x08
 	};
 
 	typedef struct {
@@ -637,7 +677,7 @@ namespace mds {
 
 	typedef struct {
 		TrackMode track_mode;
-		uint8_t session;
+		SubchannelMode subchannel_mode;
 		uint8_t flags;
 		uint8_t __b[1] = {};
 		EntryTypeATrackNumber track_number;
@@ -651,7 +691,7 @@ namespace mds {
 
 	typedef struct {
 		TrackMode track_mode;
-		uint8_t session;
+		SubchannelMode subchannel_mode;
 		uint8_t flags;
 		uint8_t __b[1] = {};
 		uint8_t track_number;
@@ -661,7 +701,7 @@ namespace mds {
 		uint8_t address_s = 0;
 		uint8_t address_f = 0;
 		uint32_t absolute_offset_to_track_table_entry;
-		uint16_t sector_length = 2352;
+		uint16_t sector_length = 2352; // 2352 or 2448 with subchannels
 		uint16_t unknown_a = 2;
 		uint8_t __d[16] = {};
 		uint32_t first_sector_on_disc;
@@ -797,8 +837,8 @@ class MDSImageFormat: ImageFormat {
 			if (current_track.Point >= 0xA0) {
 				auto current_track_entry = mds::EntryTypeA();
 				current_track_entry.track_mode = mds::TrackMode::UNKNOWN;
-				std::memcpy((UCHAR*)&current_track_entry + offsetof(mds::EntryTypeA, session), &current_track, sizeof(current_track));
-				current_track_entry.session -= 1; // Probably zero-based session index.
+				std::memcpy((UCHAR*)&current_track_entry + offsetof(mds::EntryTypeA, subchannel_mode), &current_track, sizeof(current_track));
+				current_track_entry.subchannel_mode = subchannels ? mds::SubchannelMode::INTERLEAVED_96 : mds::SubchannelMode::NONE;
 				if (fwrite(&current_track_entry, sizeof(current_track_entry), 1, target_handle_mds) != 1) {
 					fprintf(stderr, "Error writing current track entry!\n");
 					throw EXIT_FAILURE;
@@ -808,8 +848,8 @@ class MDSImageFormat: ImageFormat {
 				auto current_track_type = get_track_type_ex(current_track);
 				// TODO: Improve mode detection.
 				current_track_entry.track_mode = current_track_type == TrackType::AUDIO ? mds::TrackMode::AUDIO : mds::TrackMode::MODE1;
-				std::memcpy((UCHAR*)&current_track_entry + offsetof(mds::EntryTypeA, session), &current_track, sizeof(current_track));
-				current_track_entry.session -= 1; // Probably zero-based session index.
+				std::memcpy((UCHAR*)&current_track_entry + offsetof(mds::EntryTypeA, subchannel_mode), &current_track, sizeof(current_track));
+				current_track_entry.subchannel_mode = subchannels ? mds::SubchannelMode::INTERLEAVED_96 : mds::SubchannelMode::NONE;
 				current_track_entry.sector_length = subchannels ? CD_SECTOR_LENGTH + CD_SUBCHANNELS_LENGTH : CD_SECTOR_LENGTH;
 				current_track_entry.first_sector_on_disc = first_sector_on_disc;
 				current_track_entry.mdf_byte_offset = mdf_byte_offset;
@@ -1079,6 +1119,16 @@ auto from_bcd(UCHAR byte)
 		throw EXIT_FAILURE;
 	}
 	return (hi << 3) + hi + hi + lo;
+}
+
+auto to_bcd(UCHAR byte)
+-> unsigned int {
+	if (byte >= 100) {
+		throw EXIT_FAILURE;
+	}
+	auto hi = (byte / 10);
+	auto lo = (byte % 10);
+	return (hi << 4) | (lo << 0);
 }
 
 auto get_subchannel_offset(HANDLE handle)
