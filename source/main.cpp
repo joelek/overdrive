@@ -55,7 +55,7 @@ namespace cd {
 	enum class SessionType: uint8_t {
 		CDDA_OR_CDROM = 0x00,
 		CDI = 0x10,
-		CDROMXA_OR_DDCD = 0x20
+		CDXA_OR_DDCD = 0x20
 	};
 
 	#pragma pack(pop)
@@ -695,7 +695,7 @@ auto get_track_type_ex(HANDLE handle, const CDROM_TOC_FULL &toc, int index)
 				return TrackTypeEx::DATA_MODE_2;
 			}
 		}
-	} else if (session_type == cd::SessionType::CDROMXA_OR_DDCD) {
+	} else if (session_type == cd::SessionType::CDXA_OR_DDCD) {
 		auto sector = CD_SECTOR_DATA();
 		read_sector_sptd(handle, sector, iso9660::PrimaryVolumeDescriptorSector);
 		auto &cdxa_sector = *(cdrom::CDXASector*)(void*)&sector.data;
@@ -1499,6 +1499,14 @@ auto save(int argc, char **argv)
 			sptd_mode_sense(handle, mode_sense);
 			mode_sense.page_data.read_retry_count = max_read_retries;
 			sptd_mode_select(handle, mode_sense);
+		}
+		auto session_type = get_session_type(toc_ex);
+		if (session_type == cd::SessionType::CDDA_OR_CDROM) {
+			fprintf(stderr, "Disc contains a CDDA or CDROM session\n");
+		} else if (session_type == cd::SessionType::CDI) {
+			fprintf(stderr, "Disc contains a CDI session\n");
+		} else if (session_type == cd::SessionType::CDXA_OR_DDCD) {
+			fprintf(stderr, "Disc contains a CDXA or DDCD session\n");
 		}
 		{
 			auto mode_sense = ModeSense2();
