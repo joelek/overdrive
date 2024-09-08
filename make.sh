@@ -20,6 +20,7 @@ if [ $1 = "release" ]; then
 fi
 
 SOURCES=(
+	"accuraterip"
 	"cdb"
 	"idiv"
 )

@@ -7,7 +7,6 @@ Utility for interfacing with optical drives. Written for the Windows platform.
 * Investigate possibility of disabling read cache.
 	Can be done by issuing normal READ SCSI command.
 * Decide on strategy for storing unreadable sectors.
-* Add AccurateRip data and use automatically.
 * Implement C2-based refinement.
 * Handle read errors during audio track extraction.
 * Add separate retry count for audio tracks.

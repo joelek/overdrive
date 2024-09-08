@@ -16,6 +16,7 @@
 #include <memory>
 #include <algorithm>
 
+#include "accuraterip.h"
 #include "idiv.h"
 #include "cdb.h"
 
@@ -139,6 +140,17 @@ auto ascii_dump(uint8_t* bytes, int size, const char* name)
 			} \
 		}
 #endif
+
+auto trim(const std::string &string)
+-> std::string {
+	auto start = string.find_first_not_of(" \n\r\t");
+	if (start > string.length()) {
+		return "";
+	}
+	auto end = string.find_last_not_of(" \n\r\t");
+	return string.substr(start, end - start + 1);
+}
+
 
 typedef struct {
 	unsigned char data[CD_SECTOR_LENGTH];
@@ -597,6 +609,45 @@ auto sptd_mode_sense2(
 	data.sptd.TimeOutValue = 10;
 	data.sptd.DataBuffer = &mode_sense;
 	data.sptd.DataTransferLength = sizeof(mode_sense);
+	data.sptd.SenseInfoLength = sizeof(data.sense);
+	data.sptd.SenseInfoOffset = offsetof(SPTDWithSenseBuffer, sense);
+	memcpy(data.sptd.Cdb, &cdb, sizeof(cdb));
+	auto bytes_returned = ULONG(0);
+	auto bytes_expected = ULONG(sizeof(data.sptd));
+	SetLastError(ERROR_SUCCESS);
+	auto outcome = DeviceIoControl(
+		handle,
+		IOCTL_SCSI_PASS_THROUGH_DIRECT,
+		&data,
+		sizeof(data),
+		&data,
+		sizeof(data),
+		&bytes_returned,
+		nullptr
+	);
+	WINAPI_CHECK_STATUS();
+	if (!outcome || (bytes_returned != bytes_expected)) {
+		throw EXIT_FAILURE;
+	}
+}
+
+typedef struct {
+	cdb::Inquiry6Response response;
+} Inquiry;
+
+auto sptd_inquiry(
+	HANDLE handle,
+	Inquiry& inquiry
+) -> void {
+	auto data = SPTDWithSenseBuffer();
+	auto cdb = cdb::Inquiry6();
+	cdb.allocation_length_be = byteswap16(sizeof(inquiry));
+	data.sptd.Length = sizeof(data.sptd);
+	data.sptd.CdbLength = sizeof(cdb);
+	data.sptd.DataIn = SCSI_IOCTL_DATA_IN;
+	data.sptd.TimeOutValue = 10;
+	data.sptd.DataBuffer = &inquiry;
+	data.sptd.DataTransferLength = sizeof(inquiry);
 	data.sptd.SenseInfoLength = sizeof(data.sense);
 	data.sptd.SenseInfoOffset = offsetof(SPTDWithSenseBuffer, sense);
 	memcpy(data.sptd.Cdb, &cdb, sizeof(cdb));
@@ -1330,7 +1381,7 @@ auto save(int argc, char **argv)
 	auto format = FileFormat::MDF_MDS;
 	auto drive_argument = std::optional<std::string>();
 	auto max_read_retries = 8;
-	auto read_offset_correction = 0;
+	auto read_offset_correction = std::optional<int>();
 	auto max_audio_read_passes = 8;
 	auto split_tracks = false;
 	auto add_wave_headers = false;
@@ -1489,6 +1540,19 @@ auto save(int argc, char **argv)
 		throw EXIT_FAILURE;
 	} else {
 		auto handle = get_cdrom_handle(drive_argument.value());
+		auto inquiry = Inquiry();
+		sptd_inquiry(handle, inquiry);
+		auto vendor = trim(std::string(inquiry.response.vendor_identification, sizeof(inquiry.response.vendor_identification)));
+		auto product = trim(std::string(inquiry.response.product_identification, sizeof(inquiry.response.product_identification)));
+		fprintf(stderr, "Vendor is \"%s\"\n", vendor.c_str());
+		fprintf(stderr, "Product is \"%s\"\n", product.c_str());
+		auto it = accuraterip::OFFSETS.find(vendor + " - " + product);
+		if (it != accuraterip::OFFSETS.end()) {
+			fprintf(stderr, "Detected read offset correction as %i samples (%i bytes)\n", it->second, (it->second * CDDA_STEREO_SAMPLE_LENGTH));
+			if (!read_offset_correction) {
+				read_offset_correction = it->second;
+			}
+		}
 		auto subchannel_offset = get_subchannel_offset(handle);
 		fprintf(stderr, "Subchannel data offset is %u\n", subchannel_offset);
 		auto toc = get_cdrom_toc(handle);
@@ -1525,8 +1589,9 @@ auto save(int argc, char **argv)
 		auto sector_count = AddressToSectors(lead_out_track.Address) - AddressToSectors(first_track.Address);
 		fprintf(stderr, "Disc contains %i tracks\n", track_count);
 		fprintf(stderr, "Disc length is %lu sectors\n", sector_count);
-		auto read_offset_correction_bytes = read_offset_correction * CDDA_STEREO_SAMPLE_LENGTH;
-		fprintf(stderr, "Read offset correction is set to %i samples (%i bytes)\n", read_offset_correction, read_offset_correction_bytes);
+		auto read_offset_correction_value = read_offset_correction.value_or(0);
+		auto read_offset_correction_bytes = read_offset_correction_value * CDDA_STEREO_SAMPLE_LENGTH;
+		fprintf(stderr, "Read offset correction is set to %i samples (%i bytes)\n", read_offset_correction_value, read_offset_correction_bytes);
 		auto track_pregap_sectors_list = std::vector<unsigned int>();
 		track_pregap_sectors_list.push_back(2 * CD_SECTORS_PER_SECOND);
 		for (auto i = toc.FirstTrack + 1; i <= toc.LastTrack; i += 1) {

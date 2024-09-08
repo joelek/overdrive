@@ -31,6 +31,54 @@ namespace cdb {
 		uint8_t control;
 	} Inquiry6;
 
+	typedef struct {
+		uint8_t peripheral_device_type: 5;
+		uint8_t peripheral_qualifier: 3;
+		uint8_t : 7;
+		uint8_t rmb: 1;
+		uint8_t version: 8;
+		uint8_t response_data_format: 4;
+		uint8_t hisup: 1;
+		uint8_t normalca: 1;
+		uint8_t : 1;
+		uint8_t : 1;
+		uint8_t additional_length: 8;
+		uint8_t protect: 1;
+		uint8_t : 2;
+		uint8_t threepc: 1;
+		uint8_t tpgs: 2;
+		uint8_t acc: 1;
+		uint8_t scss: 1;
+		uint8_t : 1;
+		uint8_t : 1;
+		uint8_t : 1;
+		uint8_t : 1;
+		uint8_t multip: 1;
+		uint8_t vs1: 1;
+		uint8_t encserv: 1;
+		uint8_t : 1;
+		uint8_t vs2: 1;
+		uint8_t command_queue: 1;
+		uint8_t : 1;
+		uint8_t : 1;
+		uint8_t : 1;
+		uint8_t : 1;
+		uint8_t : 1;
+		uint8_t : 1;
+		const char vendor_identification[8] = {};
+		const char product_identification[16] = {};
+		uint32_t product_revision_level_be;
+		const char drive_serial_number[8] = {};
+		uint8_t vendor_unique[12];
+		uint8_t : 1;
+		uint8_t : 1;
+		uint8_t : 2;
+		uint8_t : 4;
+		uint8_t : 8;
+		uint16_t vendor_descriptor_be[8];
+		uint8_t reserved[22];
+	} Inquiry6Response;
+
 	enum class SensePage: uint8_t {
 		ReadWriteErrorRecoveryModePage = 0x01,
 		CapabilitiesAndMechanicalStatusPage = 0x2A
