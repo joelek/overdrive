@@ -1542,11 +1542,11 @@ auto save(int argc, char **argv)
 		auto handle = get_cdrom_handle(drive_argument.value());
 		auto inquiry = Inquiry();
 		sptd_inquiry(handle, inquiry);
-		auto vendor = trim(std::string(inquiry.response.vendor_identification, sizeof(inquiry.response.vendor_identification)));
-		auto product = trim(std::string(inquiry.response.product_identification, sizeof(inquiry.response.product_identification)));
-		fprintf(stderr, "Vendor is \"%s\"\n", vendor.c_str());
-		fprintf(stderr, "Product is \"%s\"\n", product.c_str());
-		auto it = accuraterip::OFFSETS.find(vendor + " - " + product);
+		auto vendor = std::string(inquiry.response.vendor_identification, sizeof(inquiry.response.vendor_identification));
+		auto product = std::string(inquiry.response.product_identification, sizeof(inquiry.response.product_identification));
+		fprintf(stderr, "Vendor is \"%s\"\n", trim(vendor).c_str());
+		fprintf(stderr, "Product is \"%s\"\n", trim(product).c_str());
+		auto it = accuraterip::OFFSETS.find(trim(vendor + " - " + product));
 		if (it != accuraterip::OFFSETS.end()) {
 			fprintf(stderr, "Detected read offset correction as %i samples (%i bytes)\n", it->second, (it->second * CDDA_STEREO_SAMPLE_LENGTH));
 			if (!read_offset_correction) {
