@@ -4,5 +4,5 @@
 #include <string>
 
 namespace accuraterip {
-	extern const std::map<std::string, int> OFFSETS;
+	extern const std::map<std::string, int> RACS;
 }

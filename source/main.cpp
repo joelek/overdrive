@@ -1546,11 +1546,11 @@ auto save(int argc, char **argv)
 		auto product = std::string(inquiry.response.product_identification, sizeof(inquiry.response.product_identification));
 		fprintf(stderr, "Vendor is \"%s\"\n", trim(vendor).c_str());
 		fprintf(stderr, "Product is \"%s\"\n", trim(product).c_str());
-		auto it = accuraterip::OFFSETS.find(trim(vendor + " - " + product));
-		if (it != accuraterip::OFFSETS.end()) {
-			fprintf(stderr, "Detected read offset correction as %i samples (%i bytes)\n", it->second, (it->second * CDDA_STEREO_SAMPLE_LENGTH));
+		auto rac = accuraterip::RACS.find(trim(vendor + " - " + product));
+		if (rac != accuraterip::RACS.end()) {
+			fprintf(stderr, "Detected read offset correction as %i samples (%i bytes)\n", rac->second, (rac->second * CDDA_STEREO_SAMPLE_LENGTH));
 			if (!read_offset_correction) {
-				read_offset_correction = it->second;
+				read_offset_correction = rac->second;
 			}
 		}
 		auto subchannel_offset = get_subchannel_offset(handle);
