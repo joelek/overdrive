@@ -62,3 +62,5 @@ for i in ${TARGETS[@]}; do
 		exit 1;
 	fi
 done
+
+echo "[done]"
