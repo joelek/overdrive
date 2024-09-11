@@ -943,7 +943,7 @@ class ImageFormat {
 
 	virtual ~ImageFormat() {}
 
-	virtual auto write_sector_data(const TRACK_DATA& track, const uint8_t* data) -> bool = 0;
+	virtual auto write_sector_data(const TRACK_DATA& track, const uint8_t* data, size_t size) -> bool = 0;
 	virtual auto write_subchannel_data(const TRACK_DATA& track, const uint8_t* data) -> bool = 0;
 	virtual auto write_index(HANDLE handle, const CDROM_TOC& toc, const CDROM_TOC_FULL& toc_ex, bool subchannels, const std::vector<int>& bad_sector_numbers, const std::vector<unsigned int>& track_pregap_sectors_list, const std::vector<unsigned int>& track_length_sectors_list) -> void = 0;
 
@@ -975,9 +975,9 @@ class MDSImageFormat: ImageFormat {
 		fclose(this->target_handle_mdf);
 	}
 
-	auto write_sector_data(const TRACK_DATA& track, const uint8_t* data) -> bool {
+	auto write_sector_data(const TRACK_DATA& track, const uint8_t* data, size_t size) -> bool {
 		(void)track;
-		auto bytes_expected = (size_t)CD_SECTOR_LENGTH;
+		auto bytes_expected = size;
 		auto bytes_returned = fwrite(data, 1, bytes_expected, this->target_handle_mdf);
 		return bytes_returned == bytes_expected;
 	}
@@ -1179,8 +1179,8 @@ class BINCUEImageFormat: ImageFormat {
 		fclose(this->target_handle_bin);
 	}
 
-	auto write_sector_data(const TRACK_DATA& track, const uint8_t* data) -> bool {
-		auto bytes_expected = (size_t)CD_SECTOR_LENGTH;
+	auto write_sector_data(const TRACK_DATA& track, const uint8_t* data, size_t size) -> bool {
+		auto bytes_expected = size;
 		auto bytes_returned = fwrite(data, 1, bytes_expected, this->get_track_handle(track));
 		return bytes_returned == bytes_expected;
 	}
@@ -1693,7 +1693,7 @@ auto save(int argc, char **argv)
 				}
 				for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
 					auto cd_sector = extracted_cdda_sectors_list.at(sector_index - first_sector).at(0);
-					auto outcome = image_format->write_sector_data(current_track, cd_sector.data);
+					auto outcome = image_format->write_sector_data(current_track, cd_sector.data, CD_SECTOR_LENGTH);
 					if (!outcome) {
 						fprintf(stderr, "Error writing sector data %lu to file!\n", sector_index);
 						throw EXIT_FAILURE;
@@ -1705,7 +1705,7 @@ auto save(int argc, char **argv)
 				for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
 					try {
 						read_sector_sptd(handle, cd_sector, sector_index);
-						auto outcome = image_format->write_sector_data(current_track, cd_sector.data);
+						auto outcome = image_format->write_sector_data(current_track, cd_sector.data, CD_SECTOR_LENGTH);
 						if (!outcome) {
 							fprintf(stderr, "Error writing sector data %lu to file!\n", sector_index);
 							throw EXIT_FAILURE;
@@ -1720,7 +1720,7 @@ auto save(int argc, char **argv)
 					} catch (...) {
 						fprintf(stderr, "Error reading sector %lu!\n", sector_index);
 						bad_sector_numbers.push_back(sector_index);
-						auto outcome = image_format->write_sector_data(current_track, empty_cd_sector.data);
+						auto outcome = image_format->write_sector_data(current_track, empty_cd_sector.data, CD_SECTOR_LENGTH);
 						if (!outcome) {
 							fprintf(stderr, "Error writing sector data %lu to file!\n", sector_index);
 							throw EXIT_FAILURE;
