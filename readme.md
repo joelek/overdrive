@@ -10,6 +10,8 @@ Utility for interfacing with optical drives. Written for the Windows platform.
 * Implement C2-based refinement.
 * Handle read errors during audio track extraction.
 * Add separate retry count for audio tracks.
+* Fix mode writing for BIN/CUE writer.
+* Add cooked sector storage option.
 
 ## Read offset correction
 
