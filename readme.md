@@ -12,6 +12,7 @@ Utility for interfacing with optical drives. Written for the Windows platform.
 * Add separate retry count for audio tracks.
 * Fix mode writing for BIN/CUE writer.
 * Add cooked sector storage option.
+* Fix issue with subchannel offset detection.
 
 ## Read offset correction
 
