@@ -1555,6 +1555,8 @@ auto save(int argc, char **argv)
 		}
 		auto subchannel_offset = get_subchannel_offset(handle);
 		fprintf(stderr, "Subchannel data offset is %u\n", subchannel_offset);
+		auto c2_offset = subchannel_offset == CD_SECTOR_LENGTH ? CD_SECTOR_LENGTH + CD_SUBCHANNELS_LENGTH : CD_SECTOR_LENGTH;
+		fprintf(stderr, "C2 data offset is %u\n", c2_offset);
 		auto toc = get_cdrom_toc(handle);
 		validate_cdrom_toc(toc);
 		auto toc_ex = get_cdrom_full_toc(handle);
@@ -1642,9 +1644,10 @@ auto save(int argc, char **argv)
 					auto c2_errors = false;
 					for (auto sector_index = adjusted_first_sector; sector_index < adjusted_last_sector; sector_index += 1) {
 						try {
+							auto c2_data = (UCHAR*)&cd_sector + c2_offset;
 							read_sector_sptd(handle, cd_sector, sector_index);
 							for (auto i = 0; i < (int)sizeof(cd_sector.c2_data); i++) {
-								if (cd_sector.c2_data[i] != 0) {
+								if (c2_data[i] != 0) {
 									c2_errors = true;
 									break;
 								}
