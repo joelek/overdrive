@@ -13,6 +13,8 @@ Utility for interfacing with optical drives. Written for the Windows platform.
 * Fix mode writing for BIN/CUE writer.
 * Add cooked sector storage option.
 * Fix issue with subchannel offset detection.
+* Add ignore read error setting (data tracks only).
+* Prevent reading into end of data tracks when read offset correction is negative.
 
 ## Read offset correction
 
