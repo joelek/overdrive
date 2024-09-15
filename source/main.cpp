@@ -1368,30 +1368,60 @@ auto to_bcd(UCHAR byte)
 auto get_subchannel_offset(HANDLE handle)
 -> unsigned int {
 	auto sector = CD_SECTOR_DATA();
-	auto target_lba = 0u;
-	read_sector_sptd(handle, sector, target_lba);
-	{
-		auto sector_data = *(CD_SECTOR_DATA*)&sector;
-		auto subchannel_data = deinterleave_subchannel_data(sector_data.subchannel_data);
-		auto q = (cdrom::SubchannelQ*)subchannel_data.channels[CD_SUBCHANNEL_Q_INDEX];
-		if (q->adr == 1) {
-			auto actual_lba = AddressToSectors2(from_bcd(q->mode1.absolute_m_bcd), from_bcd(q->mode1.absolute_s_bcd), from_bcd(q->mode1.absolute_f_bcd));
-			if (actual_lba == target_lba) {
-				return offsetof(CD_SECTOR_DATA, subchannel_data);
+	try {
+		int delta_lbas[10];
+		auto delta_lba_index = 0u;
+		for (auto target_lba = 0u; target_lba < 10u; target_lba += 1) {
+			read_sector_sptd(handle, sector, target_lba);
+			auto sector_data = *(CD_SECTOR_DATA*)&sector;
+			auto subchannel_data = deinterleave_subchannel_data(sector_data.subchannel_data);
+			auto q = (cdrom::SubchannelQ*)subchannel_data.channels[CD_SUBCHANNEL_Q_INDEX];
+			if (q->adr == 1) {
+				auto actual_lba = AddressToSectors2(from_bcd(q->mode1.absolute_m_bcd), from_bcd(q->mode1.absolute_s_bcd), from_bcd(q->mode1.absolute_f_bcd));
+				auto delta_lba = (int)target_lba - (int)actual_lba;
+				if (delta_lba < -10 || delta_lba > 10) {
+					throw EXIT_FAILURE;
+				}
+				if (delta_lba_index > 0) {
+					if (delta_lbas[delta_lba_index] != delta_lba) {
+						throw EXIT_FAILURE;
+					}
+				}
+				delta_lbas[delta_lba_index] = delta_lba;
+				delta_lba_index += 1;
 			}
 		}
-	}
-	{
-		auto sector_data = *(CD_SECTOR_DATA_ALT*)&sector;
-		auto subchannel_data = deinterleave_subchannel_data(sector_data.subchannel_data);
-		auto q = (cdrom::SubchannelQ*)subchannel_data.channels[CD_SUBCHANNEL_Q_INDEX];
-		if (q->adr == 1) {
-			auto actual_lba = AddressToSectors2(from_bcd(q->mode1.absolute_m_bcd), from_bcd(q->mode1.absolute_s_bcd), from_bcd(q->mode1.absolute_f_bcd));
-			if (actual_lba == target_lba) {
-				return offsetof(CD_SECTOR_DATA_ALT, subchannel_data);
+		if (delta_lba_index > 9) {
+			return offsetof(CD_SECTOR_DATA, subchannel_data);
+		}
+	} catch (...) {}
+	try {
+		int delta_lbas[10];
+		auto delta_lba_index = 0u;
+		for (auto target_lba = 0u; target_lba < 10u; target_lba += 1) {
+			read_sector_sptd(handle, sector, target_lba);
+			auto sector_data = *(CD_SECTOR_DATA_ALT*)&sector;
+			auto subchannel_data = deinterleave_subchannel_data(sector_data.subchannel_data);
+			auto q = (cdrom::SubchannelQ*)subchannel_data.channels[CD_SUBCHANNEL_Q_INDEX];
+			if (q->adr == 1) {
+				auto actual_lba = AddressToSectors2(from_bcd(q->mode1.absolute_m_bcd), from_bcd(q->mode1.absolute_s_bcd), from_bcd(q->mode1.absolute_f_bcd));
+				auto delta_lba = (int)target_lba - (int)actual_lba;
+				if (delta_lba < -10 || delta_lba > 10) {
+					throw EXIT_FAILURE;
+				}
+				if (delta_lba_index > 0) {
+					if (delta_lbas[delta_lba_index] != delta_lba) {
+						throw EXIT_FAILURE;
+					}
+				}
+				delta_lbas[delta_lba_index] = delta_lba;
+				delta_lba_index += 1;
 			}
 		}
-	}
+		if (delta_lba_index > 9) {
+			return offsetof(CD_SECTOR_DATA_ALT, subchannel_data);
+		}
+	} catch (...) {}
 	throw EXIT_FAILURE;
 }
 
