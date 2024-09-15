@@ -225,44 +225,66 @@ namespace cdrom {
 	} Header;
 
 	typedef struct {
-		Header header;
 		uint8_t user_data[CDROM_MODE1_DATA_LENGTH];
 		uint8_t edc[CDROM_EDC_LENGTH];
 		uint8_t padding[CDROM_PAD_LENGTH];
 		uint8_t ecc[CDROM_ECC_LENGTH];
+	} Mode1SectorBody;
+
+	typedef struct {
+		Header header;
+		Mode1SectorBody body;
 	} Mode1Sector;
 
 	typedef struct {
-		Header header;
 		uint8_t user_data[CDROM_MODE2_DATA_LENGTH];
-	} Mode2Sector;
+	} Mode2SectorBody;
 
 	typedef struct {
 		Header header;
+		Mode2SectorBody body;
+	} Mode2Sector;
+
+	typedef struct {
 		XASubheader header_1;
 		XASubheader header_2;
 		uint8_t user_data[CDROM_MODE2_FORM_1_DATA_LENGTH];
 		uint8_t optional_edc[CDROM_EDC_LENGTH];
-	} Mode2Form1Sector;
+	} Mode2Form1SectorBody;
 
 	typedef struct {
 		Header header;
+		Mode2Form1SectorBody body;
+	} Mode2Form1Sector;
+
+	typedef struct {
 		XASubheader header_1;
 		XASubheader header_2;
 		uint8_t user_data[CDROM_MODE2_FORM_2_DATA_LENGTH];
 		uint8_t edc[CDROM_EDC_LENGTH];
 		uint8_t p_parity[CDROM_P_PARITY_LENGTH];
 		uint8_t q_parity[CDROM_Q_PARITY_LENGTH];
+	} Mode2Form2SectorBody;
+
+	typedef struct {
+		Header header;
+		Mode2Form2SectorBody body;
 	} Mode2Form2Sector;
 
 	typedef struct {
 		Header header;
+		union {
+			Mode1SectorBody mode1;
+			Mode2SectorBody mode2;
+		} body;
 	} CDROMSector;
 
 	typedef struct {
 		Header header;
-		XASubheader header_1;
-		XASubheader header_2;
+		union {
+			Mode2Form1SectorBody mode2form1;
+			Mode2Form2SectorBody mode2form2;
+		} body;
 	} CDXASector;
 
 	#pragma pack(pop)
@@ -749,9 +771,9 @@ auto get_track_type_ex(HANDLE handle, const CDROM_TOC_FULL &toc, int index)
 	} else if (session_type == cd::SessionType::CDXA_OR_DDCD) {
 		auto sector = CD_SECTOR_DATA();
 		read_sector_sptd(handle, sector, iso9660::PrimaryVolumeDescriptorSector);
-		auto &cdxa_sector = *(cdrom::CDXASector*)(void*)&sector.data;
+		auto &cdxa_sector = *(cdrom::Mode2Form1Sector*)(void*)&sector.data;
 		if (cdxa_sector.header.mode == 2) {
-			if (cdxa_sector.header_1.form_2 == 0) {
+			if (cdxa_sector.body.header_1.form_2 == 0) {
 				return TrackTypeEx::DATA_MODE_2_FORM_1;
 			} else {
 				return TrackTypeEx::DATA_MODE_2_FORM_2;
@@ -1385,6 +1407,7 @@ auto save(int argc, char **argv)
 	auto max_audio_read_passes = 8;
 	auto split_tracks = false;
 	auto add_wave_headers = false;
+	auto complete_data_sectors = false;
 	auto unrecognized_arguments = std::vector<char*>();
 	auto positional_index = 0;
 	for (auto i = 2; i < argc; i += 1) {
@@ -1484,6 +1507,16 @@ auto save(int argc, char **argv)
 			} else {
 				unrecognized_arguments.push_back(argument);
 			}
+		} else if (strstr(argument, "--complete-data-sectors=") == argument) {
+			auto value = argument + sizeof("--complete-data-sectors=") - 1;
+			if (false) {
+			} else if (strcmp(value, "false") == 0) {
+				complete_data_sectors = false;
+			} else if (strcmp(value, "true") == 0) {
+				complete_data_sectors = true;
+			} else {
+				unrecognized_arguments.push_back(argument);
+			}
 		} else if (positional_index == 0) {
 			auto value = argument;
 			auto value_length = strlen(value);
@@ -1537,6 +1570,8 @@ auto save(int argc, char **argv)
 		fprintf(stderr, "\t\tStore tracks as separate files when format is BIN/CUE (false by default).\n");
 		fprintf(stderr, "\t--add-wave-headers=boolean\n");
 		fprintf(stderr, "\t\tAdd wave headers to audio tracks when format is BIN/CUE (false by default).\n");
+		fprintf(stderr, "\t--complete-data-sectors=boolean\n");
+		fprintf(stderr, "\t\tStore complete sectors for data tracks (true by default).\n");
 		throw EXIT_FAILURE;
 	} else {
 		auto handle = get_cdrom_handle(drive_argument.value());
@@ -1574,6 +1609,20 @@ auto save(int argc, char **argv)
 		} else if (session_type == cd::SessionType::CDXA_OR_DDCD) {
 			fprintf(stderr, "Disc contains a CDXA or DDCD session\n");
 		}
+		auto data_offset = size_t(0);
+		auto data_length = size_t(CD_SECTOR_LENGTH);
+		if (!complete_data_sectors) {
+			data_length = CDROM_MODE1_DATA_LENGTH;
+			if (session_type == cd::SessionType::CDDA_OR_CDROM) {
+				data_offset = offsetof(cdrom::CDROMSector, body) + offsetof(cdrom::Mode1SectorBody, user_data);
+			} else if (session_type == cd::SessionType::CDI) {
+				throw EXIT_FAILURE;
+			} else if (session_type == cd::SessionType::CDXA_OR_DDCD) {
+				data_offset = offsetof(cdrom::CDXASector, body) + offsetof(cdrom::Mode2Form1SectorBody, user_data);
+			}
+		}
+		fprintf(stderr, "Data track sector offset is %llu\n", data_offset);
+		fprintf(stderr, "Data track sector length is %llu\n", data_length);
 		{
 			auto mode_sense = ModeSense2();
 			sptd_mode_sense2(handle, mode_sense);
@@ -1708,7 +1757,7 @@ auto save(int argc, char **argv)
 				for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
 					try {
 						read_sector_sptd(handle, cd_sector, sector_index);
-						auto outcome = image_format->write_sector_data(current_track, cd_sector.data, CD_SECTOR_LENGTH);
+						auto outcome = image_format->write_sector_data(current_track, cd_sector.data + data_offset, data_length);
 						if (!outcome) {
 							fprintf(stderr, "Error writing sector data %lu to file!\n", sector_index);
 							throw EXIT_FAILURE;
@@ -1723,7 +1772,7 @@ auto save(int argc, char **argv)
 					} catch (...) {
 						fprintf(stderr, "Error reading sector %lu!\n", sector_index);
 						bad_sector_numbers.push_back(sector_index);
-						auto outcome = image_format->write_sector_data(current_track, empty_cd_sector.data, CD_SECTOR_LENGTH);
+						auto outcome = image_format->write_sector_data(current_track, empty_cd_sector.data + data_offset, data_length);
 						if (!outcome) {
 							fprintf(stderr, "Error writing sector data %lu to file!\n", sector_index);
 							throw EXIT_FAILURE;
