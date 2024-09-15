@@ -11,7 +11,6 @@ Utility for interfacing with optical drives. Written for the Windows platform.
 * Handle read errors during audio track extraction.
 * Add separate retry count for audio tracks.
 * Fix mode writing for BIN/CUE writer.
-* Fix issue with subchannel offset detection.
 * Add ignore read error setting (data tracks only).
 * Prevent reading into end of data tracks when read offset correction is negative.
 * Parse ISO9660 and display filename on read error.
