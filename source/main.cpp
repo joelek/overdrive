@@ -1179,7 +1179,7 @@ namespace wave {
 class BINCUEImageFormat: ImageFormat {
 	public:
 
-	BINCUEImageFormat(const std::string& directory, const std::string& filename, bool split_tracks, bool add_wave_headers): ImageFormat() {
+	BINCUEImageFormat(const std::string& directory, const std::string& filename, bool split_tracks, bool add_wave_headers, bool complete_data_sectors): ImageFormat() {
 		auto target_path_cue = directory + filename + ".cue";
 		auto target_handle_cue = fopen(target_path_cue.c_str(), "wb+");
 		if (target_handle_cue == nullptr) {
@@ -1188,6 +1188,7 @@ class BINCUEImageFormat: ImageFormat {
 		}
 		this->split_tracks = split_tracks;
 		this->add_wave_headers = add_wave_headers;
+		this->complete_data_sectors = complete_data_sectors;
 		this->directory = directory;
 		this->filename = filename;
 		this->target_handle_cue = target_handle_cue;
@@ -1228,7 +1229,7 @@ class BINCUEImageFormat: ImageFormat {
 				auto extension = this->add_wave_headers && current_track_type == TrackType::AUDIO ? ".wav" : ".bin";
 				auto tag = this->add_wave_headers && current_track_type == TrackType::AUDIO ? "WAVE" : "BINARY";
 				fprintf(this->target_handle_cue, "FILE \"%s_%.2i%s\" %s\n", this->filename.c_str(), track_number, extension, tag);
-				fprintf(this->target_handle_cue, "\tTRACK %.2i %s\n", track_number, current_track_type == TrackType::AUDIO ? "AUDIO" : "MODE1/2352");
+				fprintf(this->target_handle_cue, "\tTRACK %.2i %s\n", track_number, current_track_type == TrackType::AUDIO ? "AUDIO" : this->complete_data_sectors ? "MODE1/2352" : "MODE1/2048");
 				auto track_pregap_sectors = track_pregap_sectors_list.at(track_number - 1);
 				auto track_pregap_sectors_to_write = track_number == toc.FirstTrack ? 0 : track_pregap_sectors;
 				auto pregap_address = get_address_for_sector(track_pregap_sectors_to_write);
@@ -1242,7 +1243,7 @@ class BINCUEImageFormat: ImageFormat {
 			for (auto track_number = toc.FirstTrack; track_number <= toc.LastTrack; track_number += 1) {
 				auto &current_track = toc.TrackData[track_number - 1];
 				auto current_track_type = get_track_type(current_track);
-				fprintf(this->target_handle_cue, "\tTRACK %.2i %s\n", track_number, current_track_type == TrackType::AUDIO ? "AUDIO" : "MODE1/2352");
+				fprintf(this->target_handle_cue, "\tTRACK %.2i %s\n", track_number, current_track_type == TrackType::AUDIO ? "AUDIO" : this->complete_data_sectors ? "MODE1/2352" : "MODE1/2048");
 				auto track_pregap_sectors = track_pregap_sectors_list.at(track_number - 1);
 				auto track_length_sectors = track_length_sectors_list.at(track_number - 1);
 				auto track_pregap_sectors_to_write = track_number == toc.FirstTrack ? 0 : track_pregap_sectors;
@@ -1327,6 +1328,7 @@ class BINCUEImageFormat: ImageFormat {
 
 	bool split_tracks;
 	bool add_wave_headers;
+	bool complete_data_sectors;
 	std::string directory;
 	std::string filename;
 	FILE* target_handle_cue;
@@ -1334,12 +1336,12 @@ class BINCUEImageFormat: ImageFormat {
 	TRACK_DATA current_track;
 };
 
-auto get_image_format(FileFormat format, const std::string& directory, const std::string& filename, bool split_tracks, bool add_wave_headers)
+auto get_image_format(FileFormat format, const std::string& directory, const std::string& filename, bool split_tracks, bool add_wave_headers, bool complete_data_sectors)
 -> std::shared_ptr<ImageFormat> {
 	if (format == FileFormat::MDF_MDS) {
 		return std::shared_ptr<ImageFormat>((ImageFormat*)new MDSImageFormat(directory, filename));
 	}
-	return std::shared_ptr<ImageFormat>((ImageFormat*)new BINCUEImageFormat(std::string(directory), std::string(filename), split_tracks, add_wave_headers));
+	return std::shared_ptr<ImageFormat>((ImageFormat*)new BINCUEImageFormat(std::string(directory), std::string(filename), split_tracks, add_wave_headers, complete_data_sectors));
 }
 
 auto from_bcd(UCHAR byte)
@@ -1663,7 +1665,7 @@ auto save(int argc, char **argv)
 				throw EXIT_FAILURE;
 			}
 		}
-		auto image_format = get_image_format(format, directory, filename, split_tracks, add_wave_headers);
+		auto image_format = get_image_format(format, directory, filename, split_tracks, add_wave_headers, complete_data_sectors);
 		auto &first_track = toc.TrackData[toc.FirstTrack - 1];
 		auto &lead_out_track = toc.TrackData[toc.LastTrack + 1 - 1];
 		auto track_count = toc.LastTrack - toc.FirstTrack + 1;
