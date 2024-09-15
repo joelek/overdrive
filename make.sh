@@ -23,6 +23,7 @@ SOURCES=(
 	"accuraterip"
 	"cdb"
 	"idiv"
+	"iso9660"
 )
 
 TARGETS=(
