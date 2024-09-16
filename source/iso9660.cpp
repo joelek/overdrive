@@ -35,23 +35,30 @@ namespace iso9660 {
 			while (buffer_offset < buffer_offset + fse.length_bytes) {
 				auto& deh = *reinterpret_cast<DirectoryEntryHeader*>(buffer_offset);
 				auto record_length = deh.length;
+				if (record_length > 0) {
+					record_length += deh.extended_record_length;
+					auto identifier = std::string(reinterpret_cast<char*>(&deh) + sizeof(DirectoryEntryHeader), deh.identifier_length);
+					if (identifier != CURRENT_DIRECTORY_IDENTIFIER && identifier != PARENT_DIRECTORY_IDENTIFIER) {
+						auto is_directory = deh.flags.directory == 1;
+						auto first_sector = deh.extent_sector_le;
+						auto length_bytes = deh.data_length_le;
+						auto parent_first_sector = std::optional<size_t>(fse.first_sector);
+						fses.push_back({
+							identifier,
+							is_directory,
+							first_sector,
+							length_bytes,
+							parent_first_sector
+						});
+					}
+				} else {
+					auto bytes_parsed = fse.length_bytes - buffer_length;
+					auto next_sector = idiv::ceil(bytes_parsed, 2048) * 2048;
+					auto skip_bytes = next_sector - bytes_parsed;
+					record_length = skip_bytes;
+				}
 				if (record_length == 0) {
 					break;
-				}
-				record_length += deh.extended_record_length;
-				auto identifier = std::string(reinterpret_cast<char*>(&deh) + sizeof(DirectoryEntryHeader), deh.identifier_length);
-				if (identifier != CURRENT_DIRECTORY_IDENTIFIER && identifier != PARENT_DIRECTORY_IDENTIFIER) {
-					auto is_directory = deh.flags.directory == 1;
-					auto first_sector = deh.extent_sector_le;
-					auto length_bytes = deh.data_length_le;
-					auto parent_first_sector = std::optional<size_t>(fse.first_sector);
-					fses.push_back({
-						identifier,
-						is_directory,
-						first_sector,
-						length_bytes,
-						parent_first_sector
-					});
 				}
 				buffer_offset += record_length;
 				buffer_length -= record_length;
