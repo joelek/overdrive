@@ -1382,7 +1382,7 @@ auto get_subchannel_offset(HANDLE handle)
 					throw EXIT_FAILURE;
 				}
 				if (delta_lba_index > 0) {
-					if (delta_lbas[delta_lba_index] != delta_lba) {
+					if (delta_lbas[delta_lba_index - 1] != delta_lba) {
 						throw EXIT_FAILURE;
 					}
 				}
@@ -1409,7 +1409,7 @@ auto get_subchannel_offset(HANDLE handle)
 					throw EXIT_FAILURE;
 				}
 				if (delta_lba_index > 0) {
-					if (delta_lbas[delta_lba_index] != delta_lba) {
+					if (delta_lbas[delta_lba_index - 1] != delta_lba) {
 						throw EXIT_FAILURE;
 					}
 				}
