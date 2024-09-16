@@ -32,7 +32,8 @@ namespace iso9660 {
 			auto buffer = read_file_system_entry(read_user_data, fse);
 			auto buffer_offset = buffer.data();
 			auto buffer_length = fse.length_bytes;
-			while (buffer_offset < buffer_offset + fse.length_bytes) {
+			auto buffer_offset_end = buffer_offset + buffer_length;
+			while (buffer_offset < buffer_offset_end) {
 				auto& deh = *reinterpret_cast<DirectoryEntryHeader*>(buffer_offset);
 				auto record_length = deh.length;
 				if (record_length > 0) {
