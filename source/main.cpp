@@ -19,6 +19,7 @@
 #include "accuraterip.h"
 #include "idiv.h"
 #include "cdb.h"
+#include "iso9660.h"
 
 #define APP_NAME "Disc Reader"
 #define APP_VERSION "0.0.0"
@@ -744,10 +745,6 @@ enum class TrackTypeEx {
 	DATA_MODE_2_FORM_2
 };
 
-namespace iso9660 {
-	const unsigned int PrimaryVolumeDescriptorSector = 16;
-};
-
 auto get_track_type_ex(HANDLE handle, const CDROM_TOC_FULL &toc, int index)
 -> TrackTypeEx {
 	auto &track = toc.TrackDescriptors[index];
@@ -758,7 +755,7 @@ auto get_track_type_ex(HANDLE handle, const CDROM_TOC_FULL &toc, int index)
 			return TrackTypeEx::AUDIO;
 		} else {
 			auto sector = CD_SECTOR_DATA();
-			read_sector_sptd(handle, sector, iso9660::PrimaryVolumeDescriptorSector);
+			read_sector_sptd(handle, sector, iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR);
 			auto &cdrom_sector = *(cdrom::CDROMSector*)(void*)&sector.data;
 			if (cdrom_sector.header.mode == 0) {
 				return TrackTypeEx::DATA_MODE_0;
@@ -770,7 +767,7 @@ auto get_track_type_ex(HANDLE handle, const CDROM_TOC_FULL &toc, int index)
 		}
 	} else if (session_type == cd::SessionType::CDXA_OR_DDCD) {
 		auto sector = CD_SECTOR_DATA();
-		read_sector_sptd(handle, sector, iso9660::PrimaryVolumeDescriptorSector);
+		read_sector_sptd(handle, sector, iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR);
 		auto &cdxa_sector = *(cdrom::Mode2Form1Sector*)(void*)&sector.data;
 		if (cdxa_sector.header.mode == 2) {
 			if (cdxa_sector.body.header_1.form_2 == 0) {
@@ -1712,8 +1709,8 @@ auto save(int argc, char **argv)
 				fprintf(stderr, "Current track contains audio\n");
 				auto start_offset_bytes = (first_sector * CD_SECTOR_LENGTH) + read_offset_correction_bytes;
 				auto end_offset_bytes = (last_sector * CD_SECTOR_LENGTH) + read_offset_correction_bytes;
-				auto adjusted_first_sector = idiv_floor(start_offset_bytes, CD_SECTOR_LENGTH);
-				auto adjusted_last_sector = idiv_ceil(end_offset_bytes, CD_SECTOR_LENGTH);
+				auto adjusted_first_sector = idiv::floor(start_offset_bytes, CD_SECTOR_LENGTH);
+				auto adjusted_last_sector = idiv::ceil(end_offset_bytes, CD_SECTOR_LENGTH);
 				auto adjusted_track_length_sectors = adjusted_last_sector - adjusted_first_sector;
 				fprintf(stderr, "Extracting %i sectors from %i to %i\n", adjusted_track_length_sectors, adjusted_first_sector, adjusted_last_sector - 1);
 				auto track_data = std::vector<uint8_t>(adjusted_track_length_sectors * CD_SECTOR_LENGTH);

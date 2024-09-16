@@ -1,8 +1,16 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
+#include <map>
+#include <string>
+#include <vector>
 
 namespace iso9660 {
+	const auto PRIMARY_VOLUME_DESCRIPTOR_SECTOR = size_t(16);
+	const auto CURRENT_DIRECTORY_IDENTIFIER = std::string("\0", 1);
+	const auto PARENT_DIRECTORY_IDENTIFIER = std::string("\1", 1);
+
 	#pragma pack(push, 1)
 
 	typedef struct {
@@ -116,4 +124,26 @@ namespace iso9660 {
 	} PrimaryVolumeDescriptor;
 
 	#pragma pack(pop)
+
+	struct FileSystemEntry {
+		std::string identifier;
+		bool is_directory;
+		size_t first_sector;
+		size_t length_bytes;
+	};
+
+	class FileSystem {
+		public:
+
+		FileSystem(const std::function<void(size_t sector, void* user_data)>& read_user_data);
+/*
+		auto list_directory_entries(const FileSystemEntry& entry) -> const std::vector<FileSystemEntry>&;
+		auto list_directory_entries() -> const std::vector<FileSystemEntry>&;
+ */
+		protected:
+
+		size_t first_sector;
+		std::map<size_t, FileSystemEntry> entries;
+		std::map<size_t, std::vector<size_t>> children;
+	};
 }
