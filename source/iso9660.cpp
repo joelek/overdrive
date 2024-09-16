@@ -44,11 +44,13 @@ namespace iso9660 {
 					auto is_directory = deh.flags.directory == 1;
 					auto first_sector = deh.extent_sector_le;
 					auto length_bytes = deh.data_length_le;
+					auto parent_first_sector = std::optional<size_t>(fse.first_sector);
 					fses.push_back({
 						identifier,
 						is_directory,
 						first_sector,
-						length_bytes
+						length_bytes,
+						parent_first_sector
 					});
 				}
 				buffer_offset += record_length;
@@ -61,16 +63,14 @@ namespace iso9660 {
 			const std::function<void(size_t sector, void* user_data)>& read_user_data,
 			const FileSystemEntry& fse,
 			std::map<size_t, FileSystemEntry>& entries,
-			std::map<size_t, std::vector<size_t>>& children
+			std::map<size_t, std::vector<FileSystemEntry>>& children
 		) -> void {
 			if (fse.is_directory) {
 				auto fses = internal::read_file_system_entries(read_user_data, fse);
-				auto first_sectors = std::vector<size_t>();
 				for (const auto& fse : fses) {
 					populate_directory_entries(read_user_data, fse, entries, children);
-					first_sectors.push_back(fse.first_sector);
 				}
-				children[fse.first_sector] = std::move(first_sectors);
+				children[fse.first_sector] = std::move(fses);
 			}
 			entries[fse.first_sector] = fse;
 		}
@@ -87,31 +87,47 @@ namespace iso9660 {
 		auto is_directory = deh.flags.directory == 1;
 		auto first_sector = deh.extent_sector_le;
 		auto length_bytes = deh.data_length_le;
+		auto parent_first_sector = std::optional<size_t>();
 		auto root = FileSystemEntry({
 			identifier,
 			is_directory,
 			first_sector,
-			length_bytes
+			length_bytes,
+			parent_first_sector
 		});
 		this->first_sector = first_sector;
 		internal::populate_directory_entries(read_user_data, root, this->entries, this->children);
-
-
-
-
-		for (const auto& e : this->entries) {
-			fprintf(stderr, "%i %s\n", e.first, e.second.identifier.c_str());
-		}
-		for (const auto& e : this->children) {
-			fprintf(stderr, "%i %i\n", e.first, e.second.size());
-		}
-	}
-/*
-	auto FileSystem::list_directory_entries() -> const std::vector<FileSystemEntry>& {
-
 	}
 
-	auto FileSystem::list_directory_entries(const FileSystemEntry& entry) -> const std::vector<FileSystemEntry>& {
+	auto FileSystem::get_entry_at_sector(
+		size_t sector
+	) -> std::optional<FileSystemEntry> {
+		for (const auto& entry : this->entries) {
+			auto& fse = entry.second;
+			auto length_sectors = idiv::ceil(fse.length_bytes, 2048);
+			if (sector >= fse.first_sector && sector < fse.first_sector + length_sectors) {
+				return fse;
+			}
+		}
+		return std::optional<FileSystemEntry>();
+	}
 
-	} */
+	auto FileSystem::get_root_directory_entry(
+	) -> const FileSystemEntry& {
+		auto iterator = this->entries.find(this->first_sector);
+		if (iterator == this->entries.end()) {
+			throw EXIT_FAILURE;
+		}
+		return iterator->second;
+	}
+
+	auto FileSystem::list_directory_entries(
+		const FileSystemEntry& entry
+	) -> const std::vector<FileSystemEntry>& {
+		auto iterator = this->children.find(entry.first_sector);
+		if (iterator == this->children.end()) {
+			throw EXIT_FAILURE;
+		}
+		return iterator->second;
+	}
 }

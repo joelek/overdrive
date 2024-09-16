@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <functional>
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -130,20 +131,22 @@ namespace iso9660 {
 		bool is_directory;
 		size_t first_sector;
 		size_t length_bytes;
+		std::optional<size_t> parent_first_sector;
 	};
 
 	class FileSystem {
 		public:
 
 		FileSystem(const std::function<void(size_t sector, void* user_data)>& read_user_data);
-/*
+
+		auto get_entry_at_sector(size_t sector) -> std::optional<FileSystemEntry>;
+		auto get_root_directory_entry() -> const FileSystemEntry&;
 		auto list_directory_entries(const FileSystemEntry& entry) -> const std::vector<FileSystemEntry>&;
-		auto list_directory_entries() -> const std::vector<FileSystemEntry>&;
- */
+
 		protected:
 
 		size_t first_sector;
 		std::map<size_t, FileSystemEntry> entries;
-		std::map<size_t, std::vector<size_t>> children;
+		std::map<size_t, std::vector<FileSystemEntry>> children;
 	};
 }
