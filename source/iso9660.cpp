@@ -70,17 +70,21 @@ namespace iso9660 {
 		auto populate_directory_entries(
 			const std::function<void(size_t sector, void* user_data)>& read_user_data,
 			const FileSystemEntry& fse,
+			std::vector<FileSystemEntry> ancestors,
 			std::map<size_t, FileSystemEntry>& entries,
-			std::map<size_t, std::vector<FileSystemEntry>>& children
+			std::map<size_t, std::vector<FileSystemEntry>>& children,
+			std::map<size_t, std::vector<FileSystemEntry>>& hierarchies
 		) -> void {
+			ancestors.push_back(fse);
 			if (fse.is_directory) {
 				auto fses = internal::read_file_system_entries(read_user_data, fse);
 				for (const auto& fse : fses) {
-					populate_directory_entries(read_user_data, fse, entries, children);
+					populate_directory_entries(read_user_data, fse, ancestors, entries, children, hierarchies);
 				}
 				children[fse.first_sector] = std::move(fses);
 			}
 			entries[fse.first_sector] = fse;
+			hierarchies[fse.first_sector] = std::move(ancestors);
 		}
 	}
 
@@ -104,7 +108,8 @@ namespace iso9660 {
 			parent_first_sector
 		});
 		this->first_sector = first_sector;
-		internal::populate_directory_entries(read_user_data, root, this->entries, this->children);
+		auto ancestors = std::vector<FileSystemEntry>();
+		internal::populate_directory_entries(read_user_data, root, ancestors, this->entries, this->children, this->hierarchies);
 	}
 
 	auto FileSystem::get_entry_at_sector(
@@ -118,6 +123,16 @@ namespace iso9660 {
 			}
 		}
 		return std::optional<FileSystemEntry>();
+	}
+
+	auto FileSystem::get_entry_hierarchy(
+		const FileSystemEntry& entry
+	) -> const std::vector<FileSystemEntry>& {
+		auto iterator = this->hierarchies.find(entry.first_sector);
+		if (iterator == this->hierarchies.end()) {
+			throw EXIT_FAILURE;
+		}
+		return iterator->second;
 	}
 
 	auto FileSystem::get_root_directory_entry(

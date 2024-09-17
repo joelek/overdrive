@@ -1688,10 +1688,6 @@ auto save(int argc, char **argv)
 		auto bad_sector_numbers = std::vector<int>();
 		auto empty_cd_sector = CD_SECTOR_DATA();
 		auto cd_sector = CD_SECTOR_DATA();
-		auto file_system = iso9660::FileSystem([&](size_t sector, void* user_data) -> void {
-			read_sector_sptd(handle, cd_sector, sector);
-			std::memcpy(user_data, cd_sector.data + data_offset, CDROM_MODE1_DATA_LENGTH);
-		});
 		auto start_ms = get_timestamp_ms();
 		for (auto i = toc.FirstTrack; i <= toc.LastTrack; i += 1) {
 			fprintf(stderr, "Processing track %u\n", i);
@@ -1786,6 +1782,10 @@ auto save(int argc, char **argv)
 				}
 			} else {
 				fprintf(stderr, "Current track contains data\n");
+				auto file_system = iso9660::FileSystem([&](size_t sector, void* user_data) -> void {
+					read_sector_sptd(handle, cd_sector, sector);
+					std::memcpy(user_data, cd_sector.data + data_offset, CDROM_MODE1_DATA_LENGTH);
+				});
 				fprintf(stderr, "Extracting %lu sectors from %lu to %lu\n", track_length_sectors, first_sector, last_sector - 1);
 				for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
 					try {
@@ -1806,8 +1806,21 @@ auto save(int argc, char **argv)
 						fprintf(stderr, "Error reading sector %lu!\n", sector_index);
 						auto entry = file_system.get_entry_at_sector(sector_index);
 						if (entry) {
-							auto identifier = entry->identifier;
+							auto& entries = file_system.get_entry_hierarchy(*entry);
+							auto identifier = std::string(drive_argument.value()) + ":";
+							for (const auto& entry : entries) {
+								if (entry.identifier == iso9660::CURRENT_DIRECTORY_IDENTIFIER) {
+									continue;
+								}
+								if (entry.identifier == iso9660::PARENT_DIRECTORY_IDENTIFIER) {
+									continue;
+								}
+								identifier += "\\";
+								identifier += std::string(entry.identifier);
+							}
 							fprintf(stderr, "Sector belongs to \"%s\"\n", identifier.c_str());
+						} else {
+							fprintf(stderr, "Sector does not belong to specific file.\n");
 						}
 						bad_sector_numbers.push_back(sector_index);
 						auto outcome = image_format->write_sector_data(current_track, empty_cd_sector.data + data_offset, data_length);

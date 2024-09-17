@@ -140,6 +140,7 @@ namespace iso9660 {
 		FileSystem(const std::function<void(size_t sector, void* user_data)>& read_user_data);
 
 		auto get_entry_at_sector(size_t sector) -> std::optional<FileSystemEntry>;
+		auto get_entry_hierarchy(const FileSystemEntry& entry) -> const std::vector<FileSystemEntry>&;
 		auto get_root_directory_entry() -> const FileSystemEntry&;
 		auto list_directory_entries(const FileSystemEntry& entry) -> const std::vector<FileSystemEntry>&;
 
@@ -148,5 +149,6 @@ namespace iso9660 {
 		size_t first_sector;
 		std::map<size_t, FileSystemEntry> entries;
 		std::map<size_t, std::vector<FileSystemEntry>> children;
+		std::map<size_t, std::vector<FileSystemEntry>> hierarchies;
 	};
 }
