@@ -7,7 +7,7 @@ else
 	exit 1
 fi
 
-COMPILER_OPTIONS="-std=c++17 -shared-libgcc -pedantic -Wall -Wextra -O3"
+COMPILER_OPTIONS="-std=c++17 -static -pedantic -Wall -Wextra -O3"
 
 if [ $1 = "debug" ]; then
 	echo "[configuration: debug]"
