@@ -1421,6 +1421,7 @@ auto get_subchannel_offset(HANDLE handle)
 			return offsetof(CD_SECTOR_DATA_ALT, subchannel_data);
 		}
 	} catch (...) {}
+	fprintf(stderr, "Subchannel offset detection failed!\n");
 	throw EXIT_FAILURE;
 }
 
