@@ -12,6 +12,7 @@ namespace type {
 	typedef int64_t si64;
 	typedef uint64_t ui64;
 	typedef bool flag;
+	typedef uint8_t byte;
 	typedef float fp32;
 	typedef double fp64;
 	typedef char ch08;
