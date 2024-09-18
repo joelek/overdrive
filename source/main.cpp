@@ -1366,8 +1366,11 @@ auto to_bcd(UCHAR byte)
 
 auto get_subchannel_offset(HANDLE handle)
 -> unsigned int {
+	fprintf(stderr, "Detecting subchannel offset\n");
 	auto sector = CD_SECTOR_DATA();
 	try {
+		auto offset = offsetof(CD_SECTOR_DATA, subchannel_data);
+		fprintf(stderr, "Testing subchannel offset %llu\n", offset);
 		int delta_lbas[10];
 		auto delta_lba_index = 0u;
 		for (auto target_lba = 0u; target_lba < 10u; target_lba += 1) {
@@ -1379,10 +1382,12 @@ auto get_subchannel_offset(HANDLE handle)
 				auto actual_lba = AddressToSectors2(from_bcd(q->mode1.absolute_m_bcd), from_bcd(q->mode1.absolute_s_bcd), from_bcd(q->mode1.absolute_f_bcd));
 				auto delta_lba = (int)target_lba - (int)actual_lba;
 				if (delta_lba < -10 || delta_lba > 10) {
+					fprintf(stderr, "The subchannel position difference of %i is too large\n", delta_lba);
 					throw EXIT_FAILURE;
 				}
 				if (delta_lba_index > 0) {
 					if (delta_lbas[delta_lba_index - 1] != delta_lba) {
+						fprintf(stderr, "The subchannel position difference is not consistent\n");
 						throw EXIT_FAILURE;
 					}
 				}
@@ -1390,11 +1395,14 @@ auto get_subchannel_offset(HANDLE handle)
 				delta_lba_index += 1;
 			}
 		}
-		if (delta_lba_index > 9) {
-			return offsetof(CD_SECTOR_DATA, subchannel_data);
+		fprintf(stderr, "Got %u identical subchannel position difference values\n", delta_lba_index);
+		if (delta_lba_index >= 9) {
+			return offset;
 		}
 	} catch (...) {}
 	try {
+		auto offset = offsetof(CD_SECTOR_DATA_ALT, subchannel_data);
+		fprintf(stderr, "Testing subchannel offset %llu\n", offset);
 		int delta_lbas[10];
 		auto delta_lba_index = 0u;
 		for (auto target_lba = 0u; target_lba < 10u; target_lba += 1) {
@@ -1406,10 +1414,12 @@ auto get_subchannel_offset(HANDLE handle)
 				auto actual_lba = AddressToSectors2(from_bcd(q->mode1.absolute_m_bcd), from_bcd(q->mode1.absolute_s_bcd), from_bcd(q->mode1.absolute_f_bcd));
 				auto delta_lba = (int)target_lba - (int)actual_lba;
 				if (delta_lba < -10 || delta_lba > 10) {
+					fprintf(stderr, "The subchannel position difference of %i is too large\n", delta_lba);
 					throw EXIT_FAILURE;
 				}
 				if (delta_lba_index > 0) {
 					if (delta_lbas[delta_lba_index - 1] != delta_lba) {
+						fprintf(stderr, "The subchannel position difference is not consistent\n");
 						throw EXIT_FAILURE;
 					}
 				}
@@ -1417,8 +1427,9 @@ auto get_subchannel_offset(HANDLE handle)
 				delta_lba_index += 1;
 			}
 		}
-		if (delta_lba_index > 9) {
-			return offsetof(CD_SECTOR_DATA_ALT, subchannel_data);
+		fprintf(stderr, "Got %u identical subchannel position difference values\n", delta_lba_index);
+		if (delta_lba_index >= 9) {
+			return offset;
 		}
 	} catch (...) {}
 	fprintf(stderr, "Subchannel offset detection failed!\n");
