@@ -24,6 +24,7 @@ SOURCES=(
 	"cdb"
 	"idiv"
 	"iso9660"
+	"type"
 )
 
 TARGETS=(
