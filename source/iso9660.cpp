@@ -1,5 +1,6 @@
 #include "iso9660.h"
 
+#include <array>
 #include <cstring>
 #include "idiv.h"
 
@@ -9,15 +10,15 @@ namespace iso9660 {
 			const std::function<void(size_t sector, void* user_data)>& read_user_data,
 			const FileSystemEntry& fse
 		) -> std::vector<uint8_t> {
-			uint8_t user_data[2048];
+			auto user_data = std::array<uint8_t, 2048>();
 			auto length_sectors = idiv::ceil(fse.length_bytes, 2048);
 			auto buffer = std::vector<uint8_t>(fse.length_bytes);
 			auto buffer_offset = buffer.data();
 			auto buffer_length = fse.length_bytes;
 			for (auto sector_index = fse.first_sector; sector_index < fse.first_sector + length_sectors; sector_index += 1) {
-				read_user_data(sector_index, user_data);
+				read_user_data(sector_index, user_data.data());
 				auto chunk_length = std::min<size_t>(buffer_length, 2048);
-				std::memcpy(buffer_offset, user_data, chunk_length);
+				std::memcpy(buffer_offset, user_data.data(), chunk_length);
 				buffer_offset += chunk_length;
 				buffer_length -= chunk_length;
 			}
@@ -91,9 +92,9 @@ namespace iso9660 {
 	FileSystem::FileSystem(
 		const std::function<void(size_t sector, void* user_data)>& read_user_data
 	) {
-		uint8_t user_data[2048];
-		read_user_data(PRIMARY_VOLUME_DESCRIPTOR_SECTOR, user_data);
-		auto& pvd = *reinterpret_cast<PrimaryVolumeDescriptor*>(user_data);
+		auto user_data = std::array<uint8_t, 2048>();
+		read_user_data(PRIMARY_VOLUME_DESCRIPTOR_SECTOR, user_data.data());
+		auto& pvd = *reinterpret_cast<PrimaryVolumeDescriptor*>(user_data.data());
 		auto& deh = pvd.root_directory_entry.header;
 		auto identifier = std::string(reinterpret_cast<char*>(&deh) + sizeof(DirectoryEntryHeader), deh.identifier_length);
 		auto is_directory = deh.flags.directory == 1;
