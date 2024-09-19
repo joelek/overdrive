@@ -4518,6 +4518,13 @@ const std::string CSV = std::string(
 
 namespace accuraterip {
 	namespace internal {
+		auto create_key(
+			const std::string& vendor,
+			const std::string& product
+		) -> std::string {
+			return utils::string::trim(vendor + " - " + product);
+		}
+
 		auto create_read_offset_correction_values(
 		) -> std::map<std::string, si_t> {
 			auto read_offset_correction_values = std::map<std::string, si_t>();
@@ -4528,7 +4535,7 @@ namespace accuraterip {
 					auto& vendor = tokens.at(0);
 					auto& product = tokens.at(1);
 					auto& rac = tokens.at(2);
-					auto key = utils::string::trim(vendor + " - " + product);
+					auto key = create_key(vendor, product);
 					read_offset_correction_values[key] = std::atoi(rac.c_str());
 				}
 			}
@@ -4545,7 +4552,7 @@ namespace accuraterip {
 		reference<array<8, constant<ch08_t>>> vendor,
 		reference<array<16, constant<ch08_t>>> product
 	) -> std::optional<si_t> {
-		auto key = utils::string::trim(std::string(vendor, sizeof(vendor)) + " - " + std::string(product, sizeof(product)));
+		auto key = internal::create_key(std::string(vendor, sizeof(vendor)), std::string(product, sizeof(product)));
 		auto iterator = this->read_offset_correction_values.find(key);
 		if (iterator != this->read_offset_correction_values.end()) {
 			return iterator->second;
