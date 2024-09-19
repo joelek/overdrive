@@ -12,7 +12,6 @@ Utility for interfacing with optical drives. Written for the Windows platform.
 * Add separate retry count for audio tracks.
 * Add ignore read error setting (data tracks only).
 * Prevent reading into end of data tracks when read offset correction is negative.
-* Bisect sector to entry lookup in ISO9660 module.
 
 ## Read offset correction
 
