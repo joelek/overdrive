@@ -122,6 +122,8 @@ namespace iso9660 {
 		PrimaryVolumeDescriptorTimestamp volume_effective_timestamp;
 		uint8_t file_structure_version = 1;
 		uint8_t : 8;
+		uint8_t application_data[512];
+		uint8_t reserved_by_iso[653];
 	};
 
 	#pragma pack(pop)
