@@ -48,6 +48,7 @@ echo "[phase: sources]"
 
 for i in ${SOURCES[@]}; do
 	echo "[compiling: source/$i.cpp]"
+	mkdir -p $(dirname "build/objects/$i.o")
 	gcc $COMPILER_OPTIONS -c source/$i.cpp -o build/objects/$i.o
 	RETURN_CODE=$?
 	if [ $RETURN_CODE -gt 0 ]; then
@@ -60,6 +61,7 @@ echo "[phase: targets]"
 
 for i in ${TARGETS[@]}; do
 	echo "[compiling: source/$i.cpp]"
+	mkdir -p $(dirname "build/targets/$i")
 	gcc $COMPILER_OPTIONS ${OBJECTS[@]} source/$i.cpp -o build/targets/$i -l stdc++
 	RETURN_CODE=$?
 	if [ $RETURN_CODE -gt 0 ]; then
