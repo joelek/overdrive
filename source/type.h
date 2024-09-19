@@ -18,6 +18,8 @@ namespace type {
 	typedef char ch08_t;
 	typedef char16_t ch16_t;
 	typedef char32_t ch32_t;
+	typedef int si_t;
+	typedef unsigned ui_t;
 
 	template <typename A> using pointer = A*;
 	template <typename A> using reference = A&;
