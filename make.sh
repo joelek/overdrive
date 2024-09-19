@@ -21,7 +21,7 @@ fi
 
 SOURCES=(
 	"accuraterip"
-	"cdb"
+	"scsi/cdb"
 	"idiv"
 	"iso9660"
 	"type"

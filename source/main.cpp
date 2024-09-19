@@ -18,7 +18,7 @@
 
 #include "accuraterip.h"
 #include "idiv.h"
-#include "cdb.h"
+#include "scsi/cdb.h"
 #include "iso9660.h"
 #include "utils.h"
 
