@@ -4519,8 +4519,8 @@ const std::string CSV = std::string(
 namespace accuraterip {
 	namespace internal {
 		auto create_read_offset_correction_values(
-		) -> std::map<std::string, int> {
-			auto read_offset_correction_values = std::map<std::string, int>();
+		) -> std::map<std::string, si_t> {
+			auto read_offset_correction_values = std::map<std::string, si_t>();
 			auto lines = utils::string::split(CSV, "\n");
 			for (const auto& line : lines) {
 				auto tokens = utils::string::split(line, ",");
@@ -4544,12 +4544,12 @@ namespace accuraterip {
 	auto Database::get_read_offset_correction_value(
 		reference<array<8, constant<ch08_t>>> vendor,
 		reference<array<16, constant<ch08_t>>> product
-	) -> std::optional<int> {
+	) -> std::optional<si_t> {
 		auto key = utils::string::trim(std::string(vendor, sizeof(vendor)) + " - " + std::string(product, sizeof(product)));
 		auto iterator = this->read_offset_correction_values.find(key);
 		if (iterator != this->read_offset_correction_values.end()) {
 			return iterator->second;
 		}
-		return std::optional<int>();
+		return std::optional<si_t>();
 	}
 }

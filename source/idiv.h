@@ -1,18 +1,22 @@
 #pragma once
 
+#include "type.h"
+
 namespace idiv {
+	using namespace type;
+
 	auto ceil(
-		int n,
-		int d
-	) -> int;
+		si_t n,
+		si_t d
+	) -> si_t;
 
 	auto floor(
-		int n,
-		int d
-	) -> int;
+		si_t n,
+		si_t d
+	) -> si_t;
 
 	auto round(
-		int n,
-		int d
-	) -> int;
+		si_t n,
+		si_t d
+	) -> si_t;
 }

@@ -10,10 +10,10 @@ namespace iso9660 {
 		auto read_file_system_entry(
 			const std::function<void(size_t sector, void* user_data)>& read_user_data,
 			const FileSystemEntry& fse
-		) -> std::vector<uint8_t> {
-			auto user_data = std::array<uint8_t, 2048>();
+		) -> std::vector<byte_t> {
+			auto user_data = std::array<byte_t, 2048>();
 			auto length_sectors = idiv::ceil(fse.length_bytes, 2048);
-			auto buffer = std::vector<uint8_t>(fse.length_bytes);
+			auto buffer = std::vector<byte_t>(fse.length_bytes);
 			auto buffer_offset = buffer.data();
 			auto buffer_length = fse.length_bytes;
 			for (auto sector_index = fse.first_sector; sector_index < fse.first_sector + length_sectors; sector_index += 1) {
@@ -117,7 +117,7 @@ namespace iso9660 {
 	FileSystem::FileSystem(
 		const std::function<void(size_t sector, void* user_data)>& read_user_data
 	) {
-		auto user_data = std::array<uint8_t, 2048>();
+		auto user_data = std::array<byte_t, 2048>();
 		read_user_data(PRIMARY_VOLUME_DESCRIPTOR_SECTOR, user_data.data());
 		auto& pvd = *reinterpret_cast<PrimaryVolumeDescriptor*>(user_data.data());
 		auto& deh = pvd.root_directory_entry.header;
@@ -137,7 +137,7 @@ namespace iso9660 {
 		internal::populate_directory_entries(read_user_data, root, ancestors, this->entries, this->children, this->hierarchies);
 		this->root = root;
 		// Sort in increasing order.
-		std::sort(this->entries.begin(), this->entries.end(), [](const FileSystemEntry& one, const FileSystemEntry& two) -> bool {
+		std::sort(this->entries.begin(), this->entries.end(), [](const FileSystemEntry& one, const FileSystemEntry& two) -> bool_t {
 			return one.first_sector < two.first_sector;
 		});
 	}

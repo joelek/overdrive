@@ -11,7 +11,7 @@ namespace type {
 	typedef uint32_t ui32_t;
 	typedef int64_t si64_t;
 	typedef uint64_t ui64_t;
-	typedef bool flag_t;
+	typedef bool bool_t;
 	typedef uint8_t byte_t;
 	typedef float fp32_t;
 	typedef double fp64_t;

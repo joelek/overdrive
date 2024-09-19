@@ -2,23 +2,23 @@
 
 namespace idiv {
 	auto ceil(
-		int n,
-		int d
-	) -> int {
+		si_t n,
+		si_t d
+	) -> si_t {
 		return n / d + (n % d != 0 && (n ^ d) > 0);
 	}
 
 	auto floor(
-		int n,
-		int d
-	) -> int {
+		si_t n,
+		si_t d
+	) -> si_t {
 		return n / d - (n % d != 0 && (n ^ d) < 0);
 	}
 
 	auto round(
-		int n,
-		int d
-	) -> int {
+		si_t n,
+		si_t d
+	) -> si_t {
 		return (n ^ d) < 0 ? (n - d / 2) / d : (n + d / 2) / d;
 	}
 }
