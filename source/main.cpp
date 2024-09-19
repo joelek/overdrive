@@ -1429,7 +1429,7 @@ auto get_subchannel_offset(HANDLE handle)
 auto save(int argc, char **argv)
 -> void {
 	auto subchannels = false;
-	auto directory = std::string(".\\");
+	auto directory = std::string(".\\private\\");
 	auto filename = std::string("image");
 	auto format = FileFormat::MDF_MDS;
 	auto drive_argument = std::optional<std::string>();
