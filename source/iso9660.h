@@ -14,7 +14,7 @@ namespace iso9660 {
 
 	#pragma pack(push, 1)
 
-	typedef struct {
+	struct DirectoryEntryTimestamp {
 		uint8_t years_since_1900;
 		uint8_t month_number;
 		uint8_t day_number;
@@ -22,9 +22,9 @@ namespace iso9660 {
 		uint8_t minutes;
 		uint8_t seconds;
 		int8_t time_zone_offset_quarter_hours;
-	} DirectoryEntryTimestamp;
+	};
 
-	typedef struct {
+	struct DirectoryEntryFlags {
 		uint8_t hidden: 1;
 		uint8_t directory: 1;
 		uint8_t associated: 1;
@@ -33,9 +33,9 @@ namespace iso9660 {
 		uint8_t : 1;
 		uint8_t : 1;
 		uint8_t final: 1;
-	} DirectoryEntryFlags;
+	};
 
-	typedef struct {
+	struct DirectoryEntryHeader {
 		uint8_t length;
 		uint8_t extended_record_length;
 		uint32_t extent_sector_le;
@@ -49,9 +49,9 @@ namespace iso9660 {
 		uint16_t volume_sequence_number_le;
 		uint16_t volume_sequence_number_be;
 		uint8_t identifier_length;
-	} DirectoryEntryHeader;
+	};
 
-	typedef struct {
+	struct PrimaryVolumeDescriptorTimestamp {
 		char year[4];
 		char month[2];
 		char day[2];
@@ -60,7 +60,7 @@ namespace iso9660 {
 		char second[2];
 		char hundredths[2];
 		int8_t time_zone_offset_quarter_hours;
-	} PrimaryVolumeDescriptorTimestamp;
+	};
 
 	enum class VolumeDescriptorType: uint8_t {
 		BOOT_RECORD = 0,
@@ -70,13 +70,13 @@ namespace iso9660 {
 		VOLUME_DESCRIPTOR_SET_TERMINATOR = 255
 	};
 
-	typedef struct {
+	struct VolumeDescriptorHeader {
 		VolumeDescriptorType type;
 		char identifier[5] = { 'C', 'D', '0', '0', '1' };
 		uint8_t version = 1;
-	} VolumeDescriptorHeader;
+	};
 
-	typedef struct {
+	struct PrimaryVolumeDescriptor {
 		VolumeDescriptorHeader header;
 		uint8_t : 8;
 		char system_identifier[32];
@@ -122,11 +122,13 @@ namespace iso9660 {
 		PrimaryVolumeDescriptorTimestamp volume_effective_timestamp;
 		uint8_t file_structure_version = 1;
 		uint8_t : 8;
-	} PrimaryVolumeDescriptor;
+	};
 
 	#pragma pack(pop)
 
-	struct FileSystemEntry {
+	class FileSystemEntry {
+		public:
+
 		std::string identifier;
 		bool is_directory;
 		size_t first_sector;
