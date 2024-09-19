@@ -24,6 +24,8 @@ namespace iso9660 {
 		int8_t time_zone_offset_quarter_hours;
 	};
 
+	static_assert(sizeof(DirectoryEntryTimestamp) == 7);
+
 	struct DirectoryEntryFlags {
 		uint8_t hidden: 1;
 		uint8_t directory: 1;
@@ -34,6 +36,8 @@ namespace iso9660 {
 		uint8_t : 1;
 		uint8_t final: 1;
 	};
+
+	static_assert(sizeof(DirectoryEntryFlags) == 1);
 
 	struct DirectoryEntryHeader {
 		uint8_t length;
@@ -51,6 +55,8 @@ namespace iso9660 {
 		uint8_t identifier_length;
 	};
 
+	static_assert(sizeof(DirectoryEntryHeader) == 33);
+
 	struct PrimaryVolumeDescriptorTimestamp {
 		char year[4];
 		char month[2];
@@ -62,6 +68,8 @@ namespace iso9660 {
 		int8_t time_zone_offset_quarter_hours;
 	};
 
+	static_assert(sizeof(PrimaryVolumeDescriptorTimestamp) == 17);
+
 	enum class VolumeDescriptorType: uint8_t {
 		BOOT_RECORD = 0,
 		PRIMARY_VOLUME_DESCRIPTOR = 1,
@@ -70,11 +78,15 @@ namespace iso9660 {
 		VOLUME_DESCRIPTOR_SET_TERMINATOR = 255
 	};
 
+	static_assert(sizeof(VolumeDescriptorType) == 1);
+
 	struct VolumeDescriptorHeader {
 		VolumeDescriptorType type;
 		char identifier[5] = { 'C', 'D', '0', '0', '1' };
 		uint8_t version = 1;
 	};
+
+	static_assert(sizeof(VolumeDescriptorHeader) == 7);
 
 	struct PrimaryVolumeDescriptor {
 		VolumeDescriptorHeader header;
@@ -125,6 +137,8 @@ namespace iso9660 {
 		uint8_t application_data[512];
 		uint8_t reserved_by_iso[653];
 	};
+
+	static_assert(sizeof(PrimaryVolumeDescriptor) == 2048);
 
 	#pragma pack(pop)
 
