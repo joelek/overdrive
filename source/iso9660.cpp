@@ -1,5 +1,6 @@
 #include "iso9660.h"
 
+#include <algorithm>
 #include <array>
 #include <cstring>
 #include "idiv.h"
@@ -72,7 +73,7 @@ namespace iso9660 {
 			const std::function<void(size_t sector, void* user_data)>& read_user_data,
 			const FileSystemEntry& fse,
 			std::vector<FileSystemEntry> ancestors,
-			std::map<size_t, FileSystemEntry>& entries,
+			std::vector<FileSystemEntry>& entries,
 			std::map<size_t, std::vector<FileSystemEntry>>& children,
 			std::map<size_t, std::vector<FileSystemEntry>>& hierarchies
 		) -> void {
@@ -84,29 +85,29 @@ namespace iso9660 {
 				}
 				children[fse.first_sector] = std::move(fses);
 			}
-			entries[fse.first_sector] = fse;
+			entries.push_back(fse);
 			hierarchies[fse.first_sector] = std::move(ancestors);
 		}
 
-		auto bisect_entries_values(
-			const std::vector<FileSystemEntry>& entries_values,
+		auto bisect_entries(
+			const std::vector<FileSystemEntry>& entries,
 			size_t lower_index_inclusive,
 			size_t upper_index_exclusive,
 			size_t sector
 		) -> std::optional<FileSystemEntry> {
 			if (lower_index_inclusive + 1 == upper_index_exclusive) {
-				auto& fse = entries_values.at(lower_index_inclusive);
+				auto& fse = entries.at(lower_index_inclusive);
 				auto length_sectors = idiv::ceil(fse.length_bytes, 2048);
 				if (sector >= fse.first_sector && sector < fse.first_sector + length_sectors) {
 					return fse;
 				}
 			} else if (lower_index_inclusive + 1 < upper_index_exclusive) {
 				auto pivot_index = (lower_index_inclusive + upper_index_exclusive) / 2;
-				auto& fse = entries_values.at(pivot_index);
+				auto& fse = entries.at(pivot_index);
 				if (sector < fse.first_sector) {
-					return bisect_entries_values(entries_values, lower_index_inclusive, pivot_index, sector);
+					return bisect_entries(entries, lower_index_inclusive, pivot_index, sector);
 				} else {
-					return bisect_entries_values(entries_values, pivot_index, upper_index_exclusive, sector);
+					return bisect_entries(entries, pivot_index, upper_index_exclusive, sector);
 				}
 			}
 			return std::optional<FileSystemEntry>();
@@ -134,35 +135,11 @@ namespace iso9660 {
 		});
 		auto ancestors = std::vector<FileSystemEntry>();
 		internal::populate_directory_entries(read_user_data, root, ancestors, this->entries, this->children, this->hierarchies);
-		this->first_sector = first_sector;
-		for (const auto& entry : this->entries) {
-			this->entries_values.push_back(entry.second);
-		}
-	}
-
-	auto FileSystem::get_entry_at_sector(
-		size_t sector
-	) -> std::optional<FileSystemEntry> {
-		return internal::bisect_entries_values(this->entries_values, 0, this->entries_values.size(), sector);
-	}
-
-	auto FileSystem::get_entry_hierarchy(
-		const FileSystemEntry& entry
-	) -> const std::vector<FileSystemEntry>& {
-		auto iterator = this->hierarchies.find(entry.first_sector);
-		if (iterator == this->hierarchies.end()) {
-			throw EXIT_FAILURE;
-		}
-		return iterator->second;
-	}
-
-	auto FileSystem::get_root_entry(
-	) -> const FileSystemEntry& {
-		auto iterator = this->entries.find(this->first_sector);
-		if (iterator == this->entries.end()) {
-			throw EXIT_FAILURE;
-		}
-		return iterator->second;
+		this->root = root;
+		// Sort in increasing order.
+		std::sort(this->entries.begin(), this->entries.end(), [](const FileSystemEntry& one, const FileSystemEntry& two) -> bool {
+			return one.first_sector < two.first_sector;
+		});
 	}
 
 	auto FileSystem::get_children(
@@ -173,5 +150,26 @@ namespace iso9660 {
 			throw EXIT_FAILURE;
 		}
 		return iterator->second;
+	}
+
+	auto FileSystem::get_entry(
+		size_t sector
+	) -> std::optional<FileSystemEntry> {
+		return internal::bisect_entries(this->entries, 0, this->entries.size(), sector);
+	}
+
+	auto FileSystem::get_hierarchy(
+		const FileSystemEntry& entry
+	) -> const std::vector<FileSystemEntry>& {
+		auto iterator = this->hierarchies.find(entry.first_sector);
+		if (iterator == this->hierarchies.end()) {
+			throw EXIT_FAILURE;
+		}
+		return iterator->second;
+	}
+
+	auto FileSystem::get_root(
+	) -> const FileSystemEntry& {
+		return this->root;
 	}
 }

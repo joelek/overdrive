@@ -141,27 +141,26 @@ namespace iso9660 {
 			const std::function<void(size_t sector, void* user_data)>& read_user_data
 		);
 
-		auto get_entry_at_sector(
-			size_t sector
-		) -> std::optional<FileSystemEntry>;
-
-		auto get_entry_hierarchy(
-			const FileSystemEntry& entry
-		) -> const std::vector<FileSystemEntry>&;
-
-		auto get_root_entry(
-		) -> const FileSystemEntry&;
-
 		auto get_children(
 			const FileSystemEntry& entry
 		) -> const std::vector<FileSystemEntry>&;
 
+		auto get_entry(
+			size_t sector
+		) -> std::optional<FileSystemEntry>;
+
+		auto get_hierarchy(
+			const FileSystemEntry& entry
+		) -> const std::vector<FileSystemEntry>&;
+
+		auto get_root(
+		) -> const FileSystemEntry&;
+
 		protected:
 
-		size_t first_sector;
-		std::map<size_t, FileSystemEntry> entries;
+		FileSystemEntry root;
+		std::vector<FileSystemEntry> entries;
 		std::map<size_t, std::vector<FileSystemEntry>> children;
 		std::map<size_t, std::vector<FileSystemEntry>> hierarchies;
-		std::vector<FileSystemEntry> entries_values;
 	};
 }

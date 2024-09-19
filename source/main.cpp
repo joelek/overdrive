@@ -1816,9 +1816,9 @@ auto save(int argc, char **argv)
 						}
 					} catch (...) {
 						fprintf(stderr, "Error reading sector %lu!\n", sector_index);
-						auto entry = file_system.get_entry_at_sector(sector_index);
+						auto entry = file_system.get_entry(sector_index);
 						if (entry) {
-							auto& entries = file_system.get_entry_hierarchy(*entry);
+							auto& entries = file_system.get_hierarchy(*entry);
 							auto identifier = std::string(drive_argument.value()) + ":";
 							for (const auto& entry : entries) {
 								if (entry.identifier == iso9660::CURRENT_DIRECTORY_IDENTIFIER) {
