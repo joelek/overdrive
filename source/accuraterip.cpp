@@ -4529,7 +4529,7 @@ namespace accuraterip {
 					auto& product = tokens.at(1);
 					auto& rac = tokens.at(2);
 					auto key = utils::string::trim(vendor + " - " + product);
-					read_offset_correction_values[key] = atoi(rac.c_str());
+					read_offset_correction_values[key] = std::atoi(rac.c_str());
 				}
 			}
 			return read_offset_correction_values;
