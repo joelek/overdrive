@@ -51,6 +51,7 @@ for i in ${SOURCES[@]}; do
 	gcc $COMPILER_OPTIONS -c source/$i.cpp -o build/objects/$i.o
 	RETURN_CODE=$?
 	if [ $RETURN_CODE -gt 0 ]; then
+		echo "[failure]"
 		exit 1;
 	fi
 done
@@ -62,8 +63,9 @@ for i in ${TARGETS[@]}; do
 	gcc $COMPILER_OPTIONS ${OBJECTS[@]} source/$i.cpp -o build/targets/$i -l stdc++
 	RETURN_CODE=$?
 	if [ $RETURN_CODE -gt 0 ]; then
+		echo "[failure]"
 		exit 1;
 	fi
 done
 
-echo "[done]"
+echo "[success]"
