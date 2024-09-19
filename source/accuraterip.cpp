@@ -4542,8 +4542,8 @@ namespace accuraterip {
 	}
 
 	auto Database::get_read_offset_correction_value(
-		reference<array<8, constant<ch08>>> vendor,
-		reference<array<16, constant<ch08>>> product
+		reference<array<8, constant<ch08_t>>> vendor,
+		reference<array<16, constant<ch08_t>>> product
 	) -> std::optional<int> {
 		auto key = utils::string::trim(std::string(vendor, sizeof(vendor)) + " - " + std::string(product, sizeof(product)));
 		auto iterator = this->read_offset_correction_values.find(key);
