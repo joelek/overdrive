@@ -87,6 +87,30 @@ namespace iso9660 {
 			entries[fse.first_sector] = fse;
 			hierarchies[fse.first_sector] = std::move(ancestors);
 		}
+
+		auto bisect_entries_values(
+			const std::vector<FileSystemEntry>& entries_values,
+			size_t lower_index_inclusive,
+			size_t upper_index_exclusive,
+			size_t sector
+		) -> std::optional<FileSystemEntry> {
+			if (lower_index_inclusive + 1 == upper_index_exclusive) {
+				auto& fse = entries_values.at(lower_index_inclusive);
+				auto length_sectors = idiv::ceil(fse.length_bytes, 2048);
+				if (sector >= fse.first_sector && sector < fse.first_sector + length_sectors) {
+					return fse;
+				}
+			} else if (lower_index_inclusive + 1 < upper_index_exclusive) {
+				auto pivot_index = (lower_index_inclusive + upper_index_exclusive) / 2;
+				auto& fse = entries_values.at(pivot_index);
+				if (sector < fse.first_sector) {
+					return bisect_entries_values(entries_values, lower_index_inclusive, pivot_index, sector);
+				} else {
+					return bisect_entries_values(entries_values, pivot_index, upper_index_exclusive, sector);
+				}
+			}
+			return std::optional<FileSystemEntry>();
+		}
 	}
 
 	FileSystem::FileSystem(
@@ -108,22 +132,18 @@ namespace iso9660 {
 			length_bytes,
 			parent_first_sector
 		});
-		this->first_sector = first_sector;
 		auto ancestors = std::vector<FileSystemEntry>();
 		internal::populate_directory_entries(read_user_data, root, ancestors, this->entries, this->children, this->hierarchies);
+		this->first_sector = first_sector;
+		for (const auto& entry : this->entries) {
+			this->entries_values.push_back(entry.second);
+		}
 	}
 
 	auto FileSystem::get_entry_at_sector(
 		size_t sector
 	) -> std::optional<FileSystemEntry> {
-		for (const auto& entry : this->entries) {
-			auto& fse = entry.second;
-			auto length_sectors = idiv::ceil(fse.length_bytes, 2048);
-			if (sector >= fse.first_sector && sector < fse.first_sector + length_sectors) {
-				return fse;
-			}
-		}
-		return std::optional<FileSystemEntry>();
+		return internal::bisect_entries_values(this->entries_values, 0, this->entries_values.size(), sector);
 	}
 
 	auto FileSystem::get_entry_hierarchy(
@@ -136,7 +156,7 @@ namespace iso9660 {
 		return iterator->second;
 	}
 
-	auto FileSystem::get_root_directory_entry(
+	auto FileSystem::get_root_entry(
 	) -> const FileSystemEntry& {
 		auto iterator = this->entries.find(this->first_sector);
 		if (iterator == this->entries.end()) {
@@ -145,7 +165,7 @@ namespace iso9660 {
 		return iterator->second;
 	}
 
-	auto FileSystem::list_directory_entries(
+	auto FileSystem::get_children(
 		const FileSystemEntry& entry
 	) -> const std::vector<FileSystemEntry>& {
 		auto iterator = this->children.find(entry.first_sector);
