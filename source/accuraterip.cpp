@@ -1,8 +1,8 @@
 #include "accuraterip.h"
 
-#include <vector>
+#include "utils.h"
 
-static const std::string CSV = std::string(
+const std::string CSV = std::string(
 	"16X DVD-,ROM,738\n"
 	"24X     ,SATA DVDRW,6\n"
 	"52XATAPI,  CD-ROM,108\n"
@@ -4516,39 +4516,40 @@ static const std::string CSV = std::string(
 	"YAMAKAWA,DVR-Y08,48\n"
 );
 
-auto split(const std::string &string, const std::string &delimiter)
--> std::vector<std::string> {
-	auto parts = std::vector<std::string>();
-	auto offset = size_t(0);
-	while (true) {
-		auto offset_found = string.find(delimiter, offset);
-		auto part = string.substr(offset, offset_found - offset);
-		parts.push_back(part);
-		if (offset_found >= string.size()) {
-			break;
-		}
-		offset = offset_found + delimiter.size();
-	}
-	return parts;
-}
-
 namespace accuraterip {
-	auto create_rac_map()
-	-> std::map<std::string, int> {
-		auto racs = std::map<std::string, int>();
-		auto lines = split(CSV, "\n");
-		for (const auto &line : lines) {
-			auto tokens = split(line, ",");
-			if (tokens.size() == 3) {
-				auto &vendor = tokens.at(0);
-				auto &product = tokens.at(1);
-				auto &rac = tokens.at(2);
-				auto key = vendor + " - " + product;
-				racs.insert({ key, atoi(rac.c_str()) });
+	namespace internal {
+		auto create_read_offset_correction_values(
+		) -> std::map<std::string, int> {
+			auto read_offset_correction_values = std::map<std::string, int>();
+			auto lines = utils::string::split(CSV, "\n");
+			for (const auto& line : lines) {
+				auto tokens = utils::string::split(line, ",");
+				if (tokens.size() == 3) {
+					auto& vendor = tokens.at(0);
+					auto& product = tokens.at(1);
+					auto& rac = tokens.at(2);
+					auto key = utils::string::trim(vendor + " - " + product);
+					read_offset_correction_values[key] = atoi(rac.c_str());
+				}
 			}
+			return read_offset_correction_values;
 		}
-		return racs;
 	}
 
-	const std::map<std::string, int> RACS = create_rac_map();
+	Database::Database(
+	) {
+		this->read_offset_correction_values = std::move(internal::create_read_offset_correction_values());
+	}
+
+	auto Database::get_read_offset_correction_value(
+		reference<array<8, constant<ch08>>> vendor,
+		reference<array<16, constant<ch08>>> product
+	) -> std::optional<int> {
+		auto key = utils::string::trim(std::string(vendor, sizeof(vendor)) + " - " + std::string(product, sizeof(product)));
+		auto iterator = this->read_offset_correction_values.find(key);
+		if (iterator != this->read_offset_correction_values.end()) {
+			return iterator->second;
+		}
+		return std::optional<int>();
+	}
 }

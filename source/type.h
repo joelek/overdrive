@@ -23,6 +23,6 @@ namespace type {
 	template <typename A> using reference = A&;
 	template <typename A> using temporary = A&&;
 	template <typename A> using constant = A const;
-	template <typename A, unsigned B> using array = A[B];
+	template <unsigned B, typename A> using array = A[B];
 	template <typename A, typename... B> using function = A(B...);
 }

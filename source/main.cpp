@@ -20,6 +20,7 @@
 #include "idiv.h"
 #include "cdb.h"
 #include "iso9660.h"
+#include "utils.h"
 
 #define APP_NAME "Disc Reader"
 #define APP_VERSION "0.0.0"
@@ -141,17 +142,6 @@ auto ascii_dump(uint8_t* bytes, int size, const char* name)
 			} \
 		}
 #endif
-
-auto trim(const std::string &string)
--> std::string {
-	auto start = string.find_first_not_of(" \n\r\t");
-	if (start > string.length()) {
-		return "";
-	}
-	auto end = string.find_last_not_of(" \n\r\t");
-	return string.substr(start, end - start + 1);
-}
-
 
 typedef struct {
 	unsigned char data[CD_SECTOR_LENGTH];
@@ -1620,13 +1610,15 @@ auto save(int argc, char **argv)
 		sptd_inquiry(handle, inquiry);
 		auto vendor = std::string(inquiry.response.vendor_identification, sizeof(inquiry.response.vendor_identification));
 		auto product = std::string(inquiry.response.product_identification, sizeof(inquiry.response.product_identification));
-		fprintf(stderr, "Vendor is \"%s\"\n", trim(vendor).c_str());
-		fprintf(stderr, "Product is \"%s\"\n", trim(product).c_str());
-		auto rac = accuraterip::RACS.find(trim(vendor + " - " + product));
-		if (rac != accuraterip::RACS.end()) {
-			fprintf(stderr, "Detected read offset correction as %i samples (%i bytes)\n", rac->second, (rac->second * CDDA_STEREO_SAMPLE_LENGTH));
+		fprintf(stderr, "Vendor is \"%s\"\n", utils::string::trim(vendor).c_str());
+		fprintf(stderr, "Product is \"%s\"\n", utils::string::trim(product).c_str());
+		auto accuraterip_database = accuraterip::Database();
+		auto optional_rac = accuraterip_database.get_read_offset_correction_value(inquiry.response.vendor_identification, inquiry.response.product_identification);
+		if (optional_rac) {
+			auto rac = *optional_rac;
+			fprintf(stderr, "Detected read offset correction as %i samples (%i bytes)\n", rac, (rac * CDDA_STEREO_SAMPLE_LENGTH));
 			if (!read_offset_correction) {
-				read_offset_correction = rac->second;
+				read_offset_correction = rac;
 			}
 		}
 		auto subchannel_offset = get_subchannel_offset(handle);

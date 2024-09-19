@@ -25,6 +25,7 @@ SOURCES=(
 	"idiv"
 	"iso9660"
 	"type"
+	"utils"
 )
 
 TARGETS=(
