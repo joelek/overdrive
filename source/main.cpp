@@ -21,6 +21,7 @@
 #include "scsi/cdb.h"
 #include "iso9660.h"
 #include "utils.h"
+#include "disc/namespace.h"
 
 #define APP_NAME "Disc Reader"
 #define APP_VERSION "0.0.0"
@@ -51,18 +52,6 @@
 #define CDROM_MODE2_DATA_LENGTH (CD_SECTOR_LENGTH - CDROM_SYNC_HEADER_LENGTH)
 #define CDROM_MODE2_FORM_1_DATA_LENGTH (CD_SECTOR_LENGTH - CDROM_SYNC_HEADER_LENGTH - CDROM_XA_SUBHEADER_LENGTH - CDROM_XA_SUBHEADER_LENGTH - CDROM_EDC_LENGTH - CDROM_ECC_LENGTH)
 #define CDROM_MODE2_FORM_2_DATA_LENGTH (CD_SECTOR_LENGTH - CDROM_SYNC_HEADER_LENGTH - CDROM_XA_SUBHEADER_LENGTH - CDROM_XA_SUBHEADER_LENGTH- CDROM_EDC_LENGTH)
-
-namespace cd {
-	#pragma pack(push, 1)
-
-	enum class SessionType: uint8_t {
-		CDDA_OR_CDROM = 0x00,
-		CDI = 0x10,
-		CDXA_OR_DDCD = 0x20
-	};
-
-	#pragma pack(pop)
-};
 
 namespace cdda {
 	#pragma pack(push, 1)
@@ -438,13 +427,13 @@ typedef struct {
 } CDROM_TOC_FULL;
 
 auto get_session_type(const CDROM_TOC_FULL& toc)
--> cd::SessionType {
+-> disc::cd::SessionType {
 	auto toc_length = (toc.Length[0] << 8) | (toc.Length[1] << 0);
 	auto track_count = (toc_length - sizeof(toc.Length)) / sizeof(CDROM_TOC_FULL_TOC_DATA_BLOCK);
 	for (auto track_index = 0u; track_index < track_count; track_index += 1) {
 		auto &track = toc.TrackDescriptors[track_index];
 		if (track.Point == 0xA0) {
-			return (cd::SessionType)track.Msf[1];
+			return (disc::cd::SessionType)track.Msf[1];
 		}
 	}
 	throw EXIT_FAILURE;
@@ -739,7 +728,7 @@ auto get_track_type_ex(HANDLE handle, const CDROM_TOC_FULL &toc, int index)
 -> TrackTypeEx {
 	auto &track = toc.TrackDescriptors[index];
 	auto session_type = get_session_type(toc);
-	if (session_type == cd::SessionType::CDDA_OR_CDROM) {
+	if (session_type == disc::cd::SessionType::CDDA_OR_CDROM) {
 		auto is_audio = (track.Control & 0b0100) == 0;
 		if (is_audio) {
 			return TrackTypeEx::AUDIO;
@@ -755,7 +744,7 @@ auto get_track_type_ex(HANDLE handle, const CDROM_TOC_FULL &toc, int index)
 				return TrackTypeEx::DATA_MODE_2;
 			}
 		}
-	} else if (session_type == cd::SessionType::CDXA_OR_DDCD) {
+	} else if (session_type == disc::cd::SessionType::CDXA_OR_DDCD) {
 		auto sector = CD_SECTOR_DATA();
 		read_sector_sptd(handle, sector, iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR);
 		auto &cdxa_sector = *(cdrom::Mode2Form1Sector*)(void*)&sector.data;
@@ -1635,22 +1624,22 @@ auto save(int argc, char **argv)
 			sptd_mode_select(handle, mode_sense);
 		}
 		auto session_type = get_session_type(toc_ex);
-		if (session_type == cd::SessionType::CDDA_OR_CDROM) {
+		if (session_type == disc::cd::SessionType::CDDA_OR_CDROM) {
 			fprintf(stderr, "Disc contains a CDDA or CDROM session\n");
-		} else if (session_type == cd::SessionType::CDI) {
+		} else if (session_type == disc::cd::SessionType::CDI) {
 			fprintf(stderr, "Disc contains a CDI session\n");
-		} else if (session_type == cd::SessionType::CDXA_OR_DDCD) {
+		} else if (session_type == disc::cd::SessionType::CDXA_OR_DDCD) {
 			fprintf(stderr, "Disc contains a CDXA or DDCD session\n");
 		}
 		auto data_offset = size_t(0);
 		auto data_length = size_t(CD_SECTOR_LENGTH);
 		if (!complete_data_sectors) {
 			data_length = CDROM_MODE1_DATA_LENGTH;
-			if (session_type == cd::SessionType::CDDA_OR_CDROM) {
+			if (session_type == disc::cd::SessionType::CDDA_OR_CDROM) {
 				data_offset = offsetof(cdrom::CDROMSector, body) + offsetof(cdrom::Mode1SectorBody, user_data);
-			} else if (session_type == cd::SessionType::CDI) {
+			} else if (session_type == disc::cd::SessionType::CDI) {
 				throw EXIT_FAILURE;
-			} else if (session_type == cd::SessionType::CDXA_OR_DDCD) {
+			} else if (session_type == disc::cd::SessionType::CDXA_OR_DDCD) {
 				data_offset = offsetof(cdrom::CDXASector, body) + offsetof(cdrom::Mode2Form1SectorBody, user_data);
 			}
 		}

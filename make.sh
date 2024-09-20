@@ -20,8 +20,12 @@ if [ $1 = "release" ]; then
 fi
 
 SOURCES=(
-	"accuraterip"
+	"disc/cd"
+	"disc/cdda"
+	"disc/cdrom"
+	"disc/namespace"
 	"scsi/cdb"
+	"accuraterip"
 	"idiv"
 	"iso9660"
 	"type"
