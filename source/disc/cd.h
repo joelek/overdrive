@@ -30,5 +30,100 @@ namespace cd {
 
 	static_assert(sizeof(SessionType) == 1);
 
+	struct SectorAddress {
+		ui08_t m;
+		ui08_t s;
+		ui08_t f;
+	};
+
+	static_assert(sizeof(SectorAddress) == 3);
+
+	struct SubchannelData {
+		byte_t channels[SUBCHANNEL_COUNT][SUBCHANNEL_LENGTH];
+	};
+
+	static_assert(sizeof(SubchannelData) == SUBCHANNELS_LENGTH);
+
+	enum class Control: ui08_t {
+		AUDIO_2_CHANNELS_COPY_PROTECTED = 0b0000,
+		AUDIO_2_CHANNELS_WITH_PRE_EMPHASIS_COPY_PROTECTED = 0b0001,
+		AUDIO_4_CHANNELS_COPY_PROTECTED = 0b1000,
+		AUDIO_4_CHANNELS_WITH_PRE_EMPHASIS_COPY_PROTECTED = 0b1001,
+		DATA_RECORDED_UINTERRUPTED_COPY_PROTECTED = 0b0100,
+		DATA_RECORDED_INCREMENTALLY_COPY_PROTECTED = 0b0101,
+		AUDIO_2_CHANNELS_COPY_PERMITTED = 0b0010,
+		AUDIO_2_CHANNELS_WITH_PRE_EMPHASIS_COPY_PERMITTED = 0b0011,
+		AUDIO_4_CHANNELS_COPY_PERMITTED = 0b1010,
+		AUDIO_4_CHANNELS_WITH_PRE_EMPHASIS_COPY_PERMITTED = 0b1011,
+		DATA_RECORDED_UINTERRUPTED_COPY_PERMITTED = 0b0110,
+		DATA_RECORDED_INCREMENTALLY_COPY_PERMITTED = 0b0111
+	};
+
+	static_assert(sizeof(Control) == 1);
+
+	struct SubchannelQMode1Data {
+		ui08_t track_number;
+		ui08_t track_index;
+		cd::SectorAddress relative_address_bcd;
+		ui08_t zero;
+		cd::SectorAddress absolute_address_bcd;
+	};
+
+	static_assert(sizeof(SubchannelQMode1Data) == 9);
+
+	struct SubchannelQMode2Data {
+		ui08_t mcnr02: 4;
+		ui08_t mcnr01: 4;
+		ui08_t mcnr04: 4;
+		ui08_t mcnr03: 4;
+		ui08_t mcnr06: 4;
+		ui08_t mcnr05: 4;
+		ui08_t mcnr08: 4;
+		ui08_t mcnr07: 4;
+		ui08_t mcnr10: 4;
+		ui08_t mcnr09: 4;
+		ui08_t mcnr12: 4;
+		ui08_t mcnr11: 4;
+		ui08_t zero01: 4;
+		ui08_t mcnr13: 4;
+		ui08_t zero02: 8;
+		ui08_t absolute_frame: 8;
+	};
+
+	static_assert(sizeof(SubchannelQMode2Data) == 9);
+
+	struct SubchannelQMode3Data {
+		ui32_t zero01: 2;
+		ui32_t isrc05: 6;
+		ui32_t isrc04: 6;
+		ui32_t isrc03: 6;
+		ui32_t isrc02: 6;
+		ui32_t isrc01: 6;
+		ui08_t isrc07: 4;
+		ui08_t isrc06: 4;
+		ui08_t isrc09: 4;
+		ui08_t isrc08: 4;
+		ui08_t isrc11: 4;
+		ui08_t isrc10: 4;
+		ui08_t zero02: 4;
+		ui08_t isrc12: 4;
+		ui08_t absolute_frame: 8;
+	};
+
+	static_assert(sizeof(SubchannelQMode3Data) == 9);
+
+	struct SubchannelQ {
+		ui08_t adr: 4;
+		Control control: 4;
+		union {
+			SubchannelQMode1Data mode1;
+			SubchannelQMode2Data mode2;
+			SubchannelQMode3Data mode3;
+		};
+		ui16_t crc_be;
+	};
+
+	static_assert(sizeof(SubchannelQ) == cd::SUBCHANNEL_LENGTH);
+
 	#pragma pack(pop)
 }

@@ -96,125 +96,6 @@ typedef struct {
 	unsigned int counter;
 } ExtractedCDDASector;
 
-namespace cdrom {
-	#pragma pack(push, 1)
-
-	typedef struct {
-		uint8_t channels[8][12];
-	} SubchannelData;
-
-	enum class Control: uint8_t {
-		AUDIO_2_CHANNELS_COPY_PROTECTED = 0b0000,
-		AUDIO_2_CHANNELS_WITH_PRE_EMPHASIS_COPY_PROTECTED = 0b0001,
-		AUDIO_4_CHANNELS_COPY_PROTECTED = 0b1000,
-		AUDIO_4_CHANNELS_WITH_PRE_EMPHASIS_COPY_PROTECTED = 0b1001,
-		DATA_RECORD_UINTERRUPTED_COPY_PROTECTED = 0b0100,
-		DATA_RECORDED_INCREMENTALLY_COPY_PROTECTED = 0b0101,
-		AUDIO_2_CHANNELS_COPY_PERMITTED = 0b0010,
-		AUDIO_2_CHANNELS_WITH_PRE_EMPHASIS_COPY_PERMITTED = 0b0011,
-		AUDIO_4_CHANNELS_COPY_PERMITTED = 0b1010,
-		AUDIO_4_CHANNELS_WITH_PRE_EMPHASIS_COPY_PERMITTED = 0b1011,
-		DATA_RECORD_UINTERRUPTED_COPY_PERMITTED = 0b0110,
-		DATA_RECORDED_INCREMENTALLY_COPY_PERMITTED = 0b0111
-	};
-
-	typedef struct {
-		uint8_t adr: 4;
-		uint8_t control: 4;
-		union {
-			struct {
-				uint8_t track_number;
-				uint8_t track_index;
-				uint8_t relative_m_bcd;
-				uint8_t relative_s_bcd;
-				uint8_t relative_f_bcd;
-				uint8_t zero = 0;
-				uint8_t absolute_m_bcd;
-				uint8_t absolute_s_bcd;
-				uint8_t absolute_f_bcd;
-			} mode1;
-		};
-		uint16_t crc_be;
-	} SubchannelQ;
-
-	typedef struct {
-		uint8_t m;
-		uint8_t s;
-		uint8_t f;
-	} Address;
-
-	typedef struct {
-		uint8_t sync[12] = { 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
-		Address absolute_address_bcd;
-		uint8_t mode;
-	} Header;
-
-	typedef struct {
-		uint8_t user_data[cdrom::MODE1_DATA_LENGTH];
-		uint8_t edc[cdrom::EDC_LENGTH];
-		uint8_t padding[cdrom::PAD_LENGTH];
-		uint8_t ecc[cdrom::ECC_LENGTH];
-	} Mode1SectorBody;
-
-	typedef struct {
-		Header header;
-		Mode1SectorBody body;
-	} Mode1Sector;
-
-	typedef struct {
-		uint8_t user_data[cdrom::MODE2_DATA_LENGTH];
-	} Mode2SectorBody;
-
-	typedef struct {
-		Header header;
-		Mode2SectorBody body;
-	} Mode2Sector;
-
-	typedef struct {
-		cdxa::Subheader header_1;
-		cdxa::Subheader header_2;
-		uint8_t user_data[cdxa::MODE2_FORM1_DATA_LENGTH];
-		uint8_t optional_edc[cdrom::EDC_LENGTH];
-	} Mode2Form1SectorBody;
-
-	typedef struct {
-		Header header;
-		Mode2Form1SectorBody body;
-	} Mode2Form1Sector;
-
-	typedef struct {
-		cdxa::Subheader header_1;
-		cdxa::Subheader header_2;
-		uint8_t user_data[cdxa::MODE2_FORM2_DATA_LENGTH];
-		uint8_t edc[cdrom::EDC_LENGTH];
-		uint8_t p_parity[cdrom::P_PARITY_LENGTH];
-		uint8_t q_parity[cdrom::Q_PARITY_LENGTH];
-	} Mode2Form2SectorBody;
-
-	typedef struct {
-		Header header;
-		Mode2Form2SectorBody body;
-	} Mode2Form2Sector;
-
-	typedef struct {
-		Header header;
-		union {
-			Mode1SectorBody mode1;
-			Mode2SectorBody mode2;
-		} body;
-	} CDROMSector;
-
-	typedef struct {
-		Header header;
-		union {
-			Mode2Form1SectorBody mode2form1;
-			Mode2Form2SectorBody mode2form2;
-		} body;
-	} CDXASector;
-
-	#pragma pack(pop)
-}
-
 ULONG AddressToSectors(const UCHAR Addr[4]) {
 	ULONG Sectors = Addr[1]*75*60 + Addr[2]*75 + Addr[3];
 	return Sectors - 150;
@@ -225,20 +106,14 @@ ULONG AddressToSectors2(UCHAR m, UCHAR s, UCHAR f) {
 	return Sectors - 150;
 }
 
-typedef struct {
-	uint8_t m;
-	uint8_t s;
-	uint8_t f;
-} SectorAddress;
-
 auto get_address_for_sector(int sector_index)
--> SectorAddress {
+-> cd::SectorAddress {
 	auto f = sector_index;
 	auto s = sector_index / cd::SECTORS_PER_SECOND;
 	f -= s * cd::SECTORS_PER_SECOND;
 	auto m = s / 60;
 	s -= m * 60;
-	auto address = SectorAddress();
+	auto address = cd::SectorAddress();
 	address.m = m;
 	address.s = s;
 	address.f = f;
@@ -272,19 +147,6 @@ auto get_timestamp_ms()
 	epoch_start_integer.LowPart = epoch_start_filetime.dwLowDateTime;
 	auto current_time_ms = (current_time_integer.QuadPart - epoch_start_integer.QuadPart) / 10000;
 	return current_time_ms;
-}
-
-auto rstrstr(const char * haystack, const char * needle)
--> const char * {
-	auto substring = strstr(haystack, needle);
-	while (substring != nullptr) {
-		auto next_substring = strstr(substring + 1, needle);
-		if (next_substring == nullptr) {
-			break;
-		}
-		substring = next_substring;
-	}
-	return substring;
 }
 
 auto get_cdrom_handle(std::string &drive)
@@ -622,21 +484,21 @@ auto get_track_type_ex(HANDLE handle, const CDROM_TOC_FULL &toc, int index)
 		} else {
 			auto sector = cdb::ReadCDResponseDataA();
 			read_sector_sptd(handle, sector, iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR);
-			auto &cdrom_sector = *(cdrom::CDROMSector*)(void*)&sector.data;
-			if (cdrom_sector.header.mode == 0) {
+			auto &cdrom_sector = *(cdrom::Sector*)(void*)&sector.data;
+			if (cdrom_sector.base.header.mode == 0) {
 				return TrackTypeEx::DATA_MODE_0;
-			} else if (cdrom_sector.header.mode == 1) {
+			} else if (cdrom_sector.base.header.mode == 1) {
 				return TrackTypeEx::DATA_MODE_1;
-			} else if (cdrom_sector.header.mode == 2) {
+			} else if (cdrom_sector.base.header.mode == 2) {
 				return TrackTypeEx::DATA_MODE_2;
 			}
 		}
 	} else if (session_type == disc::cd::SessionType::CDXA_OR_DDCD) {
 		auto sector = cdb::ReadCDResponseDataA();
 		read_sector_sptd(handle, sector, iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR);
-		auto &cdxa_sector = *(cdrom::Mode2Form1Sector*)(void*)&sector.data;
-		if (cdxa_sector.header.mode == 2) {
-			if (cdxa_sector.body.header_1.form_2 == 0) {
+		auto &cdxa_sector = *(cdxa::Sector*)(void*)&sector.data;
+		if (cdxa_sector.base.header.mode == 2) {
+			if (cdxa_sector.base.header_1.form_2 == 0) {
 				return TrackTypeEx::DATA_MODE_2_FORM_1;
 			} else {
 				return TrackTypeEx::DATA_MODE_2_FORM_2;
@@ -647,8 +509,8 @@ auto get_track_type_ex(HANDLE handle, const CDROM_TOC_FULL &toc, int index)
 }
 
 auto deinterleave_subchannel_data(const UCHAR* sector_subchannel_data)
--> cdrom::SubchannelData {
-	auto subchannel_data = cdrom::SubchannelData();
+-> cd::SubchannelData {
+	auto subchannel_data = cd::SubchannelData();
 	for (auto subchannel_index = 7; subchannel_index >= 0; subchannel_index -= 1) {
 		auto channel_right_shift = 7 - subchannel_index;
 		auto offset = 0;
@@ -1243,9 +1105,9 @@ auto get_subchannel_offset(HANDLE handle)
 			read_sector_sptd(handle, sector, target_lba);
 			auto sector_data = *(cdb::ReadCDResponseDataA*)&sector;
 			auto subchannel_data = deinterleave_subchannel_data(sector_data.subchannel_data);
-			auto q = (cdrom::SubchannelQ*)subchannel_data.channels[cd::SUBCHANNEL_Q_INDEX];
+			auto q = (cd::SubchannelQ*)subchannel_data.channels[cd::SUBCHANNEL_Q_INDEX];
 			if (q->adr == 1) {
-				auto actual_lba = AddressToSectors2(from_bcd(q->mode1.absolute_m_bcd), from_bcd(q->mode1.absolute_s_bcd), from_bcd(q->mode1.absolute_f_bcd));
+				auto actual_lba = AddressToSectors2(from_bcd(q->mode1.absolute_address_bcd.m), from_bcd(q->mode1.absolute_address_bcd.s), from_bcd(q->mode1.absolute_address_bcd.f));
 				auto delta_lba = (int)target_lba - (int)actual_lba;
 				if (delta_lba < -10 || delta_lba > 10) {
 					fprintf(stderr, "The subchannel position difference of %i is too large\n", delta_lba);
@@ -1275,9 +1137,9 @@ auto get_subchannel_offset(HANDLE handle)
 			read_sector_sptd(handle, sector, target_lba);
 			auto sector_data = *(cdb::ReadCDResponseDataB*)&sector;
 			auto subchannel_data = deinterleave_subchannel_data(sector_data.subchannel_data);
-			auto q = (cdrom::SubchannelQ*)subchannel_data.channels[cd::SUBCHANNEL_Q_INDEX];
+			auto q = (cd::SubchannelQ*)subchannel_data.channels[cd::SUBCHANNEL_Q_INDEX];
 			if (q->adr == 1) {
-				auto actual_lba = AddressToSectors2(from_bcd(q->mode1.absolute_m_bcd), from_bcd(q->mode1.absolute_s_bcd), from_bcd(q->mode1.absolute_f_bcd));
+				auto actual_lba = AddressToSectors2(from_bcd(q->mode1.absolute_address_bcd.m), from_bcd(q->mode1.absolute_address_bcd.s), from_bcd(q->mode1.absolute_address_bcd.f));
 				auto delta_lba = (int)target_lba - (int)actual_lba;
 				if (delta_lba < -10 || delta_lba > 10) {
 					fprintf(stderr, "The subchannel position difference of %i is too large\n", delta_lba);
@@ -1523,11 +1385,11 @@ auto save(int argc, char **argv)
 		if (!complete_data_sectors) {
 			data_length = cdrom::MODE1_DATA_LENGTH;
 			if (session_type == disc::cd::SessionType::CDDA_OR_CDROM) {
-				data_offset = offsetof(cdrom::CDROMSector, body) + offsetof(cdrom::Mode1SectorBody, user_data);
+				data_offset = offsetof(cdrom::Mode1Sector, user_data);
 			} else if (session_type == disc::cd::SessionType::CDI) {
 				throw EXIT_FAILURE;
 			} else if (session_type == disc::cd::SessionType::CDXA_OR_DDCD) {
-				data_offset = offsetof(cdrom::CDXASector, body) + offsetof(cdrom::Mode2Form1SectorBody, user_data);
+				data_offset = offsetof(cdxa::Mode2Form1Sector, user_data);
 			}
 		}
 		fprintf(stderr, "Data track sector offset is %llu\n", data_offset);

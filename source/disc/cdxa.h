@@ -7,9 +7,12 @@
 namespace cdxa {
 	using namespace type;
 
+	const auto SECTOR_LENGTH = size_t(cd::SECTOR_LENGTH);
 	const auto SUBHEADER_LENGTH = size_t(4);
-	const auto MODE2_FORM1_DATA_LENGTH = size_t(cd::SECTOR_LENGTH - cdrom::SYNC_HEADER_LENGTH - SUBHEADER_LENGTH - SUBHEADER_LENGTH - cdrom::EDC_LENGTH - cdrom::ECC_LENGTH);
-	const auto MODE2_FORM2_DATA_LENGTH = size_t(cd::SECTOR_LENGTH - cdrom::SYNC_HEADER_LENGTH - SUBHEADER_LENGTH - SUBHEADER_LENGTH - cdrom::EDC_LENGTH);
+	const auto MODE2_FORM1_SECTOR_LENGTH = size_t(SECTOR_LENGTH);
+	const auto MODE2_FORM1_DATA_LENGTH = size_t(MODE2_FORM1_SECTOR_LENGTH - cdrom::SYNC_HEADER_LENGTH - SUBHEADER_LENGTH - SUBHEADER_LENGTH - cdrom::EDC_LENGTH - cdrom::ECC_LENGTH);
+	const auto MODE2_FORM2_SECTOR_LENGTH = size_t(SECTOR_LENGTH);
+	const auto MODE2_FORM2_DATA_LENGTH = size_t(MODE2_FORM2_SECTOR_LENGTH - cdrom::SYNC_HEADER_LENGTH - SUBHEADER_LENGTH - SUBHEADER_LENGTH - cdrom::EDC_LENGTH);
 
 	#pragma pack(push, 1)
 
@@ -28,6 +31,44 @@ namespace cdxa {
 	};
 
 	static_assert(sizeof(Subheader) == SUBHEADER_LENGTH);
+
+	struct BaseSector {
+		cdrom::SyncHeader header;
+		Subheader header_1;
+		Subheader header_2;
+	};
+
+	static_assert(sizeof(BaseSector) == cdrom::SYNC_HEADER_LENGTH + SUBHEADER_LENGTH + SUBHEADER_LENGTH);
+
+	struct Mode2Form1Sector {
+		cdrom::SyncHeader header;
+		Subheader header_1;
+		Subheader header_2;
+		byte_t user_data[MODE2_FORM1_DATA_LENGTH];
+		byte_t edc[cdrom::EDC_LENGTH];
+		byte_t p_parity[cdrom::P_PARITY_LENGTH];
+		byte_t q_parity[cdrom::Q_PARITY_LENGTH];
+	};
+
+	static_assert(sizeof(Mode2Form1Sector) == MODE2_FORM1_SECTOR_LENGTH);
+
+	struct Mode2Form2Sector {
+		cdrom::SyncHeader header;
+		Subheader header_1;
+		Subheader header_2;
+		byte_t user_data[MODE2_FORM2_DATA_LENGTH];
+		byte_t optional_edc[cdrom::EDC_LENGTH];
+	};
+
+	static_assert(sizeof(Mode2Form2Sector) == MODE2_FORM2_SECTOR_LENGTH);
+
+	union Sector {
+		BaseSector base;
+		Mode2Form1Sector mode2form1;
+		Mode2Form2Sector mode2form2;
+	};
+
+	static_assert(sizeof(Sector) == SECTOR_LENGTH);
 
 	#pragma pack(pop)
 }
