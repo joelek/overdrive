@@ -23,6 +23,7 @@ SOURCES=(
 	"disc/cd"
 	"disc/cdda"
 	"disc/cdrom"
+	"disc/cdxa"
 	"disc/namespace"
 	"scsi/cdb"
 	"accuraterip"

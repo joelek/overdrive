@@ -26,47 +26,6 @@
 #define APP_NAME "Disc Reader"
 #define APP_VERSION "0.0.0"
 
-#define CD_SECTOR_LENGTH 2352
-#define CD_SECTORS_PER_SECOND 75
-#define CD_SUBCHANNELS_LENGTH 96
-#define CD_C2_ERROR_POINTERS_LENGTH (CD_SECTOR_LENGTH / 8)
-#define CD_SUBCHANNEL_P_INDEX 0
-#define CD_SUBCHANNEL_Q_INDEX 1
-
-#define CDDA_STEREO_SAMPLE_LENGTH 4
-#define CDDA_STEREO_SAMPLES_PER_FRAME 6
-#define CDDA_STEREO_FRAME_LENGTH (CDDA_STEREO_SAMPLES_PER_FRAME * CDDA_STEREO_SAMPLE_LENGTH)
-#define CDDA_STEREO_FRAMES_PER_SECTOR (CD_SECTOR_LENGTH / CDDA_STEREO_FRAME_LENGTH)
-
-#define CDROM_SYNC_LENGTH 12
-#define CDROM_HEADER_LENGTH 4
-#define CDROM_SYNC_HEADER_LENGTH (CDROM_SYNC_LENGTH + CDROM_HEADER_LENGTH)
-#define CDROM_EDC_LENGTH 4
-#define CDROM_PAD_LENGTH 8
-#define CDROM_P_PARITY_LENGTH 172
-#define CDROM_Q_PARITY_LENGTH 104
-#define CDROM_ECC_LENGTH (CDROM_P_PARITY_LENGTH + CDROM_Q_PARITY_LENGTH)
-#define CDROM_EDC_PAD_ECC_LENGTH (CDROM_EDC_LENGTH + CDROM_PAD_LENGTH + CDROM_ECC_LENGTH)
-#define CDROM_XA_SUBHEADER_LENGTH 4
-#define CDROM_MODE1_DATA_LENGTH (CD_SECTOR_LENGTH - CDROM_SYNC_HEADER_LENGTH - CDROM_EDC_PAD_ECC_LENGTH)
-#define CDROM_MODE2_DATA_LENGTH (CD_SECTOR_LENGTH - CDROM_SYNC_HEADER_LENGTH)
-#define CDROM_MODE2_FORM_1_DATA_LENGTH (CD_SECTOR_LENGTH - CDROM_SYNC_HEADER_LENGTH - CDROM_XA_SUBHEADER_LENGTH - CDROM_XA_SUBHEADER_LENGTH - CDROM_EDC_LENGTH - CDROM_ECC_LENGTH)
-#define CDROM_MODE2_FORM_2_DATA_LENGTH (CD_SECTOR_LENGTH - CDROM_SYNC_HEADER_LENGTH - CDROM_XA_SUBHEADER_LENGTH - CDROM_XA_SUBHEADER_LENGTH- CDROM_EDC_LENGTH)
-
-namespace cdda {
-	#pragma pack(push, 1)
-
-	typedef struct {
-		uint8_t samples[CDDA_STEREO_SAMPLES_PER_FRAME][CDDA_STEREO_SAMPLE_LENGTH];
-	} StereoFrame;
-
-	typedef struct {
-		StereoFrame frames[CDDA_STEREO_FRAMES_PER_SECTOR];
-	} StereoSector;
-
-	#pragma pack(pop)
-};
-
 auto byteswap16(uint16_t v)
 -> uint16_t {
 	auto pointer = (uint8_t*)&v;
@@ -133,7 +92,7 @@ auto ascii_dump(uint8_t* bytes, int size, const char* name)
 #endif
 
 typedef struct {
-	unsigned char data[CD_SECTOR_LENGTH];
+	unsigned char data[cd::SECTOR_LENGTH];
 	unsigned int counter;
 } ExtractedCDDASector;
 
@@ -205,10 +164,10 @@ namespace cdrom {
 	} Header;
 
 	typedef struct {
-		uint8_t user_data[CDROM_MODE1_DATA_LENGTH];
-		uint8_t edc[CDROM_EDC_LENGTH];
-		uint8_t padding[CDROM_PAD_LENGTH];
-		uint8_t ecc[CDROM_ECC_LENGTH];
+		uint8_t user_data[cdrom::MODE1_DATA_LENGTH];
+		uint8_t edc[cdrom::EDC_LENGTH];
+		uint8_t padding[cdrom::PAD_LENGTH];
+		uint8_t ecc[cdrom::ECC_LENGTH];
 	} Mode1SectorBody;
 
 	typedef struct {
@@ -217,7 +176,7 @@ namespace cdrom {
 	} Mode1Sector;
 
 	typedef struct {
-		uint8_t user_data[CDROM_MODE2_DATA_LENGTH];
+		uint8_t user_data[cdrom::MODE2_DATA_LENGTH];
 	} Mode2SectorBody;
 
 	typedef struct {
@@ -228,8 +187,8 @@ namespace cdrom {
 	typedef struct {
 		XASubheader header_1;
 		XASubheader header_2;
-		uint8_t user_data[CDROM_MODE2_FORM_1_DATA_LENGTH];
-		uint8_t optional_edc[CDROM_EDC_LENGTH];
+		uint8_t user_data[cdxa::MODE2_FORM1_DATA_LENGTH];
+		uint8_t optional_edc[cdrom::EDC_LENGTH];
 	} Mode2Form1SectorBody;
 
 	typedef struct {
@@ -240,10 +199,10 @@ namespace cdrom {
 	typedef struct {
 		XASubheader header_1;
 		XASubheader header_2;
-		uint8_t user_data[CDROM_MODE2_FORM_2_DATA_LENGTH];
-		uint8_t edc[CDROM_EDC_LENGTH];
-		uint8_t p_parity[CDROM_P_PARITY_LENGTH];
-		uint8_t q_parity[CDROM_Q_PARITY_LENGTH];
+		uint8_t user_data[cdxa::MODE2_FORM2_DATA_LENGTH];
+		uint8_t edc[cdrom::EDC_LENGTH];
+		uint8_t p_parity[cdrom::P_PARITY_LENGTH];
+		uint8_t q_parity[cdrom::Q_PARITY_LENGTH];
 	} Mode2Form2SectorBody;
 
 	typedef struct {
@@ -289,8 +248,8 @@ typedef struct {
 auto get_address_for_sector(int sector_index)
 -> SectorAddress {
 	auto f = sector_index;
-	auto s = sector_index / CD_SECTORS_PER_SECOND;
-	f -= s * CD_SECTORS_PER_SECOND;
+	auto s = sector_index / cd::SECTORS_PER_SECOND;
+	f -= s * cd::SECTORS_PER_SECOND;
 	auto m = s / 60;
 	s -= m * 60;
 	auto address = SectorAddress();
@@ -389,15 +348,15 @@ namespace libjson {
  */
 
 typedef struct {
-	UCHAR data[CD_SECTOR_LENGTH];
-	UCHAR c2_data[CD_C2_ERROR_POINTERS_LENGTH];
-	UCHAR subchannel_data[CD_SUBCHANNELS_LENGTH];
+	UCHAR data[cd::SECTOR_LENGTH];
+	UCHAR c2_data[cd::C2_ERROR_POINTERS_LENGTH];
+	UCHAR subchannel_data[cd::SUBCHANNELS_LENGTH];
 } CD_SECTOR_DATA;
 
 typedef struct {
-	UCHAR data[CD_SECTOR_LENGTH];
-	UCHAR subchannel_data[CD_SUBCHANNELS_LENGTH];
-	UCHAR c2_data[CD_C2_ERROR_POINTERS_LENGTH];
+	UCHAR data[cd::SECTOR_LENGTH];
+	UCHAR subchannel_data[cd::SUBCHANNELS_LENGTH];
+	UCHAR c2_data[cd::C2_ERROR_POINTERS_LENGTH];
 } CD_SECTOR_DATA_ALT;
 
 auto get_cdrom_handle(std::string &drive)
@@ -680,9 +639,9 @@ auto read_raw_sector(
 	auto read_info = RAW_READ_INFO();
 	read_info.TrackMode = TRACK_MODE_TYPE::CDDA;
 	read_info.SectorCount = 1;
-	read_info.DiskOffset.QuadPart = lba * CDROM_MODE1_DATA_LENGTH;
+	read_info.DiskOffset.QuadPart = lba * cdrom::MODE1_DATA_LENGTH;
 	auto bytes_returned = ULONG(0);
-	auto bytes_expected = ULONG(CD_SECTOR_LENGTH);
+	auto bytes_expected = ULONG(cd::SECTOR_LENGTH);
 	SetLastError(ERROR_SUCCESS);
 	auto outcome = DeviceIoControl(
 		handle,
@@ -690,7 +649,7 @@ auto read_raw_sector(
 		&read_info,
 		sizeof(read_info),
 		data,
-		CD_SECTOR_LENGTH,
+		cd::SECTOR_LENGTH,
 		&bytes_returned,
 		nullptr
 	);
@@ -982,7 +941,7 @@ class MDSImageFormat: ImageFormat {
 
 	auto write_subchannel_data(const TRACK_DATA& track, const uint8_t* data) -> bool {
 		(void)track;
-		auto bytes_expected = (size_t)CD_SUBCHANNELS_LENGTH;
+		auto bytes_expected = (size_t)cd::SUBCHANNELS_LENGTH;
 		auto bytes_returned = fwrite(data, 1, bytes_expected, this->target_handle_mdf);
 		return bytes_returned == bytes_expected;
 	}
@@ -1037,7 +996,7 @@ class MDSImageFormat: ImageFormat {
 				current_track_entry.track_mode_flags = current_track_mode == mds::TrackMode::MODE2_FORM1 || current_track_mode == mds::TrackMode::MODE2_FORM2 ? mds::TrackModeFlags::UNKNOWN_E : mds::TrackModeFlags::UNKNOWN_A;
 				std::memcpy((UCHAR*)&current_track_entry + offsetof(mds::EntryTypeA, subchannel_mode), &current_track, sizeof(current_track));
 				current_track_entry.subchannel_mode = subchannels ? mds::SubchannelMode::INTERLEAVED_96 : mds::SubchannelMode::NONE;
-				current_track_entry.sector_length = subchannels ? CD_SECTOR_LENGTH + CD_SUBCHANNELS_LENGTH : CD_SECTOR_LENGTH;
+				current_track_entry.sector_length = subchannels ? cd::SECTOR_LENGTH + cd::SUBCHANNELS_LENGTH : cd::SECTOR_LENGTH;
 				current_track_entry.first_sector_on_disc = first_sector_on_disc;
 				current_track_entry.mdf_byte_offset = mdf_byte_offset;
 				current_track_entry.absolute_offset_to_track_table_entry = absolute_offset_to_track_table_entry + (track_number - toc.FirstTrack) * sizeof(mds::TrackTableEntry);
@@ -1187,7 +1146,7 @@ class BINCUEImageFormat: ImageFormat {
 	auto write_subchannel_data(const TRACK_DATA& track, const uint8_t* data) -> bool {
 		fprintf(stderr, "Subchannel data cannot be stored using the BIN/CUE format!\n");
 		throw EXIT_FAILURE;
-		auto bytes_expected = (size_t)CD_SUBCHANNELS_LENGTH;
+		auto bytes_expected = (size_t)cd::SUBCHANNELS_LENGTH;
 		auto bytes_returned = fwrite(data, 1, bytes_expected, this->get_track_handle(track));
 		return bytes_returned == bytes_expected;
 	}
@@ -1356,7 +1315,7 @@ auto get_subchannel_offset(HANDLE handle)
 			read_sector_sptd(handle, sector, target_lba);
 			auto sector_data = *(CD_SECTOR_DATA*)&sector;
 			auto subchannel_data = deinterleave_subchannel_data(sector_data.subchannel_data);
-			auto q = (cdrom::SubchannelQ*)subchannel_data.channels[CD_SUBCHANNEL_Q_INDEX];
+			auto q = (cdrom::SubchannelQ*)subchannel_data.channels[cd::SUBCHANNEL_Q_INDEX];
 			if (q->adr == 1) {
 				auto actual_lba = AddressToSectors2(from_bcd(q->mode1.absolute_m_bcd), from_bcd(q->mode1.absolute_s_bcd), from_bcd(q->mode1.absolute_f_bcd));
 				auto delta_lba = (int)target_lba - (int)actual_lba;
@@ -1388,7 +1347,7 @@ auto get_subchannel_offset(HANDLE handle)
 			read_sector_sptd(handle, sector, target_lba);
 			auto sector_data = *(CD_SECTOR_DATA_ALT*)&sector;
 			auto subchannel_data = deinterleave_subchannel_data(sector_data.subchannel_data);
-			auto q = (cdrom::SubchannelQ*)subchannel_data.channels[CD_SUBCHANNEL_Q_INDEX];
+			auto q = (cdrom::SubchannelQ*)subchannel_data.channels[cd::SUBCHANNEL_Q_INDEX];
 			if (q->adr == 1) {
 				auto actual_lba = AddressToSectors2(from_bcd(q->mode1.absolute_m_bcd), from_bcd(q->mode1.absolute_s_bcd), from_bcd(q->mode1.absolute_f_bcd));
 				auto delta_lba = (int)target_lba - (int)actual_lba;
@@ -1493,7 +1452,7 @@ auto save(int argc, char **argv)
 			auto value = argument + sizeof("--read-offset-correction=") - 1;
 			auto parsed_value = atoi(value);
 			if (false) {
-			} else if (parsed_value >= 0 - (10 * CD_SECTOR_LENGTH) && parsed_value <= 0 + (10 * CD_SECTOR_LENGTH)) {
+			} else if (parsed_value >= 0 - int(10 * cd::SECTOR_LENGTH) && parsed_value <= 0 + int(10 * cd::SECTOR_LENGTH)) {
 				read_offset_correction = parsed_value;
 			} else {
 				unrecognized_arguments.push_back(argument);
@@ -1582,7 +1541,7 @@ auto save(int argc, char **argv)
 		fprintf(stderr, "\t\tSet optical drive letter.\n");
 		fprintf(stderr, "\t--max-read-retries=integer[0,255]\n");
 		fprintf(stderr, "\t\tSet max read retries made before producing a read error (8 by default).\n");
-		fprintf(stderr, "\t--read-offset-correction=integer[%i,%i]\n", 0 - (CD_SECTOR_LENGTH * 10), 0 + (CD_SECTOR_LENGTH * 10));
+		fprintf(stderr, "\t--read-offset-correction=integer[%llu,%llu]\n", 0 - (cd::SECTOR_LENGTH * 10), 0 + (cd::SECTOR_LENGTH * 10));
 		fprintf(stderr, "\t\tSet read offset correction (samples) for audio track extraction (0 by default).\n");
 		fprintf(stderr, "\t--max-audio-read-passes=integer[1,16]\n");
 		fprintf(stderr, "\t\tSet maximum number of audio read passes made (8 by default).\n");
@@ -1605,15 +1564,15 @@ auto save(int argc, char **argv)
 		auto optional_rac = accuraterip_database.get_read_offset_correction_value(inquiry.response.vendor_identification, inquiry.response.product_identification);
 		if (optional_rac) {
 			auto rac = *optional_rac;
-			fprintf(stderr, "Detected read offset correction as %i samples (%i bytes)\n", rac, (rac * CDDA_STEREO_SAMPLE_LENGTH));
+			fprintf(stderr, "Detected read offset correction as %i samples (%llu bytes)\n", rac, (rac * cdda::STEREO_SAMPLE_LENGTH));
 			if (!read_offset_correction) {
 				read_offset_correction = rac;
 			}
 		}
 		auto subchannel_offset = get_subchannel_offset(handle);
 		fprintf(stderr, "Subchannel data offset is %u\n", subchannel_offset);
-		auto c2_offset = subchannel_offset == CD_SECTOR_LENGTH ? CD_SECTOR_LENGTH + CD_SUBCHANNELS_LENGTH : CD_SECTOR_LENGTH;
-		fprintf(stderr, "C2 data offset is %u\n", c2_offset);
+		auto c2_offset = subchannel_offset == cd::SECTOR_LENGTH ? cd::SECTOR_LENGTH + cd::SUBCHANNELS_LENGTH : cd::SECTOR_LENGTH;
+		fprintf(stderr, "C2 data offset is %llu\n", c2_offset);
 		auto toc = get_cdrom_toc(handle);
 		validate_cdrom_toc(toc);
 		auto toc_ex = get_cdrom_full_toc(handle);
@@ -1632,9 +1591,9 @@ auto save(int argc, char **argv)
 			fprintf(stderr, "Disc contains a CDXA or DDCD session\n");
 		}
 		auto data_offset = size_t(0);
-		auto data_length = size_t(CD_SECTOR_LENGTH);
+		auto data_length = size_t(cd::SECTOR_LENGTH);
 		if (!complete_data_sectors) {
-			data_length = CDROM_MODE1_DATA_LENGTH;
+			data_length = cdrom::MODE1_DATA_LENGTH;
 			if (session_type == disc::cd::SessionType::CDDA_OR_CDROM) {
 				data_offset = offsetof(cdrom::CDROMSector, body) + offsetof(cdrom::Mode1SectorBody, user_data);
 			} else if (session_type == disc::cd::SessionType::CDI) {
@@ -1663,10 +1622,10 @@ auto save(int argc, char **argv)
 		fprintf(stderr, "Disc contains %i tracks\n", track_count);
 		fprintf(stderr, "Disc length is %lu sectors\n", sector_count);
 		auto read_offset_correction_value = read_offset_correction.value_or(0);
-		auto read_offset_correction_bytes = read_offset_correction_value * CDDA_STEREO_SAMPLE_LENGTH;
-		fprintf(stderr, "Read offset correction is set to %i samples (%i bytes)\n", read_offset_correction_value, read_offset_correction_bytes);
+		auto read_offset_correction_bytes = read_offset_correction_value * cdda::STEREO_SAMPLE_LENGTH;
+		fprintf(stderr, "Read offset correction is set to %i samples (%llu bytes)\n", read_offset_correction_value, read_offset_correction_bytes);
 		auto track_pregap_sectors_list = std::vector<unsigned int>();
-		track_pregap_sectors_list.push_back(2 * CD_SECTORS_PER_SECOND);
+		track_pregap_sectors_list.push_back(2 * cd::SECTORS_PER_SECOND);
 		for (auto i = toc.FirstTrack + 1; i <= toc.LastTrack; i += 1) {
 			auto &last_track = toc.TrackData[i - 1 - 1];
 			auto &current_track = toc.TrackData[i - 1];
@@ -1674,7 +1633,7 @@ auto save(int argc, char **argv)
 			auto current_track_type = get_track_type(current_track);
 			auto track_type_change = current_track_type != last_track_type;
 			auto track_pregap_seconds = track_type_change ? 2 : 0;
-			auto track_pregap_sectors = track_pregap_seconds * CD_SECTORS_PER_SECOND;
+			auto track_pregap_sectors = track_pregap_seconds * cd::SECTORS_PER_SECOND;
 			track_pregap_sectors_list.push_back(track_pregap_sectors);
 		}
 		auto track_length_sectors_list = std::vector<unsigned int>();
@@ -1700,15 +1659,15 @@ auto save(int argc, char **argv)
 			auto current_track_type = get_track_type(current_track);
 			if (current_track_type == TrackType::AUDIO) {
 				fprintf(stderr, "Current track contains audio\n");
-				auto start_offset_bytes = (first_sector * CD_SECTOR_LENGTH) + read_offset_correction_bytes;
-				auto end_offset_bytes = (last_sector * CD_SECTOR_LENGTH) + read_offset_correction_bytes;
-				auto adjusted_first_sector = idiv::floor(start_offset_bytes, CD_SECTOR_LENGTH);
-				auto adjusted_last_sector = idiv::ceil(end_offset_bytes, CD_SECTOR_LENGTH);
+				auto start_offset_bytes = (first_sector * cd::SECTOR_LENGTH) + read_offset_correction_bytes;
+				auto end_offset_bytes = (last_sector * cd::SECTOR_LENGTH) + read_offset_correction_bytes;
+				auto adjusted_first_sector = idiv::floor(start_offset_bytes, cd::SECTOR_LENGTH);
+				auto adjusted_last_sector = idiv::ceil(end_offset_bytes, cd::SECTOR_LENGTH);
 				auto adjusted_track_length_sectors = adjusted_last_sector - adjusted_first_sector;
 				fprintf(stderr, "Extracting %i sectors from %i to %i\n", adjusted_track_length_sectors, adjusted_first_sector, adjusted_last_sector - 1);
-				auto track_data = std::vector<uint8_t>(adjusted_track_length_sectors * CD_SECTOR_LENGTH);
-				auto track_data_start_offset = read_offset_correction_bytes - ((adjusted_first_sector - first_sector) * CD_SECTOR_LENGTH);
-				fprintf(stderr, "The first %lu bytes will be discarded\n", track_data_start_offset);
+				auto track_data = std::vector<uint8_t>(adjusted_track_length_sectors * cd::SECTOR_LENGTH);
+				auto track_data_start_offset = read_offset_correction_bytes - ((adjusted_first_sector - first_sector) * cd::SECTOR_LENGTH);
+				fprintf(stderr, "The first %llu bytes will be discarded\n", track_data_start_offset);
 				auto extracted_cdda_sectors_list = std::vector<std::vector<ExtractedCDDASector>>(track_length_sectors);
 				for (auto audio_pass_index = 0; audio_pass_index < max_audio_read_passes; audio_pass_index += 1) {
 					fprintf(stderr, "Running audio extraction pass %i\n", audio_pass_index);
@@ -1723,7 +1682,7 @@ auto save(int argc, char **argv)
 									break;
 								}
 							}
-							auto target = track_data.data() + (sector_index - adjusted_first_sector) * CD_SECTOR_LENGTH;
+							auto target = track_data.data() + (sector_index - adjusted_first_sector) * cd::SECTOR_LENGTH;
 							std::memcpy(target, cd_sector.data, sizeof(cd_sector.data));
 						} catch (...) {
 							fprintf(stderr, "Error reading sector %i!\n", sector_index);
@@ -1737,11 +1696,11 @@ auto save(int argc, char **argv)
 					}
 					auto identical_sectors_with_counter_list = std::vector<unsigned int>(max_audio_read_passes);
 					for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
-						auto cd_sector = track_data.data() + track_data_start_offset + ((sector_index - first_sector) * CD_SECTOR_LENGTH);
+						auto cd_sector = track_data.data() + track_data_start_offset + ((sector_index - first_sector) * cd::SECTOR_LENGTH);
 						auto &extracted_cdda_sectors = extracted_cdda_sectors_list.at(sector_index - first_sector);
 						auto found = false;
 						for (auto &extracted_cdda_sector : extracted_cdda_sectors) {
-							if (std::memcmp(cd_sector, extracted_cdda_sector.data, CD_SECTOR_LENGTH) == 0) {
+							if (std::memcmp(cd_sector, extracted_cdda_sector.data, cd::SECTOR_LENGTH) == 0) {
 								extracted_cdda_sector.counter += 1;
 								found = true;
 								break;
@@ -1749,7 +1708,7 @@ auto save(int argc, char **argv)
 						}
 						if (!found) {
 							auto extracted_cdda_sector = ExtractedCDDASector();
-							std::memcpy(extracted_cdda_sector.data, cd_sector, CD_SECTOR_LENGTH);
+							std::memcpy(extracted_cdda_sector.data, cd_sector, cd::SECTOR_LENGTH);
 							extracted_cdda_sector.counter += 1;
 							extracted_cdda_sectors.push_back(extracted_cdda_sector);
 						}
@@ -1767,7 +1726,7 @@ auto save(int argc, char **argv)
 				}
 				for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
 					auto cd_sector = extracted_cdda_sectors_list.at(sector_index - first_sector).at(0);
-					auto outcome = image_format->write_sector_data(current_track, cd_sector.data, CD_SECTOR_LENGTH);
+					auto outcome = image_format->write_sector_data(current_track, cd_sector.data, cd::SECTOR_LENGTH);
 					if (!outcome) {
 						fprintf(stderr, "Error writing sector data %lu to file!\n", sector_index);
 						throw EXIT_FAILURE;
@@ -1777,7 +1736,7 @@ auto save(int argc, char **argv)
 				fprintf(stderr, "Current track contains data\n");
 				auto file_system = iso9660::FileSystem([&](size_t sector, void* user_data) -> void {
 					read_sector_sptd(handle, cd_sector, sector);
-					std::memcpy(user_data, cd_sector.data + data_offset, CDROM_MODE1_DATA_LENGTH);
+					std::memcpy(user_data, cd_sector.data + data_offset, cdrom::MODE1_DATA_LENGTH);
 				});
 				fprintf(stderr, "Extracting %lu sectors from %lu to %lu\n", track_length_sectors, first_sector, last_sector - 1);
 				for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {

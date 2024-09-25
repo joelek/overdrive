@@ -3,6 +3,7 @@
 #include "cd.h"
 #include "cdda.h"
 #include "cdrom.h"
+#include "cdxa.h"
 
 namespace disc {
 	namespace cd {
@@ -13,7 +14,11 @@ namespace disc {
 		using namespace ::cdda;
 	}
 
-	namespace cdda {
+	namespace cdrom {
 		using namespace ::cdrom;
+	}
+
+	namespace cdxa {
+		using namespace ::cdxa;
 	}
 }
