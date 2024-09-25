@@ -17,26 +17,13 @@
 #include <algorithm>
 
 #include "accuraterip.h"
-#include "idiv.h"
 #include "scsi/cdb.h"
 #include "iso9660.h"
-#include "utils.h"
+#include "utils/namespace.h"
 #include "disc/namespace.h"
 
 #define APP_NAME "Disc Reader"
 #define APP_VERSION "0.0.0"
-
-auto byteswap16(uint16_t v)
--> uint16_t {
-	auto pointer = (uint8_t*)&v;
-	return (pointer[0] << 8) | (pointer[1] << 0);
-}
-
-auto byteswap32(uint32_t v)
--> uint32_t {
-	auto pointer = (uint8_t*)&v;
-	return (pointer[0] << 24) | (pointer[1] << 16) | (pointer[2] << 8) | (pointer[3] << 0);
-}
 
 auto ascii_dump(uint8_t* bytes, int size, const char* name)
 -> void {
@@ -237,7 +224,7 @@ auto read_sector_sptd(
 	auto data = SPTDWithSenseBuffer();
 	auto cdb = cdb::ReadCD12();
 	cdb.expected_sector_type = cdb::ReadCD12ExpectedSectorType::ANY;
-	cdb.lba_be = byteswap32(lba);
+	cdb.lba_be = utils::byteswap::byteswap32(lba);
 	cdb.transfer_length_be[2] = 1;
 	cdb.errors = cdb::ReadCD12Errors::C2_ERROR_BLOCK_DATA;
 	cdb.edc_and_ecc = 1;
@@ -276,7 +263,7 @@ auto sptd_mode_sense(
 	auto data = SPTDWithSenseBuffer();
 	auto cdb = cdb::ModeSense10();
 	cdb.page_code = cdb::SensePage::ReadWriteErrorRecoveryModePage;
-	cdb.allocation_length_be = byteswap16(sizeof(mode_sense));
+	cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(mode_sense));
 	data.sptd.Length = sizeof(data.sptd);
 	data.sptd.CdbLength = sizeof(cdb);
 	data.sptd.DataIn = SCSI_IOCTL_DATA_IN;
@@ -312,7 +299,7 @@ auto sptd_mode_select(
 	auto data = SPTDWithSenseBuffer();
 	auto cdb = cdb::ModeSelect10();
 	cdb.page_format = 1;
-	cdb.parameter_list_length_be = byteswap16(sizeof(mode_sense));
+	cdb.parameter_list_length_be = utils::byteswap::byteswap16(sizeof(mode_sense));
 	data.sptd.Length = sizeof(data.sptd);
 	data.sptd.CdbLength = sizeof(cdb);
 	data.sptd.DataIn = SCSI_IOCTL_DATA_OUT;
@@ -353,7 +340,7 @@ auto sptd_mode_sense2(
 	auto data = SPTDWithSenseBuffer();
 	auto cdb = cdb::ModeSense10();
 	cdb.page_code = cdb::SensePage::CapabilitiesAndMechanicalStatusPage;
-	cdb.allocation_length_be = byteswap16(sizeof(mode_sense));
+	cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(mode_sense));
 	data.sptd.Length = sizeof(data.sptd);
 	data.sptd.CdbLength = sizeof(cdb);
 	data.sptd.DataIn = SCSI_IOCTL_DATA_IN;
@@ -392,7 +379,7 @@ auto sptd_inquiry(
 ) -> void {
 	auto data = SPTDWithSenseBuffer();
 	auto cdb = cdb::Inquiry6();
-	cdb.allocation_length_be = byteswap16(sizeof(inquiry));
+	cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(inquiry));
 	data.sptd.Length = sizeof(data.sptd);
 	data.sptd.CdbLength = sizeof(cdb);
 	data.sptd.DataIn = SCSI_IOCTL_DATA_IN;
@@ -1397,7 +1384,7 @@ auto save(int argc, char **argv)
 		{
 			auto mode_sense = ModeSense2();
 			sptd_mode_sense2(handle, mode_sense);
-			fprintf(stderr, "Drive has a read cache size of %u kB\n", byteswap16(mode_sense.page_data.buffer_size_supported_be));
+			fprintf(stderr, "Drive has a read cache size of %u kB\n", utils::byteswap::byteswap16(mode_sense.page_data.buffer_size_supported_be));
 			fprintf(stderr, "Drive %s read audio streams accurately\n", mode_sense.page_data.cdda_stream_is_accurate ? "can" : "cannot");
 			fprintf(stderr, "Drive %s support for reading C2 error pointers\n", mode_sense.page_data.c2_pointers_supported ? "has" : "lacks");
 			if (!mode_sense.page_data.cdda_stream_is_accurate) {
@@ -1451,8 +1438,8 @@ auto save(int argc, char **argv)
 				fprintf(stderr, "Current track contains audio\n");
 				auto start_offset_bytes = (first_sector * cd::SECTOR_LENGTH) + read_offset_correction_bytes;
 				auto end_offset_bytes = (last_sector * cd::SECTOR_LENGTH) + read_offset_correction_bytes;
-				auto adjusted_first_sector = idiv::floor(start_offset_bytes, cd::SECTOR_LENGTH);
-				auto adjusted_last_sector = idiv::ceil(end_offset_bytes, cd::SECTOR_LENGTH);
+				auto adjusted_first_sector = utils::idiv::floor(start_offset_bytes, cd::SECTOR_LENGTH);
+				auto adjusted_last_sector = utils::idiv::ceil(end_offset_bytes, cd::SECTOR_LENGTH);
 				auto adjusted_track_length_sectors = adjusted_last_sector - adjusted_first_sector;
 				fprintf(stderr, "Extracting %i sectors from %i to %i\n", adjusted_track_length_sectors, adjusted_first_sector, adjusted_last_sector - 1);
 				auto track_data = std::vector<uint8_t>(adjusted_track_length_sectors * cd::SECTOR_LENGTH);

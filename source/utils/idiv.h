@@ -1,6 +1,6 @@
 #pragma once
 
-#include "type.h"
+#include "../type.h"
 
 namespace idiv {
 	using namespace type;

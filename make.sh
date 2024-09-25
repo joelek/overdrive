@@ -29,10 +29,12 @@ SOURCES=(
 	"scsi/namespace"
 	"scsi/system"
 	"accuraterip"
-	"idiv"
 	"iso9660"
 	"type"
-	"utils"
+	"utils/byteswap"
+	"utils/idiv"
+	"utils/namespace"
+	"utils/string"
 )
 
 TARGETS=(

@@ -1,6 +1,6 @@
 #include "accuraterip.h"
 
-#include "utils.h"
+#include "./utils/namespace.h"
 
 const std::string CSV = std::string(
 	"16X DVD-,ROM,738\n"
