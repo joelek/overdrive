@@ -6,17 +6,17 @@ namespace idiv {
 	using namespace type;
 
 	auto ceil(
-		si_t n,
-		si_t d
+		si_t num,
+		si_t den
 	) -> si_t;
 
 	auto floor(
-		si_t n,
-		si_t d
+		si_t num,
+		si_t den
 	) -> si_t;
 
 	auto round(
-		si_t n,
-		si_t d
+		si_t num,
+		si_t den
 	) -> si_t;
 }
