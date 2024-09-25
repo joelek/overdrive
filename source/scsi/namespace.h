@@ -1,14 +1,14 @@
 #pragma once
 
 #include "cdb.h"
-#include "scsi.h"
+#include "system.h"
 
 namespace scsi {
 	namespace cdb {
 		using namespace ::cdb;
 	}
 
-	namespace scsi {
-		using namespace ::scsi;
+	namespace system {
+		using namespace ::system;
 	}
 }
