@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../disc/cd.h"
 #include "../type.h"
 
 namespace cdb {
@@ -354,6 +355,22 @@ namespace cdb {
 	};
 
 	static_assert(sizeof(ReadCD12) == 12);
+
+	struct ReadCDResponseDataA {
+		byte_t data[cd::SECTOR_LENGTH];
+		byte_t c2_data[cd::C2_ERROR_POINTERS_LENGTH];
+		byte_t subchannel_data[cd::SUBCHANNELS_LENGTH];
+	};
+
+	static_assert(sizeof(ReadCDResponseDataA) == cd::SECTOR_LENGTH + cd::C2_ERROR_POINTERS_LENGTH + cd::SUBCHANNELS_LENGTH);
+
+	struct ReadCDResponseDataB {
+		byte_t data[cd::SECTOR_LENGTH];
+		byte_t subchannel_data[cd::SUBCHANNELS_LENGTH];
+		byte_t c2_data[cd::C2_ERROR_POINTERS_LENGTH];
+	};
+
+	static_assert(sizeof(ReadCDResponseDataB) == cd::SECTOR_LENGTH + cd::SUBCHANNELS_LENGTH +  cd::C2_ERROR_POINTERS_LENGTH);
 
 	#pragma pack(pop)
 }

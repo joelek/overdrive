@@ -100,20 +100,6 @@ namespace cdrom {
 	#pragma pack(push, 1)
 
 	typedef struct {
-		uint8_t file_number: 8;
-		uint8_t channel_number: 8;
-		uint8_t end_of_record: 1;
-		uint8_t video_block: 1;
-		uint8_t audio_block: 1;
-		uint8_t data_block: 1;
-		uint8_t trigger_block: 1;
-		uint8_t form_2: 1;
-		uint8_t real_time_block: 1;
-		uint8_t end_of_file: 1;
-		uint8_t coding_info: 8;
-	} XASubheader;
-
-	typedef struct {
 		uint8_t channels[8][12];
 	} SubchannelData;
 
@@ -185,8 +171,8 @@ namespace cdrom {
 	} Mode2Sector;
 
 	typedef struct {
-		XASubheader header_1;
-		XASubheader header_2;
+		cdxa::Subheader header_1;
+		cdxa::Subheader header_2;
 		uint8_t user_data[cdxa::MODE2_FORM1_DATA_LENGTH];
 		uint8_t optional_edc[cdrom::EDC_LENGTH];
 	} Mode2Form1SectorBody;
@@ -197,8 +183,8 @@ namespace cdrom {
 	} Mode2Form1Sector;
 
 	typedef struct {
-		XASubheader header_1;
-		XASubheader header_2;
+		cdxa::Subheader header_1;
+		cdxa::Subheader header_2;
 		uint8_t user_data[cdxa::MODE2_FORM2_DATA_LENGTH];
 		uint8_t edc[cdrom::EDC_LENGTH];
 		uint8_t p_parity[cdrom::P_PARITY_LENGTH];
@@ -301,18 +287,6 @@ auto rstrstr(const char * haystack, const char * needle)
 	return substring;
 }
 
-typedef struct {
-	UCHAR data[cd::SECTOR_LENGTH];
-	UCHAR c2_data[cd::C2_ERROR_POINTERS_LENGTH];
-	UCHAR subchannel_data[cd::SUBCHANNELS_LENGTH];
-} CD_SECTOR_DATA;
-
-typedef struct {
-	UCHAR data[cd::SECTOR_LENGTH];
-	UCHAR subchannel_data[cd::SUBCHANNELS_LENGTH];
-	UCHAR c2_data[cd::C2_ERROR_POINTERS_LENGTH];
-} CD_SECTOR_DATA_ALT;
-
 auto get_cdrom_handle(std::string &drive)
 -> HANDLE {
 	auto filename = std::string("\\\\.\\") + drive + ":";
@@ -394,7 +368,7 @@ typedef struct {
 
 auto read_sector_sptd(
 	HANDLE handle,
-	CD_SECTOR_DATA& sector,
+	cdb::ReadCDResponseDataA& sector,
 	ULONG lba
 ) -> void {
 	memset(&sector, 0, sizeof(sector));
@@ -646,7 +620,7 @@ auto get_track_type_ex(HANDLE handle, const CDROM_TOC_FULL &toc, int index)
 		if (is_audio) {
 			return TrackTypeEx::AUDIO;
 		} else {
-			auto sector = CD_SECTOR_DATA();
+			auto sector = cdb::ReadCDResponseDataA();
 			read_sector_sptd(handle, sector, iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR);
 			auto &cdrom_sector = *(cdrom::CDROMSector*)(void*)&sector.data;
 			if (cdrom_sector.header.mode == 0) {
@@ -658,7 +632,7 @@ auto get_track_type_ex(HANDLE handle, const CDROM_TOC_FULL &toc, int index)
 			}
 		}
 	} else if (session_type == disc::cd::SessionType::CDXA_OR_DDCD) {
-		auto sector = CD_SECTOR_DATA();
+		auto sector = cdb::ReadCDResponseDataA();
 		read_sector_sptd(handle, sector, iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR);
 		auto &cdxa_sector = *(cdrom::Mode2Form1Sector*)(void*)&sector.data;
 		if (cdxa_sector.header.mode == 2) {
@@ -1259,15 +1233,15 @@ auto to_bcd(UCHAR byte)
 auto get_subchannel_offset(HANDLE handle)
 -> unsigned int {
 	fprintf(stderr, "Detecting subchannel offset\n");
-	auto sector = CD_SECTOR_DATA();
+	auto sector = cdb::ReadCDResponseDataA();
 	try {
-		auto offset = offsetof(CD_SECTOR_DATA, subchannel_data);
+		auto offset = offsetof(cdb::ReadCDResponseDataA, subchannel_data);
 		fprintf(stderr, "Testing subchannel offset %llu\n", offset);
 		int delta_lbas[10];
 		auto delta_lba_index = 0u;
 		for (auto target_lba = 0u; target_lba < 10u; target_lba += 1) {
 			read_sector_sptd(handle, sector, target_lba);
-			auto sector_data = *(CD_SECTOR_DATA*)&sector;
+			auto sector_data = *(cdb::ReadCDResponseDataA*)&sector;
 			auto subchannel_data = deinterleave_subchannel_data(sector_data.subchannel_data);
 			auto q = (cdrom::SubchannelQ*)subchannel_data.channels[cd::SUBCHANNEL_Q_INDEX];
 			if (q->adr == 1) {
@@ -1293,13 +1267,13 @@ auto get_subchannel_offset(HANDLE handle)
 		}
 	} catch (...) {}
 	try {
-		auto offset = offsetof(CD_SECTOR_DATA_ALT, subchannel_data);
+		auto offset = offsetof(cdb::ReadCDResponseDataB, subchannel_data);
 		fprintf(stderr, "Testing subchannel offset %llu\n", offset);
 		int delta_lbas[10];
 		auto delta_lba_index = 0u;
 		for (auto target_lba = 0u; target_lba < 10u; target_lba += 1) {
 			read_sector_sptd(handle, sector, target_lba);
-			auto sector_data = *(CD_SECTOR_DATA_ALT*)&sector;
+			auto sector_data = *(cdb::ReadCDResponseDataB*)&sector;
 			auto subchannel_data = deinterleave_subchannel_data(sector_data.subchannel_data);
 			auto q = (cdrom::SubchannelQ*)subchannel_data.channels[cd::SUBCHANNEL_Q_INDEX];
 			if (q->adr == 1) {
@@ -1592,8 +1566,8 @@ auto save(int argc, char **argv)
 		}
 		auto track_length_sectors_list = std::vector<unsigned int>();
 		auto bad_sector_numbers = std::vector<int>();
-		auto empty_cd_sector = CD_SECTOR_DATA();
-		auto cd_sector = CD_SECTOR_DATA();
+		auto empty_cd_sector = cdb::ReadCDResponseDataA();
+		auto cd_sector = cdb::ReadCDResponseDataA();
 		auto start_ms = get_timestamp_ms();
 		for (auto i = toc.FirstTrack; i <= toc.LastTrack; i += 1) {
 			fprintf(stderr, "Processing track %u\n", i);
