@@ -20,7 +20,7 @@
 #include "scsi/cdb.h"
 #include "iso9660.h"
 #include "utils/namespace.h"
-#include "disc/namespace.h"
+#include "discs/namespace.h"
 
 #define APP_NAME "Disc Reader"
 #define APP_VERSION "0.0.0"

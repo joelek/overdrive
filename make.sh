@@ -20,11 +20,11 @@ if [ $1 = "release" ]; then
 fi
 
 SOURCES=(
-	"disc/cd"
-	"disc/cdda"
-	"disc/cdrom"
-	"disc/cdxa"
-	"disc/namespace"
+	"discs/cd"
+	"discs/cdda"
+	"discs/cdrom"
+	"discs/cdxa"
+	"discs/namespace"
 	"scsi/cdb"
 	"scsi/namespace"
 	"scsi/system"

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../disc/cd.h"
+#include "../discs/cd.h"
 #include "../type.h"
 
 namespace cdb {
