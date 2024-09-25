@@ -26,6 +26,8 @@ SOURCES=(
 	"disc/cdxa"
 	"disc/namespace"
 	"scsi/cdb"
+	"scsi/namespace"
+	"scsi/system"
 	"accuraterip"
 	"idiv"
 	"iso9660"
