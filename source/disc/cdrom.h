@@ -16,10 +16,12 @@ namespace cdrom {
 	const auto Q_PARITY_LENGTH = size_t(104);
 	const auto ECC_LENGTH = size_t(P_PARITY_LENGTH + Q_PARITY_LENGTH);
 	const auto EDC_PAD_ECC_LENGTH = size_t(EDC_LENGTH + PAD_LENGTH + ECC_LENGTH);
-	const auto MODE1_SECTOR_LENGTH = size_t(SECTOR_LENGTH);
-	const auto MODE1_DATA_LENGTH = size_t(MODE1_SECTOR_LENGTH - SYNC_HEADER_LENGTH - EDC_PAD_ECC_LENGTH);
-	const auto MODE2_SECTOR_LENGTH = size_t(SECTOR_LENGTH);
-	const auto MODE2_DATA_LENGTH = size_t(MODE2_SECTOR_LENGTH - SYNC_HEADER_LENGTH);
+	const auto BASE_SECTOR_LENGTH = size_t(cd::SECTOR_LENGTH);
+	const auto BASE_SECTOR_DATA_LENGTH = size_t(BASE_SECTOR_LENGTH - cdrom::SYNC_HEADER_LENGTH);
+	const auto MODE1_SECTOR_LENGTH = size_t(BASE_SECTOR_LENGTH);
+	const auto MODE1_DATA_LENGTH = size_t(BASE_SECTOR_DATA_LENGTH - EDC_PAD_ECC_LENGTH);
+	const auto MODE2_SECTOR_LENGTH = size_t(BASE_SECTOR_LENGTH);
+	const auto MODE2_DATA_LENGTH = size_t(BASE_SECTOR_DATA_LENGTH);
 
 	#pragma pack(push, 1)
 
@@ -33,9 +35,10 @@ namespace cdrom {
 
 	struct BaseSector {
 		SyncHeader header;
+		byte_t data[BASE_SECTOR_DATA_LENGTH];
 	};
 
-	static_assert(sizeof(BaseSector) == SYNC_HEADER_LENGTH);
+	static_assert(sizeof(BaseSector) == BASE_SECTOR_LENGTH);
 
 	struct Mode1Sector {
 		SyncHeader header;

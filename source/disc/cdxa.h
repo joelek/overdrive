@@ -9,10 +9,12 @@ namespace cdxa {
 
 	const auto SECTOR_LENGTH = size_t(cd::SECTOR_LENGTH);
 	const auto SUBHEADER_LENGTH = size_t(4);
-	const auto MODE2_FORM1_SECTOR_LENGTH = size_t(SECTOR_LENGTH);
-	const auto MODE2_FORM1_DATA_LENGTH = size_t(MODE2_FORM1_SECTOR_LENGTH - cdrom::SYNC_HEADER_LENGTH - SUBHEADER_LENGTH - SUBHEADER_LENGTH - cdrom::EDC_LENGTH - cdrom::ECC_LENGTH);
-	const auto MODE2_FORM2_SECTOR_LENGTH = size_t(SECTOR_LENGTH);
-	const auto MODE2_FORM2_DATA_LENGTH = size_t(MODE2_FORM2_SECTOR_LENGTH - cdrom::SYNC_HEADER_LENGTH - SUBHEADER_LENGTH - SUBHEADER_LENGTH - cdrom::EDC_LENGTH);
+	const auto BASE_SECTOR_LENGTH = size_t(SECTOR_LENGTH);
+	const auto BASE_SECTOR_DATA_LENGTH = size_t(BASE_SECTOR_LENGTH - cdrom::SYNC_HEADER_LENGTH - SUBHEADER_LENGTH - SUBHEADER_LENGTH);
+	const auto MODE2_FORM1_SECTOR_LENGTH = size_t(BASE_SECTOR_LENGTH);
+	const auto MODE2_FORM1_DATA_LENGTH = size_t(BASE_SECTOR_DATA_LENGTH - cdrom::EDC_LENGTH - cdrom::ECC_LENGTH);
+	const auto MODE2_FORM2_SECTOR_LENGTH = size_t(BASE_SECTOR_LENGTH);
+	const auto MODE2_FORM2_DATA_LENGTH = size_t(BASE_SECTOR_DATA_LENGTH - cdrom::EDC_LENGTH);
 
 	#pragma pack(push, 1)
 
@@ -36,9 +38,10 @@ namespace cdxa {
 		cdrom::SyncHeader header;
 		Subheader header_1;
 		Subheader header_2;
+		byte_t data[BASE_SECTOR_DATA_LENGTH];
 	};
 
-	static_assert(sizeof(BaseSector) == cdrom::SYNC_HEADER_LENGTH + SUBHEADER_LENGTH + SUBHEADER_LENGTH);
+	static_assert(sizeof(BaseSector) == BASE_SECTOR_LENGTH);
 
 	struct Mode2Form1Sector {
 		cdrom::SyncHeader header;
