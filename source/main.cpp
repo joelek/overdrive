@@ -301,52 +301,6 @@ auto rstrstr(const char * haystack, const char * needle)
 	return substring;
 }
 
-/*
-char *strdup(const char *s) {
-	size_t slen = strlen(s);
-	char *result = (char*)malloc(slen + 1);
-	if (result == NULL)
-	{
-		return NULL;
-	}
-
-	memcpy(result, s, slen + 1);
-	return result;
-}
-
-namespace libjson {
-	class element_t {
-		public:
-			virtual ~element_t() = 0;
-		protected:
-		private:
-	};
-
-	class string_t: public element_t {
-		public:
-			string_t(const char* string);
-		protected:
-		private:
-			char* string;
-			int length;
-	};
-
-	string_t::string_t(const char* string)
-		: string(strdup(string))
-		, length(strlen(string)) {
-
-	}
-	auto parse(const char* string)
-		-> element_t* {
-		return string == nullptr ? nullptr : nullptr;
-	}
-
-	element_t::~element_t() {
-
-	}
-}
- */
-
 typedef struct {
 	UCHAR data[cd::SECTOR_LENGTH];
 	UCHAR c2_data[cd::C2_ERROR_POINTERS_LENGTH];
