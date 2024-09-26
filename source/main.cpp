@@ -19,6 +19,7 @@
 #include "accuraterip.h"
 #include "scsi/cdb.h"
 #include "iso9660.h"
+#include "audio/namespace.h"
 #include "utils/namespace.h"
 #include "discs/namespace.h"
 
@@ -866,28 +867,6 @@ class MDSImageFormat: ImageFormat {
 	FILE* target_handle_mdf;
 };
 
-namespace wave {
-	#pragma pack(push, 1)
-
-	typedef struct {
-		const uint8_t riff_header[4] = { 'R', 'I', 'F', 'F' };
-		uint32_t file_size_minus_8 = 44 + 0 - 8;
-		const uint8_t wave_header[4] = { 'W', 'A', 'V', 'E' };
-		const uint8_t fmt_header[4] = { 'f', 'm', 't', ' ' };
-		uint32_t format_data_length = 16;
-		uint16_t format = 1;
-		uint16_t number_of_channels = 2;
-		uint32_t sample_rate_hz = 44100;
-		uint32_t data_rate_bytes_per_second = (16 * 2 * 44100) >> 3;
-		uint16_t bytes_per_sample = (16 * 2) >> 3;
-		uint16_t bits_per_sample = 16;
-		const uint8_t data_header[4] = { 'd', 'a', 't', 'a' };
-		uint32_t data_length = 0;
-	} Header;
-
-	#pragma pack(pop)
-}
-
 class BINCUEImageFormat: ImageFormat {
 	public:
 
@@ -972,7 +951,7 @@ class BINCUEImageFormat: ImageFormat {
 
 	auto update_wave_header() -> void {
 		if (this->target_handle_bin != nullptr && this->add_wave_headers && get_track_type(this->current_track) == TrackType::AUDIO) {
-			auto header = wave::Header();
+			auto header = audio::wav::Header();
 			auto file_size = ftell(this->target_handle_bin);
 			fseek(this->target_handle_bin, 0, SEEK_SET);
 			if (fread(&header, sizeof(header), 1, this->target_handle_bin) != 1) {
@@ -980,7 +959,7 @@ class BINCUEImageFormat: ImageFormat {
 				throw EXIT_FAILURE;
 			}
 			fseek(this->target_handle_bin, 0, SEEK_SET);
-			header.file_size_minus_8 = file_size - 8;
+			header.riff_length = file_size - 8;
 			header.data_length = file_size - sizeof(header);
 			if (fwrite(&header, sizeof(header), 1, this->target_handle_bin) != 1) {
 				fprintf(stderr, "Failed writing WAV header to file!\n");
@@ -1011,7 +990,7 @@ class BINCUEImageFormat: ImageFormat {
 					throw EXIT_FAILURE;
 				}
 				if (this->add_wave_headers && track_type == TrackType::AUDIO) {
-					auto wave_header = wave::Header();
+					auto wave_header = audio::wav::Header();
 					auto bytes_expected = sizeof(wave_header);
 					auto bytes_returned = fwrite(&wave_header, 1, bytes_expected, target_handle_bin);
 					if (bytes_returned != bytes_expected) {

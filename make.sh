@@ -20,6 +20,8 @@ if [ $1 = "release" ]; then
 fi
 
 SOURCES=(
+	"audio/namespace"
+	"audio/wav"
 	"discs/cd"
 	"discs/cdda"
 	"discs/cdrom"
