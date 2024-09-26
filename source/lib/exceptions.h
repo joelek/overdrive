@@ -16,5 +16,17 @@ namespace exceptions {
 
 		protected:
 	};
+
+	class InvalidValueException: public std::runtime_error {
+		public:
+
+		InvalidValueException(
+			si_t value,
+			si_t min,
+			si_t max
+		);
+
+		protected:
+	};
 }
 }

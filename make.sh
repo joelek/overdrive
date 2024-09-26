@@ -33,6 +33,7 @@ SOURCES=(
 	"lib/accuraterip"
 	"lib/exceptions"
 	"lib/iso9660"
+	"utils/bcd"
 	"utils/byteswap"
 	"utils/idiv"
 	"utils/namespace"

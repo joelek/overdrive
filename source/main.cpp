@@ -1014,31 +1014,6 @@ auto get_image_format(FileFormat format, const std::string& directory, const std
 	return std::shared_ptr<ImageFormat>((ImageFormat*)new BINCUEImageFormat(std::string(directory), std::string(filename), split_tracks, add_wave_headers, complete_data_sectors));
 }
 
-// todo
-
-auto from_bcd(UCHAR byte)
--> UCHAR {
-	auto hi = (byte & 0xF0) >> 4;
-	auto lo = (byte & 0x0F) >> 0;
-	if (hi >= 10) {
-		throw EXIT_FAILURE;
-	}
-	if (lo >= 10) {
-		throw EXIT_FAILURE;
-	}
-	return (hi << 3) + hi + hi + lo;
-}
-
-auto to_bcd(UCHAR byte)
--> UCHAR {
-	if (byte >= 100) {
-		throw EXIT_FAILURE;
-	}
-	auto hi = (byte / 10);
-	auto lo = (byte % 10);
-	return (hi << 4) | (lo << 0);
-}
-
 auto get_subchannel_offset(HANDLE handle)
 -> unsigned int {
 	fprintf(stderr, "Detecting subchannel offset\n");
@@ -1054,7 +1029,7 @@ auto get_subchannel_offset(HANDLE handle)
 			auto subchannel_data = deinterleave_subchannel_data(sector_data.subchannel_data);
 			auto q = (discs::cd::SubchannelQ*)subchannel_data.channels[discs::cd::SUBCHANNEL_Q_INDEX];
 			if (q->adr == 1) {
-				auto actual_lba = discs::cd::get_sector_from_address({ from_bcd(q->mode1.absolute_address_bcd.m), from_bcd(q->mode1.absolute_address_bcd.s), from_bcd(q->mode1.absolute_address_bcd.f) }) - 150;
+				auto actual_lba = discs::cd::get_sector_from_address({ utils::bcd::decode(q->mode1.absolute_address_bcd.m), utils::bcd::decode(q->mode1.absolute_address_bcd.s), utils::bcd::decode(q->mode1.absolute_address_bcd.f) }) - 150;
 				auto delta_lba = (int)target_lba - (int)actual_lba;
 				if (delta_lba < -10 || delta_lba > 10) {
 					fprintf(stderr, "The subchannel position difference of %i is too large\n", delta_lba);
@@ -1086,7 +1061,7 @@ auto get_subchannel_offset(HANDLE handle)
 			auto subchannel_data = deinterleave_subchannel_data(sector_data.subchannel_data);
 			auto q = (discs::cd::SubchannelQ*)subchannel_data.channels[discs::cd::SUBCHANNEL_Q_INDEX];
 			if (q->adr == 1) {
-				auto actual_lba = discs::cd::get_sector_from_address({ from_bcd(q->mode1.absolute_address_bcd.m), from_bcd(q->mode1.absolute_address_bcd.s), from_bcd(q->mode1.absolute_address_bcd.f) }) - 150;
+				auto actual_lba = discs::cd::get_sector_from_address({ utils::bcd::decode(q->mode1.absolute_address_bcd.m), utils::bcd::decode(q->mode1.absolute_address_bcd.s), utils::bcd::decode(q->mode1.absolute_address_bcd.f) }) - 150;
 				auto delta_lba = (int)target_lba - (int)actual_lba;
 				if (delta_lba < -10 || delta_lba > 10) {
 					fprintf(stderr, "The subchannel position difference of %i is too large\n", delta_lba);
