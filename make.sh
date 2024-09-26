@@ -32,6 +32,7 @@ SOURCES=(
 	"scsi/system"
 	"lib/accuraterip"
 	"lib/exceptions"
+	"lib/hex"
 	"lib/iso9660"
 	"utils/bcd"
 	"utils/byteswap"

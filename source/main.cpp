@@ -29,39 +29,6 @@ using namespace overdrive;
 #define APP_NAME "Overdrive"
 #define APP_VERSION "0.0.0"
 
-auto ascii_dump(uint8_t* bytes, int size, const char* name)
--> void {
-	fprintf(stderr, "\n");
-	fprintf(stderr, "%s:\n", name);
-	auto rows = (size + 15) / 16;
-	auto offset = 0;
-	auto remaining_bytes = size;
-	for (auto r = 0; r < rows; r += 1) {
-		fprintf(stderr, "%.8X: ", offset);
-		auto cols = remaining_bytes <= 16 ? remaining_bytes : 16;
-		for (auto c = 0; c < cols; c += 1) {
-			auto byte = bytes[offset + c];
-			fprintf(stderr, "%.2X ", byte);
-		}
-		for (auto c = cols; c < 16; c += 1) {
-			fprintf(stderr, "   ");
-		}
-		for (auto c = 0; c < cols; c += 1) {
-			auto byte = bytes[offset + c];
-			fprintf(stderr, "%c", byte >= 32 && byte <= 127 ? byte : '.');
-		}
-		for (auto c = cols; c < 16; c += 1) {
-			fprintf(stderr, " ");
-		}
-		fprintf(stderr, "\n");
-		offset += cols;
-		remaining_bytes -= cols;
-	}
-	fprintf(stderr, "\n");
-}
-
-#define DUMP(var) ascii_dump((uint8_t*)(void*)&var, sizeof(var), #var)
-
 #ifdef DEBUG
 	#define WINAPI_CHECK_STATUS() \
 		{ \
