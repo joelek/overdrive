@@ -1,12 +1,15 @@
 #pragma once
 
+#include <stdexcept>
 #include "../type.h"
 
 namespace cd {
 	using namespace type;
 
 	const auto SECTOR_LENGTH = size_t(2352);
+	const auto MINUTES_PER_SECOND = size_t(60);
 	const auto SECTORS_PER_SECOND = size_t(75);
+	const auto MAX_SECTOR = size_t(100 * MINUTES_PER_SECOND * SECTORS_PER_SECOND - 1);
 	const auto SUBCHANNEL_COUNT = size_t(8);
 	const auto SUBCHANNEL_LENGTH = size_t(12);
 	const auto SUBCHANNEL_P_INDEX = size_t(0);
@@ -130,4 +133,22 @@ namespace cd {
 	static_assert(sizeof(SubchannelQ) == cd::SUBCHANNEL_LENGTH);
 
 	#pragma pack(pop)
+
+	class BadSectorException: public std::runtime_error {
+		public:
+
+		BadSectorException(
+			ui_t sector
+		);
+
+		protected:
+	};
+
+	auto get_sector_from_address(
+		const SectorAddress& address
+	) -> ui_t;
+
+	auto get_address_from_sector(
+		ui_t sector
+	) -> SectorAddress;
 }

@@ -84,30 +84,6 @@ typedef struct {
 	unsigned int counter;
 } ExtractedCDDASector;
 
-ULONG AddressToSectors(const UCHAR Addr[4]) {
-	ULONG Sectors = Addr[1]*75*60 + Addr[2]*75 + Addr[3];
-	return Sectors - 150;
-}
-
-ULONG AddressToSectors2(UCHAR m, UCHAR s, UCHAR f) {
-	ULONG Sectors = m*75*60 + s*75 + f;
-	return Sectors - 150;
-}
-
-auto get_address_for_sector(int sector_index)
--> cd::SectorAddress {
-	auto f = sector_index;
-	auto s = sector_index / cd::SECTORS_PER_SECOND;
-	f -= s * cd::SECTORS_PER_SECOND;
-	auto m = s / 60;
-	s -= m * 60;
-	auto address = cd::SectorAddress();
-	address.m = m;
-	address.s = s;
-	address.f = f;
-	return address;
-}
-
 auto get_timestamp_ms()
 -> uint64_t {
 	auto current_time_filetime = FILETIME();
@@ -728,7 +704,7 @@ class MDSImageFormat: ImageFormat {
 		auto &first_track = toc.TrackData[toc.FirstTrack - 1];
 		auto &lead_out_track = toc.TrackData[toc.LastTrack + 1 - 1];
 		auto track_count = toc.LastTrack - toc.FirstTrack + 1;
-		auto sector_count = AddressToSectors(lead_out_track.Address) - AddressToSectors(first_track.Address);
+		auto sector_count = cd::get_sector_from_address({ lead_out_track.Address[1], lead_out_track.Address[2], lead_out_track.Address[3] }) - cd::get_sector_from_address({ first_track.Address[1], first_track.Address[2], first_track.Address[3] });
 		auto absolute_offset_to_track_table_entry = sizeof(mds::FormatHeader) + sizeof(mds::DiscHeader) + 3 * sizeof(mds::EntryTypeA) + track_count * sizeof(mds::EntryTypeB) + sizeof(mds::TrackTableHeader);
 		auto absolute_offset_to_file_table_header = absolute_offset_to_track_table_entry + track_count * sizeof(mds::TrackTableEntry);
 		auto absolute_offset_to_file_table_entry = absolute_offset_to_file_table_header + sizeof(mds::FileTableHeader);
@@ -923,9 +899,9 @@ class BINCUEImageFormat: ImageFormat {
 				fprintf(this->target_handle_cue, "\tTRACK %.2i %s\n", track_number, current_track_type == TrackType::AUDIO ? "AUDIO" : this->complete_data_sectors ? "MODE1/2352" : "MODE1/2048");
 				auto track_pregap_sectors = track_pregap_sectors_list.at(track_number - 1);
 				auto track_pregap_sectors_to_write = track_number == toc.FirstTrack ? 0 : track_pregap_sectors;
-				auto pregap_address = get_address_for_sector(track_pregap_sectors_to_write);
+				auto pregap_address = cd::get_address_from_sector(track_pregap_sectors_to_write);
 				fprintf(this->target_handle_cue, "\t\tPREGAP %.2i:%.2i:%.2i\n", pregap_address.m, pregap_address.s, pregap_address.f);
-				auto offset_address = get_address_for_sector(offset);
+				auto offset_address = cd::get_address_from_sector(offset);
 				fprintf(this->target_handle_cue, "\t\tINDEX %.2i %.2i:%.2i:%.2i\n", 1, offset_address.m, offset_address.s, offset_address.f);
 			}
 		} else {
@@ -938,9 +914,9 @@ class BINCUEImageFormat: ImageFormat {
 				auto track_pregap_sectors = track_pregap_sectors_list.at(track_number - 1);
 				auto track_length_sectors = track_length_sectors_list.at(track_number - 1);
 				auto track_pregap_sectors_to_write = track_number == toc.FirstTrack ? 0 : track_pregap_sectors;
-				auto pregap_address = get_address_for_sector(track_pregap_sectors_to_write);
+				auto pregap_address = cd::get_address_from_sector(track_pregap_sectors_to_write);
 				fprintf(this->target_handle_cue, "\t\tPREGAP %.2i:%.2i:%.2i\n", pregap_address.m, pregap_address.s, pregap_address.f);
-				auto offset_address = get_address_for_sector(offset);
+				auto offset_address = cd::get_address_from_sector(offset);
 				fprintf(this->target_handle_cue, "\t\tINDEX %.2i %.2i:%.2i:%.2i\n", 1, offset_address.m, offset_address.s, offset_address.f);
 				offset += track_length_sectors;
 			}
@@ -1035,8 +1011,10 @@ auto get_image_format(FileFormat format, const std::string& directory, const std
 	return std::shared_ptr<ImageFormat>((ImageFormat*)new BINCUEImageFormat(std::string(directory), std::string(filename), split_tracks, add_wave_headers, complete_data_sectors));
 }
 
+// todo
+
 auto from_bcd(UCHAR byte)
--> unsigned int {
+-> UCHAR {
 	auto hi = (byte & 0xF0) >> 4;
 	auto lo = (byte & 0x0F) >> 0;
 	if (hi >= 10) {
@@ -1049,7 +1027,7 @@ auto from_bcd(UCHAR byte)
 }
 
 auto to_bcd(UCHAR byte)
--> unsigned int {
+-> UCHAR {
 	if (byte >= 100) {
 		throw EXIT_FAILURE;
 	}
@@ -1073,7 +1051,7 @@ auto get_subchannel_offset(HANDLE handle)
 			auto subchannel_data = deinterleave_subchannel_data(sector_data.subchannel_data);
 			auto q = (cd::SubchannelQ*)subchannel_data.channels[cd::SUBCHANNEL_Q_INDEX];
 			if (q->adr == 1) {
-				auto actual_lba = AddressToSectors2(from_bcd(q->mode1.absolute_address_bcd.m), from_bcd(q->mode1.absolute_address_bcd.s), from_bcd(q->mode1.absolute_address_bcd.f));
+				auto actual_lba = cd::get_sector_from_address({ from_bcd(q->mode1.absolute_address_bcd.m), from_bcd(q->mode1.absolute_address_bcd.s), from_bcd(q->mode1.absolute_address_bcd.f) }) - 150;
 				auto delta_lba = (int)target_lba - (int)actual_lba;
 				if (delta_lba < -10 || delta_lba > 10) {
 					fprintf(stderr, "The subchannel position difference of %i is too large\n", delta_lba);
@@ -1105,7 +1083,7 @@ auto get_subchannel_offset(HANDLE handle)
 			auto subchannel_data = deinterleave_subchannel_data(sector_data.subchannel_data);
 			auto q = (cd::SubchannelQ*)subchannel_data.channels[cd::SUBCHANNEL_Q_INDEX];
 			if (q->adr == 1) {
-				auto actual_lba = AddressToSectors2(from_bcd(q->mode1.absolute_address_bcd.m), from_bcd(q->mode1.absolute_address_bcd.s), from_bcd(q->mode1.absolute_address_bcd.f));
+				auto actual_lba = cd::get_sector_from_address({ from_bcd(q->mode1.absolute_address_bcd.m), from_bcd(q->mode1.absolute_address_bcd.s), from_bcd(q->mode1.absolute_address_bcd.f) }) - 150;
 				auto delta_lba = (int)target_lba - (int)actual_lba;
 				if (delta_lba < -10 || delta_lba > 10) {
 					fprintf(stderr, "The subchannel position difference of %i is too large\n", delta_lba);
@@ -1374,9 +1352,9 @@ auto save(int argc, char **argv)
 		auto &first_track = toc.TrackData[toc.FirstTrack - 1];
 		auto &lead_out_track = toc.TrackData[toc.LastTrack + 1 - 1];
 		auto track_count = toc.LastTrack - toc.FirstTrack + 1;
-		auto sector_count = AddressToSectors(lead_out_track.Address) - AddressToSectors(first_track.Address);
+		auto sector_count = cd::get_sector_from_address({ lead_out_track.Address[1], lead_out_track.Address[2], lead_out_track.Address[3] }) - cd::get_sector_from_address({ first_track.Address[1], first_track.Address[2], first_track.Address[3] });
 		fprintf(stderr, "Disc contains %i tracks\n", track_count);
-		fprintf(stderr, "Disc length is %lu sectors\n", sector_count);
+		fprintf(stderr, "Disc length is %u sectors\n", sector_count);
 		auto read_offset_correction_value = read_offset_correction.value_or(0);
 		auto read_offset_correction_bytes = read_offset_correction_value * cdda::STEREO_SAMPLE_LENGTH;
 		fprintf(stderr, "Read offset correction is set to %i samples (%llu bytes)\n", read_offset_correction_value, read_offset_correction_bytes);
@@ -1401,16 +1379,16 @@ auto save(int argc, char **argv)
 			fprintf(stderr, "Processing track %u\n", i);
 			auto &current_track = toc.TrackData[i - 1];
 			auto &next_track = toc.TrackData[i + 1 - 1];
-			auto current_track_lba = AddressToSectors(current_track.Address);
-			auto next_track_lba = AddressToSectors(next_track.Address);
-			fprintf(stderr, "Current track starts at sector %lu\n", current_track_lba);
-			fprintf(stderr, "Next track starts at sector %lu\n", next_track_lba);
+			auto current_track_lba = cd::get_sector_from_address({ current_track.Address[1], current_track.Address[2], current_track.Address[3] }) - 150;
+			auto next_track_lba = cd::get_sector_from_address({ next_track.Address[1], next_track.Address[2], next_track.Address[3] }) - 150;
+			fprintf(stderr, "Current track starts at sector %u\n", current_track_lba);
+			fprintf(stderr, "Next track starts at sector %u\n", next_track_lba);
 			auto next_track_pregap_sectors = i == toc.LastTrack ? 0 : track_pregap_sectors_list.at(i + 1 -  toc.FirstTrack);
 			fprintf(stderr, "Next track has a pregap of %i sectors\n", next_track_pregap_sectors);
 			auto first_sector = current_track_lba;
 			auto last_sector = next_track_lba - next_track_pregap_sectors;
 			auto track_length_sectors = last_sector - first_sector;
-			fprintf(stderr, "Track length is %lu sectors\n", track_length_sectors);
+			fprintf(stderr, "Track length is %u sectors\n", track_length_sectors);
 			track_length_sectors_list.push_back(track_length_sectors);
 			auto current_track_type = get_track_type(current_track);
 			if (current_track_type == TrackType::AUDIO) {
@@ -1476,7 +1454,7 @@ auto save(int argc, char **argv)
 						identical_sectors_with_counter_list.at(extracted_cdda_sector.counter - 1) += 1;
 					}
 					if (audio_pass_index > 0 && identical_sectors_with_counter_list.at(audio_pass_index) == track_length_sectors) {
-						fprintf(stderr, "Got %i identical copies of %lu sectors\n", audio_pass_index + 1, track_length_sectors);
+						fprintf(stderr, "Got %i identical copies of %u sectors\n", audio_pass_index + 1, track_length_sectors);
 						break;
 					}
 				}
@@ -1484,7 +1462,7 @@ auto save(int argc, char **argv)
 					auto cd_sector = extracted_cdda_sectors_list.at(sector_index - first_sector).at(0);
 					auto outcome = image_format->write_sector_data(current_track, cd_sector.data, cd::SECTOR_LENGTH);
 					if (!outcome) {
-						fprintf(stderr, "Error writing sector data %lu to file!\n", sector_index);
+						fprintf(stderr, "Error writing sector data %u to file!\n", sector_index);
 						throw EXIT_FAILURE;
 					}
 				}
@@ -1494,24 +1472,24 @@ auto save(int argc, char **argv)
 					read_sector_sptd(handle, cd_sector, sector);
 					std::memcpy(user_data, cd_sector.data + data_offset, cdrom::MODE1_DATA_LENGTH);
 				});
-				fprintf(stderr, "Extracting %lu sectors from %lu to %lu\n", track_length_sectors, first_sector, last_sector - 1);
+				fprintf(stderr, "Extracting %u sectors from %u to %u\n", track_length_sectors, first_sector, last_sector - 1);
 				for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
 					try {
 						read_sector_sptd(handle, cd_sector, sector_index);
 						auto outcome = image_format->write_sector_data(current_track, cd_sector.data + data_offset, data_length);
 						if (!outcome) {
-							fprintf(stderr, "Error writing sector data %lu to file!\n", sector_index);
+							fprintf(stderr, "Error writing sector data %u to file!\n", sector_index);
 							throw EXIT_FAILURE;
 						}
 						if (subchannels) {
 							auto outcome2 = image_format->write_subchannel_data(current_track, (UCHAR*)&cd_sector + subchannel_offset);
 							if (!outcome2) {
-								fprintf(stderr, "Error writing subchannel data %lu to file!\n", sector_index);
+								fprintf(stderr, "Error writing subchannel data %u to file!\n", sector_index);
 								throw EXIT_FAILURE;
 							}
 						}
 					} catch (...) {
-						fprintf(stderr, "Error reading sector %lu!\n", sector_index);
+						fprintf(stderr, "Error reading sector %u!\n", sector_index);
 						auto entry = file_system.get_entry(sector_index);
 						if (entry) {
 							auto& entries = file_system.get_hierarchy(*entry);
@@ -1533,13 +1511,13 @@ auto save(int argc, char **argv)
 						bad_sector_numbers.push_back(sector_index);
 						auto outcome = image_format->write_sector_data(current_track, empty_cd_sector.data + data_offset, data_length);
 						if (!outcome) {
-							fprintf(stderr, "Error writing sector data %lu to file!\n", sector_index);
+							fprintf(stderr, "Error writing sector data %u to file!\n", sector_index);
 							throw EXIT_FAILURE;
 						}
 						if (subchannels) {
 							auto outcome2 = image_format->write_subchannel_data(current_track, (UCHAR*)&cd_sector + subchannel_offset);
 							if (!outcome2) {
-								fprintf(stderr, "Error writing subchannel data %lu to file!\n", sector_index);
+								fprintf(stderr, "Error writing subchannel data %u to file!\n", sector_index);
 								throw EXIT_FAILURE;
 							}
 						}
@@ -1651,8 +1629,8 @@ auto main(int argc, char **argv)
 			if ((toc.TrackData[i-1].Control & 0x04) == 0x04) {
 				continue;
 			}
-			int first_sector = AddressToSectors(toc.TrackData[i-1].Address);
-			int last_sector = AddressToSectors(toc.TrackData[i].Address);
+			int first_sector = cd::get_sector_from_address({ toc.TrackData[i-1].Address[1], toc.TrackData[i-1].Address[2], toc.TrackData[i-1].Address[3] }) - 150;
+			int last_sector = cd::get_sector_from_address({ toc.TrackData[i].Address[1], toc.TrackData[i].Address[2], toc.TrackData[i].Address[3] } ) - 150;
 			if ((toc.TrackData[i].Control & 0x04) == 0x04) {
 				last_sector -= (150 + 2) * 75;
 			}
