@@ -4551,7 +4551,7 @@ namespace accuraterip {
 	auto Database::get_read_offset_correction_value(
 		reference<array<8, constant<ch08_t>>> vendor,
 		reference<array<16, constant<ch08_t>>> product
-	) -> std::optional<si_t> {
+	) const -> std::optional<si_t> {
 		auto key = internal::create_key(std::string(vendor, sizeof(vendor)), std::string(product, sizeof(product)));
 		auto iterator = this->read_offset_correction_values.find(key);
 		if (iterator != this->read_offset_correction_values.end()) {
