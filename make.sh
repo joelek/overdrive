@@ -30,13 +30,14 @@ SOURCES=(
 	"scsi/cdb"
 	"scsi/namespace"
 	"scsi/system"
-	"accuraterip"
-	"iso9660"
-	"type"
+	"lib/accuraterip"
+	"lib/iso9660"
 	"utils/byteswap"
 	"utils/idiv"
 	"utils/namespace"
 	"utils/string"
+	"lib"
+	"type"
 )
 
 TARGETS=(

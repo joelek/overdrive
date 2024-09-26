@@ -20,11 +20,11 @@
 #include "discs/namespace.h"
 #include "scsi/namespace.h"
 #include "utils/namespace.h"
-#include "accuraterip.h"
-#include "iso9660.h"
 #include "type.h"
+#include "lib.h"
 
 using namespace type;
+using namespace overdrive;
 
 #define APP_NAME "Disc Reader"
 #define APP_VERSION "0.0.0"

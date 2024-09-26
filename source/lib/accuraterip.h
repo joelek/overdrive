@@ -3,8 +3,9 @@
 #include <map>
 #include <string>
 #include <optional>
-#include "type.h"
+#include "../type.h"
 
+namespace overdrive {
 namespace accuraterip {
 	using namespace type;
 
@@ -23,4 +24,5 @@ namespace accuraterip {
 
 		std::map<std::string, si_t> read_offset_correction_values;
 	};
+}
 }

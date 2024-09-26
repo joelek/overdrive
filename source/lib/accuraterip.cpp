@@ -1,6 +1,6 @@
 #include "accuraterip.h"
 
-#include "./utils/namespace.h"
+#include "../utils/namespace.h"
 
 const std::string CSV = std::string(
 	"16X DVD-,ROM,738\n"
@@ -4516,6 +4516,7 @@ const std::string CSV = std::string(
 	"YAMAKAWA,DVR-Y08,48\n"
 );
 
+namespace overdrive {
 namespace accuraterip {
 	namespace internal {
 		auto create_key(
@@ -4559,4 +4560,5 @@ namespace accuraterip {
 		}
 		return std::optional<si_t>();
 	}
+}
 }

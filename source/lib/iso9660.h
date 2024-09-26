@@ -5,8 +5,9 @@
 #include <optional>
 #include <string>
 #include <vector>
-#include "type.h"
+#include "../type.h"
 
+namespace overdrive {
 namespace iso9660 {
 	using namespace type;
 
@@ -185,4 +186,5 @@ namespace iso9660 {
 		std::map<size_t, std::vector<FileSystemEntry>> children;
 		std::map<size_t, std::vector<FileSystemEntry>> hierarchies;
 	};
+}
 }

@@ -3,8 +3,9 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
-#include "./utils/namespace.h"
+#include "../utils/namespace.h"
 
+namespace overdrive {
 namespace iso9660 {
 	namespace internal {
 		auto read_file_system_entry(
@@ -172,4 +173,5 @@ namespace iso9660 {
 	) const -> const FileSystemEntry& {
 		return this->root;
 	}
+}
 }
