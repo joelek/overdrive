@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include "../type.h"
 
+namespace discs {
 namespace cd {
 	using namespace type;
 
@@ -151,4 +152,5 @@ namespace cd {
 	auto get_address_from_sector(
 		ui_t sector
 	) -> SectorAddress;
+}
 }

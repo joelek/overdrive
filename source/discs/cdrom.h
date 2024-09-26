@@ -3,6 +3,7 @@
 #include "cd.h"
 #include "../type.h"
 
+namespace discs {
 namespace cdrom {
 	using namespace type;
 
@@ -66,4 +67,5 @@ namespace cdrom {
 	static_assert(sizeof(Sector) == SECTOR_LENGTH);
 
 	#pragma pack(pop)
+}
 }

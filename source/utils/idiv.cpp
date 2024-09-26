@@ -1,5 +1,6 @@
 #include "idiv.h"
 
+namespace utils {
 namespace idiv {
 	auto ceil(
 		si_t num,
@@ -21,4 +22,5 @@ namespace idiv {
 	) -> si_t {
 		return (num ^ den) < 0 ? (num - den / 2) / den : (num + den / 2) / den;
 	}
+}
 }

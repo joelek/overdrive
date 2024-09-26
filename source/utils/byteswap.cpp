@@ -1,5 +1,6 @@
 #include "byteswap.h"
 
+namespace utils {
 namespace byteswap {
 	auto byteswap16(
 		ui16_t value
@@ -14,4 +15,5 @@ namespace byteswap {
 		auto pointer = reinterpret_cast<byte_t*>(&value);
 		return (pointer[0] << 24) | (pointer[1] << 16) | (pointer[2] << 8) | (pointer[3] << 0);
 	}
+}
 }

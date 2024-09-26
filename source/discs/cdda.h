@@ -3,6 +3,7 @@
 #include "cd.h"
 #include "../type.h"
 
+namespace discs {
 namespace cdda {
 	using namespace type;
 
@@ -34,4 +35,5 @@ namespace cdda {
 	static_assert(sizeof(Sector) == SECTOR_LENGTH);
 
 	#pragma pack(pop)
+}
 }

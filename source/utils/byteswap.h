@@ -2,6 +2,7 @@
 
 #include "../type.h"
 
+namespace utils {
 namespace byteswap {
 	using namespace type;
 
@@ -12,4 +13,5 @@ namespace byteswap {
 	auto byteswap32(
 		ui32_t value
 	) -> ui32_t;
+}
 }

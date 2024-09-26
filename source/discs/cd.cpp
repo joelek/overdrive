@@ -2,6 +2,7 @@
 
 #include <format>
 
+namespace discs {
 namespace cd {
 	BadSectorException::BadSectorException(
 		ui_t sector
@@ -34,4 +35,5 @@ namespace cd {
 		address.f = f;
 		return address;
 	}
+}
 }

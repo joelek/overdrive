@@ -2,6 +2,7 @@
 
 #include "../type.h"
 
+namespace audio {
 namespace wav {
 	using namespace type;
 
@@ -26,4 +27,5 @@ namespace wav {
 	static_assert(sizeof(Header) == 44);
 
 	#pragma pack(pop)
+}
 }

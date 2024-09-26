@@ -1,5 +1,6 @@
 #include "string.h"
 
+namespace utils {
 namespace string {
 	auto split(
 		const std::string& string,
@@ -30,4 +31,5 @@ namespace string {
 		auto end = string.find_last_not_of(characters);
 		return string.substr(start, end - start + 1);
 	}
+}
 }

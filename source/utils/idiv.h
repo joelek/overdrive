@@ -2,6 +2,7 @@
 
 #include "../type.h"
 
+namespace utils {
 namespace idiv {
 	using namespace type;
 
@@ -19,4 +20,5 @@ namespace idiv {
 		si_t num,
 		si_t den
 	) -> si_t;
+}
 }

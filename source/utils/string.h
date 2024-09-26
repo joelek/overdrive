@@ -4,6 +4,7 @@
 #include <vector>
 #include "../type.h"
 
+namespace utils {
 namespace string {
 	using namespace type;
 
@@ -16,4 +17,5 @@ namespace string {
 		const std::string& string,
 		const std::string& characters = " \n\r\t"
 	) -> std::string;
+}
 }

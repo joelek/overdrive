@@ -4,6 +4,7 @@
 #include "cdrom.h"
 #include "../type.h"
 
+namespace discs {
 namespace cdxa {
 	using namespace type;
 
@@ -74,4 +75,5 @@ namespace cdxa {
 	static_assert(sizeof(Sector) == SECTOR_LENGTH);
 
 	#pragma pack(pop)
+}
 }
