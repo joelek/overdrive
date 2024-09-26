@@ -7,16 +7,6 @@ namespace overdrive {
 namespace exceptions {
 	using namespace type;
 
-	class BadSectorException: public std::runtime_error {
-		public:
-
-		BadSectorException(
-			ui_t sector
-		);
-
-		protected:
-	};
-
 	class InvalidValueException: public std::runtime_error {
 		public:
 
