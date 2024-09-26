@@ -31,6 +31,7 @@ SOURCES=(
 	"scsi/namespace"
 	"scsi/system"
 	"lib/accuraterip"
+	"lib/exceptions"
 	"lib/iso9660"
 	"utils/byteswap"
 	"utils/idiv"

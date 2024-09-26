@@ -1,6 +1,5 @@
 #pragma once
 
-#include <stdexcept>
 #include "../type.h"
 
 namespace discs {
@@ -134,16 +133,6 @@ namespace cd {
 	static_assert(sizeof(SubchannelQ) == cd::SUBCHANNEL_LENGTH);
 
 	#pragma pack(pop)
-
-	class BadSectorException: public std::runtime_error {
-		public:
-
-		BadSectorException(
-			ui_t sector
-		);
-
-		protected:
-	};
 
 	auto get_sector_from_address(
 		const SectorAddress& address
