@@ -152,6 +152,8 @@ namespace iso9660 {
 		size_t first_sector;
 		size_t length_bytes;
 		std::optional<size_t> parent_first_sector;
+
+		protected:
 	};
 
 	class FileSystem {
@@ -163,18 +165,18 @@ namespace iso9660 {
 
 		auto get_children(
 			const FileSystemEntry& entry
-		) -> const std::vector<FileSystemEntry>&;
+		) const -> const std::vector<FileSystemEntry>&;
 
 		auto get_entry(
 			size_t sector
-		) -> std::optional<FileSystemEntry>;
+		) const -> std::optional<FileSystemEntry>;
 
 		auto get_hierarchy(
 			const FileSystemEntry& entry
-		) -> const std::vector<FileSystemEntry>&;
+		) const -> const std::vector<FileSystemEntry>&;
 
 		auto get_root(
-		) -> const FileSystemEntry&;
+		) const -> const FileSystemEntry&;
 
 		protected:
 

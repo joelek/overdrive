@@ -144,7 +144,7 @@ namespace iso9660 {
 
 	auto FileSystem::get_children(
 		const FileSystemEntry& entry
-	) -> const std::vector<FileSystemEntry>& {
+	) const -> const std::vector<FileSystemEntry>& {
 		auto iterator = this->children.find(entry.first_sector);
 		if (iterator == this->children.end()) {
 			throw EXIT_FAILURE;
@@ -154,13 +154,13 @@ namespace iso9660 {
 
 	auto FileSystem::get_entry(
 		size_t sector
-	) -> std::optional<FileSystemEntry> {
+	) const -> std::optional<FileSystemEntry> {
 		return internal::bisect_entries(this->entries, 0, this->entries.size(), sector);
 	}
 
 	auto FileSystem::get_hierarchy(
 		const FileSystemEntry& entry
-	) -> const std::vector<FileSystemEntry>& {
+	) const -> const std::vector<FileSystemEntry>& {
 		auto iterator = this->hierarchies.find(entry.first_sector);
 		if (iterator == this->hierarchies.end()) {
 			throw EXIT_FAILURE;
@@ -169,7 +169,7 @@ namespace iso9660 {
 	}
 
 	auto FileSystem::get_root(
-	) -> const FileSystemEntry& {
+	) const -> const FileSystemEntry& {
 		return this->root;
 	}
 }
