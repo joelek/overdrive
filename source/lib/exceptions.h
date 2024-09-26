@@ -18,5 +18,13 @@ namespace exceptions {
 
 		protected:
 	};
+
+	class MissingValueException: public std::runtime_error {
+		public:
+
+		MissingValueException();
+
+		protected:
+	};
 }
 }

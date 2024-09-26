@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include "exceptions.h"
 #include "../utils/namespace.h"
 
 namespace overdrive {
@@ -148,7 +149,7 @@ namespace iso9660 {
 	) const -> const std::vector<FileSystemEntry>& {
 		auto iterator = this->children.find(entry.first_sector);
 		if (iterator == this->children.end()) {
-			throw EXIT_FAILURE;
+			throw exceptions::MissingValueException();
 		}
 		return iterator->second;
 	}
@@ -164,7 +165,7 @@ namespace iso9660 {
 	) const -> const std::vector<FileSystemEntry>& {
 		auto iterator = this->hierarchies.find(entry.first_sector);
 		if (iterator == this->hierarchies.end()) {
-			throw EXIT_FAILURE;
+			throw exceptions::MissingValueException();
 		}
 		return iterator->second;
 	}
