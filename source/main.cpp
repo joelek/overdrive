@@ -26,7 +26,7 @@
 using namespace type;
 using namespace overdrive;
 
-#define APP_NAME "Disc Reader"
+#define APP_NAME "Overdrive"
 #define APP_VERSION "0.0.0"
 
 auto ascii_dump(uint8_t* bytes, int size, const char* name)

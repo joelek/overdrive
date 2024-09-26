@@ -1,4 +1,4 @@
-# Disc Reader
+# Overdrive
 
 Utility for interfacing with optical drives. Written for the Windows platform.
 
@@ -13,7 +13,6 @@ Utility for interfacing with optical drives. Written for the Windows platform.
 * Add ignore read error setting (data tracks only).
 * Prevent reading into end of data tracks when read offset correction is negative.
 * Add support for custom user data sizes in iso9660 module.
-* Decide on name for utility.
 * Make utility platform-independent.
 
 ## Read offset correction
