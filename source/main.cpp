@@ -1266,9 +1266,17 @@ auto save(int argc, char **argv)
 		auto toc = get_cdrom_toc(handle);
 		validate_cdrom_toc(toc);
 
-		auto scsi_drive = scsi::drive::Drive(handle, pass_through_direct);
-		auto toc_alt = scsi_drive.get_cdrom_toc();
+/* 		auto scsi_drive = scsi::drive::Drive(handle, pass_through_direct);
+		auto session_info = scsi_drive.get_session_info();
+		HEXDUMP(session_info);
+		auto toc_alt = scsi_drive.get_toc();
 		HEXDUMP(toc_alt);
+		auto full_toc_alt = scsi_drive.get_full_toc();
+		HEXDUMP(full_toc_alt);
+		auto pma_alt = scsi_drive.get_pma();
+		HEXDUMP(pma_alt);
+		auto atip_alt = scsi_drive.get_atip();
+		HEXDUMP(atip_alt); */
 
 		auto toc_ex = get_cdrom_full_toc(handle);
 		{
