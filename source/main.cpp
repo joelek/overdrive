@@ -49,6 +49,46 @@ using namespace overdrive;
 		}
 #endif
 
+struct SPTDWithSenseBuffer {
+	SCSI_PASS_THROUGH_DIRECT sptd;
+	byte_t sense[255];
+};
+
+auto pass_through_direct(
+	void* handle,
+	byte_t* cdb,
+	size_t cdb_size,
+	byte_t* data,
+	size_t data_size,
+	bool_t write_to_device
+) -> void {
+	auto sptd_sense = SPTDWithSenseBuffer();
+	sptd_sense.sptd.Length = sizeof(sptd_sense.sptd);
+	sptd_sense.sptd.CdbLength = cdb_size;
+	sptd_sense.sptd.DataIn = write_to_device ? SCSI_IOCTL_DATA_OUT : SCSI_IOCTL_DATA_IN;
+	sptd_sense.sptd.TimeOutValue = 10;
+	sptd_sense.sptd.DataBuffer = data;
+	sptd_sense.sptd.DataTransferLength = data_size;
+	sptd_sense.sptd.SenseInfoLength = sizeof(sptd_sense.sense);
+	sptd_sense.sptd.SenseInfoOffset = offsetof(SPTDWithSenseBuffer, sense);
+	std::memcpy(sptd_sense.sptd.Cdb, cdb, cdb_size);
+	SetLastError(ERROR_SUCCESS);
+	auto outcome = DeviceIoControl(
+		handle,
+		IOCTL_SCSI_PASS_THROUGH_DIRECT,
+		&sptd_sense,
+		sizeof(sptd_sense),
+		&sptd_sense,
+		sizeof(sptd_sense),
+		nullptr,
+		nullptr
+	);
+	WINAPI_CHECK_STATUS();
+	if (!outcome) {
+		throw EXIT_FAILURE;
+	}
+}
+
 typedef struct {
 	unsigned char data[discs::cd::SECTOR_LENGTH];
 	unsigned int counter;
@@ -156,11 +196,6 @@ auto validate_cdrom_toc(CDROM_TOC &toc)
 		throw EXIT_FAILURE;
 	}
 }
-
-typedef struct {
-	SCSI_PASS_THROUGH_DIRECT sptd;
-	UCHAR sense[255];
-} SPTDWithSenseBuffer;
 
 auto read_sector_sptd(
 	HANDLE handle,
@@ -346,34 +381,6 @@ auto sptd_inquiry(
 		sizeof(data),
 		&data,
 		sizeof(data),
-		&bytes_returned,
-		nullptr
-	);
-	WINAPI_CHECK_STATUS();
-	if (!outcome || (bytes_returned != bytes_expected)) {
-		throw EXIT_FAILURE;
-	}
-}
-
-auto read_raw_sector(
-	HANDLE handle,
-	uint8_t* data,
-	ULONG lba
-) -> void {
-	auto read_info = RAW_READ_INFO();
-	read_info.TrackMode = TRACK_MODE_TYPE::CDDA;
-	read_info.SectorCount = 1;
-	read_info.DiskOffset.QuadPart = lba * discs::cdrom::MODE1_DATA_LENGTH;
-	auto bytes_returned = ULONG(0);
-	auto bytes_expected = ULONG(discs::cd::SECTOR_LENGTH);
-	SetLastError(ERROR_SUCCESS);
-	auto outcome = DeviceIoControl(
-		handle,
-		IOCTL_CDROM_RAW_READ,
-		&read_info,
-		sizeof(read_info),
-		data,
-		discs::cd::SECTOR_LENGTH,
 		&bytes_returned,
 		nullptr
 	);
@@ -1254,6 +1261,11 @@ auto save(int argc, char **argv)
 		fprintf(stderr, "C2 data offset is %llu\n", c2_offset);
 		auto toc = get_cdrom_toc(handle);
 		validate_cdrom_toc(toc);
+
+		auto scsi_drive = scsi::drive::Drive(handle, pass_through_direct);
+		auto toc_alt = scsi_drive.get_cdrom_toc();
+		HEXDUMP(toc_alt);
+
 		auto toc_ex = get_cdrom_full_toc(handle);
 		{
 			auto mode_sense = ModeSense();

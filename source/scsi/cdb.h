@@ -9,13 +9,24 @@ namespace cdb {
 
 	#pragma pack(push, 1)
 
+	enum class ReadTOCFormat: ui08_t {
+		NORMAL_TOC = 0b0000,
+		SESSION_INFO = 0b0001,
+		FULL_TOC = 0b0010,
+		PMA = 0b0011,
+		ATIP = 0b0100,
+		CD_TEXT = 0b0101
+	};
+
+	static_assert(sizeof(ReadTOCFormat) == 1);
+
 	struct ReadTOC10 {
 		ui08_t operation_code = 0x43;
 		ui08_t : 1;
 		ui08_t time: 1;
 		ui08_t : 3;
 		ui08_t : 3;
-		ui08_t format: 4;
+		ReadTOCFormat format: 4;
 		ui08_t : 4;
 		ui08_t : 8;
 		ui08_t : 8;
@@ -26,6 +37,111 @@ namespace cdb {
 	};
 
 	static_assert(sizeof(ReadTOC10) == 10);
+
+	struct ReadTOCResponseParameterList {
+		ui16_t data_length_be;
+		ui08_t first_track_or_session_number: 8;
+		ui08_t last_track_or_session_number: 8;
+	};
+
+	static_assert(sizeof(ReadTOCResponseParameterList) == 4);
+
+	struct ReadTOCResponseNormalTOCEntry {
+		ui08_t : 8;
+		ui08_t control: 4;
+		ui08_t adr: 4;
+		ui08_t track_number: 8;
+		ui08_t : 8;
+		ui08_t : 8;
+		discs::cd::SectorAddress track_start_address;
+	};
+
+	static_assert(sizeof(ReadTOCResponseNormalTOCEntry) == 8);
+
+	struct ReadTOCResponseNormalTOC {
+		ReadTOCResponseParameterList header;
+		ReadTOCResponseNormalTOCEntry tracks[100];
+	};
+
+	static_assert(sizeof(ReadTOCResponseNormalTOC) == 804);
+
+	struct ReadTOCResponseSessionInfoEntry {
+		ui08_t : 8;
+		ui08_t control: 4;
+		ui08_t adr: 4;
+		ui08_t first_track_number_in_last_complete_session: 8;
+		ui08_t : 8;
+		ui08_t : 8;
+		discs::cd::SectorAddress track_start_address;
+	};
+
+	static_assert(sizeof(ReadTOCResponseSessionInfoEntry) == 8);
+
+	struct ReadTOCResponseFullTOCEntry {
+		ui08_t session_number: 8;
+		ui08_t control: 4;
+		ui08_t adr: 4;
+		ui08_t tno: 8;
+		ui08_t point: 8;
+		ui08_t min: 8;
+		ui08_t sec: 8;
+		ui08_t frame: 8;
+		ui08_t phour: 4;
+		ui08_t hour: 4;
+		ui08_t pmin: 8;
+		ui08_t psec: 8;
+		ui08_t pframe: 8;
+	};
+
+	static_assert(sizeof(ReadTOCResponseFullTOCEntry) == 11);
+
+	struct ReadTOCResponsePMAEntry {
+		ui08_t : 8;
+		ui08_t control: 4;
+		ui08_t adr: 4;
+		ui08_t tno: 8;
+		ui08_t point: 8;
+		ui08_t min: 8;
+		ui08_t sec: 8;
+		ui08_t frame: 8;
+		ui08_t phour: 4;
+		ui08_t hour: 4;
+		ui08_t pmin: 8;
+		ui08_t psec: 8;
+		ui08_t pframe: 8;
+	};
+
+	static_assert(sizeof(ReadTOCResponsePMAEntry) == 11);
+
+	struct ReadTOCResponseATIPEntry {
+		ui08_t reference_speed: 3;
+		ui08_t ddcd: 1;
+		ui08_t indicative_target_writing_power: 4;
+		ui08_t : 6;
+		ui08_t uru: 1;
+		ui08_t zero: 1;
+		ui08_t a3_valid: 1;
+		ui08_t a2_valid: 1;
+		ui08_t a1_valid: 1;
+		ui08_t disc_sub_type: 3;
+		ui08_t disc_type: 1;
+		ui08_t : 1;
+		ui08_t : 8;
+		discs::cd::SectorAddress astart_time_of_lead_in;
+		ui08_t : 8;
+		discs::cd::SectorAddress last_possible_start_time_of_lead_out;
+		ui08_t : 8;
+		ui08_t a1_values[3];
+		ui08_t : 8;
+		ui08_t a2_values[3];
+		ui08_t : 8;
+		ui08_t a3_values[3];
+		ui08_t : 8;
+		ui08_t s4_values[3];
+		ui08_t : 8;
+	};
+
+	static_assert(sizeof(ReadTOCResponseATIPEntry) == 28);
 
 	struct Inquiry6 {
 		ui08_t operation_code = 0x12;
