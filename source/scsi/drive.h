@@ -20,8 +20,20 @@ namespace drive {
 			const std::function<void(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)>& sptd
 		);
 
-		auto get_cdrom_toc(
+		auto get_toc(
 		) const -> cdb::ReadTOCResponseNormalTOC;
+
+		auto get_session_info(
+		) const -> cdb::ReadTOCResponseSessionInfo;
+
+		auto get_full_toc(
+		) const -> cdb::ReadTOCResponseFullTOC;
+
+		auto get_pma(
+		) const -> cdb::ReadTOCResponsePMA;
+
+		auto get_atip(
+		) const -> cdb::ReadTOCResponseATIP;
 
 		protected:
 

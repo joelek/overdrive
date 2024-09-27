@@ -10,13 +10,53 @@ namespace drive {
 		this->sptd = sptd;
 	}
 
-	auto Drive::get_cdrom_toc(
+	auto Drive::get_toc(
 	) const	-> cdb::ReadTOCResponseNormalTOC {
 		auto cdb = cdb::ReadTOC10();
 		auto data = cdb::ReadTOCResponseNormalTOC();
 		cdb.allocation_length_be = sizeof(data);
 		cdb.format = cdb::ReadTOCFormat::NORMAL_TOC;
-		cdb.track_or_session_number = 1;
+		this->sptd(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		return data;
+	}
+
+	auto Drive::get_session_info(
+	) const	-> cdb::ReadTOCResponseSessionInfo {
+		auto cdb = cdb::ReadTOC10();
+		auto data = cdb::ReadTOCResponseSessionInfo();
+		cdb.allocation_length_be = sizeof(data);
+		cdb.format = cdb::ReadTOCFormat::SESSION_INFO;
+		this->sptd(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		return data;
+	}
+
+	auto Drive::get_full_toc(
+	) const	-> cdb::ReadTOCResponseFullTOC {
+		auto cdb = cdb::ReadTOC10();
+		auto data = cdb::ReadTOCResponseFullTOC();
+		cdb.allocation_length_be = sizeof(data);
+		cdb.format = cdb::ReadTOCFormat::FULL_TOC;
+		this->sptd(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		return data;
+	}
+
+	auto Drive::get_pma(
+	) const	-> cdb::ReadTOCResponsePMA {
+		auto cdb = cdb::ReadTOC10();
+		auto data = cdb::ReadTOCResponsePMA();
+		cdb.allocation_length_be = sizeof(data);
+		cdb.format = cdb::ReadTOCFormat::PMA;
+		this->sptd(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		return data;
+	}
+
+	auto Drive::get_atip(
+	) const	-> cdb::ReadTOCResponseATIP {
+		auto cdb = cdb::ReadTOC10();
+		auto data = cdb::ReadTOCResponseATIP();
+		cdb.allocation_length_be = sizeof(data);
+		cdb.format = cdb::ReadTOCFormat::ATIP;
+		cdb.time = 1;
 		this->sptd(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		return data;
 	}

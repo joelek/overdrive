@@ -60,7 +60,7 @@ namespace cdb {
 
 	struct ReadTOCResponseNormalTOC {
 		ReadTOCResponseParameterList header;
-		ReadTOCResponseNormalTOCEntry tracks[100];
+		ReadTOCResponseNormalTOCEntry entries[100];
 	};
 
 	static_assert(sizeof(ReadTOCResponseNormalTOC) == 804);
@@ -76,6 +76,13 @@ namespace cdb {
 	};
 
 	static_assert(sizeof(ReadTOCResponseSessionInfoEntry) == 8);
+
+	struct ReadTOCResponseSessionInfo {
+		ReadTOCResponseParameterList header;
+		ReadTOCResponseSessionInfoEntry entries[100];
+	};
+
+	static_assert(sizeof(ReadTOCResponseSessionInfo) == 804);
 
 	struct ReadTOCResponseFullTOCEntry {
 		ui08_t session_number: 8;
@@ -95,6 +102,13 @@ namespace cdb {
 
 	static_assert(sizeof(ReadTOCResponseFullTOCEntry) == 11);
 
+	struct ReadTOCResponseFullTOC {
+		ReadTOCResponseParameterList header;
+		ReadTOCResponseFullTOCEntry entries[100];
+	};
+
+	static_assert(sizeof(ReadTOCResponseFullTOC) == 1104);
+
 	struct ReadTOCResponsePMAEntry {
 		ui08_t : 8;
 		ui08_t control: 4;
@@ -112,6 +126,13 @@ namespace cdb {
 	};
 
 	static_assert(sizeof(ReadTOCResponsePMAEntry) == 11);
+
+	struct ReadTOCResponsePMA {
+		ReadTOCResponseParameterList header;
+		ReadTOCResponsePMAEntry entries[100];
+	};
+
+	static_assert(sizeof(ReadTOCResponsePMA) == 1104);
 
 	struct ReadTOCResponseATIPEntry {
 		ui08_t reference_speed: 3;
@@ -142,6 +163,13 @@ namespace cdb {
 	};
 
 	static_assert(sizeof(ReadTOCResponseATIPEntry) == 28);
+
+	struct ReadTOCResponseATIP {
+		ReadTOCResponseParameterList header;
+		ReadTOCResponseATIPEntry entries[100];
+	};
+
+	static_assert(sizeof(ReadTOCResponseATIP) == 2804);
 
 	struct Inquiry6 {
 		ui08_t operation_code = 0x12;
