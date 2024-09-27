@@ -87,6 +87,10 @@ auto pass_through_direct(
 	if (!outcome) {
 		throw EXIT_FAILURE;
 	}
+	if (sptd_sense.sense[0] == (byte_t)scsi::sense::ResponseCodes::FIXED_CURRENT) {
+		auto& sense = *reinterpret_cast<scsi::sense::FixedFormat*>(sptd_sense.sense);
+		fprintf(stderr, "[WARNING] Sense info 0x%.1X 0x%.2X 0x%.2X!\n", (unsigned)sense.sense_key, sense.additional_sense_code, sense.additional_sense_code_qualifier);
+	}
 }
 
 typedef struct {

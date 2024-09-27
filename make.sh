@@ -30,6 +30,7 @@ SOURCES=(
 	"scsi/cdb"
 	"scsi/drive"
 	"scsi/namespace"
+	"scsi/sense"
 	"lib/accuraterip"
 	"lib/exceptions"
 	"lib/hex"
