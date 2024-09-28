@@ -1034,7 +1034,7 @@ auto save(int argc, char **argv)
 	auto max_audio_read_passes = 8;
 	auto split_tracks = false;
 	auto add_wave_headers = false;
-	auto complete_data_sectors = false;
+	auto complete_data_sectors = true;
 	auto unrecognized_arguments = std::vector<char*>();
 	auto positional_index = 0;
 	for (auto i = 2; i < argc; i += 1) {
