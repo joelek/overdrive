@@ -14,6 +14,7 @@ Utility for interfacing with optical drives. Written for the Windows platform.
 * Prevent reading into end of data tracks when read offset correction is negative.
 * Add support for custom user data sizes in iso9660 module.
 * Make utility platform-independent.
+* Add debug logging.
 
 ## Read offset correction
 
