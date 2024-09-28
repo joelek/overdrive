@@ -18,6 +18,7 @@ namespace drive {
 		auto data = cdb::ReadTOCResponseNormalTOC();
 		cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(data));
 		cdb.format = cdb::ReadTOCFormat::NORMAL_TOC;
+		cdb.time = 1;
 		this->sptd(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		return data;
 	}
@@ -28,6 +29,7 @@ namespace drive {
 		auto data = cdb::ReadTOCResponseSessionInfo();
 		cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(data));
 		cdb.format = cdb::ReadTOCFormat::SESSION_INFO;
+		cdb.time = 1;
 		this->sptd(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		return data;
 	}
@@ -38,6 +40,7 @@ namespace drive {
 		auto data = cdb::ReadTOCResponseFullTOC();
 		cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(data));
 		cdb.format = cdb::ReadTOCFormat::FULL_TOC;
+		cdb.time = 1;
 		this->sptd(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		return data;
 	}
@@ -48,6 +51,7 @@ namespace drive {
 		auto data = cdb::ReadTOCResponsePMA();
 		cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(data));
 		cdb.format = cdb::ReadTOCFormat::PMA;
+		cdb.time = 1;
 		this->sptd(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		return data;
 	}

@@ -90,14 +90,10 @@ namespace cdb {
 		ui08_t adr: 4;
 		ui08_t tno: 8;
 		ui08_t point: 8;
-		ui08_t min: 8;
-		ui08_t sec: 8;
-		ui08_t frame: 8;
+		discs::cd::SectorAddress address;
 		ui08_t phour: 4;
 		ui08_t hour: 4;
-		ui08_t pmin: 8;
-		ui08_t psec: 8;
-		ui08_t pframe: 8;
+		discs::cd::SectorAddress paddress;
 	};
 
 	static_assert(sizeof(ReadTOCResponseFullTOCEntry) == 11);
