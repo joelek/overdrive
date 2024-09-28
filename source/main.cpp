@@ -160,15 +160,13 @@ auto validate_cdrom_toc(scsi::cdb::ReadTOCResponseNormalTOC &toc)
 }
 
 auto read_sector_sptd(
-	HANDLE handle,
+	void* handle,
 	scsi::cdb::ReadCDResponseDataA& sector,
-	ULONG lba
+	size_t sector_index
 ) -> void {
-	memset(&sector, 0, sizeof(sector));
-	auto data = SPTDWithSenseBuffer();
 	auto cdb = scsi::cdb::ReadCD12();
 	cdb.expected_sector_type = scsi::cdb::ReadCD12ExpectedSectorType::ANY;
-	cdb.lba_be = utils::byteswap::byteswap32(lba);
+	cdb.lba_be = utils::byteswap::byteswap32(sector_index);
 	cdb.transfer_length_be[2] = 1;
 	cdb.errors = scsi::cdb::ReadCD12Errors::C2_ERROR_BLOCK_DATA;
 	cdb.edc_and_ecc = 1;
@@ -176,23 +174,8 @@ auto read_sector_sptd(
 	cdb.header_codes = scsi::cdb::ReadCD12HeaderCodes::ALL_HEADERS;
 	cdb.sync = 1;
 	cdb.subchannel_selection_bits = scsi::cdb::ReadCD12SubchanelBits::RAW;
-	data.sptd.Length = sizeof(data.sptd);
-	data.sptd.CdbLength = sizeof(cdb);
-	data.sptd.DataIn = SCSI_IOCTL_DATA_IN;
-	data.sptd.TimeOutValue = 10;
-	data.sptd.DataBuffer = &sector;
-	data.sptd.DataTransferLength = sizeof(sector);
-	data.sptd.SenseInfoLength = sizeof(data.sense);
-	data.sptd.SenseInfoOffset = offsetof(SPTDWithSenseBuffer, sense);
-	memcpy(data.sptd.Cdb, &cdb, sizeof(cdb));
-	auto bytes_returned = ULONG(0);
-	auto bytes_expected = ULONG(sizeof(data.sptd));
-	SetLastError(ERROR_SUCCESS);
-	auto outcome = DeviceIoControl(handle, IOCTL_SCSI_PASS_THROUGH_DIRECT, &data, sizeof(data), &data, sizeof(data), &bytes_returned, nullptr);
-	WINAPI_CHECK_STATUS();
-	if (!outcome || (bytes_returned != bytes_expected)) {
-		throw EXIT_FAILURE;
-	}
+	std::memset(&sector, 0, sizeof(sector));
+	return pass_through_direct(handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&sector), sizeof(sector), false);
 }
 
 typedef struct {
