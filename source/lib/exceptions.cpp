@@ -12,5 +12,8 @@ namespace exceptions {
 
 	MissingValueException::MissingValueException(
 	): std::runtime_error(std::format("Expected value to be present!")) {}
+
+	AutoDetectFailureException::AutoDetectFailureException(
+	): std::runtime_error(std::format("Expected value to be auto-detected!")) {}
 }
 }

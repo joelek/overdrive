@@ -26,5 +26,13 @@ namespace exceptions {
 
 		protected:
 	};
+
+	class AutoDetectFailureException: public std::runtime_error {
+		public:
+
+		AutoDetectFailureException();
+
+		protected:
+	};
 }
 }

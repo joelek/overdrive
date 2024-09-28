@@ -159,25 +159,6 @@ auto validate_cdrom_toc(scsi::cdb::ReadTOCResponseNormalTOC &toc)
 	}
 }
 
-auto read_sector_sptd(
-	void* handle,
-	scsi::cdb::ReadCDResponseDataA& sector,
-	size_t sector_index
-) -> void {
-	auto cdb = scsi::cdb::ReadCD12();
-	cdb.expected_sector_type = scsi::cdb::ReadCD12ExpectedSectorType::ANY;
-	cdb.lba_be = utils::byteswap::byteswap32(sector_index);
-	cdb.transfer_length_be[2] = 1;
-	cdb.errors = scsi::cdb::ReadCD12Errors::C2_ERROR_BLOCK_DATA;
-	cdb.edc_and_ecc = 1;
-	cdb.user_data = 1;
-	cdb.header_codes = scsi::cdb::ReadCD12HeaderCodes::ALL_HEADERS;
-	cdb.sync = 1;
-	cdb.subchannel_selection_bits = scsi::cdb::ReadCD12SubchanelBits::RAW;
-	std::memset(&sector, 0, sizeof(sector));
-	return pass_through_direct(handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&sector), sizeof(sector), false);
-}
-
 typedef struct {
 	scsi::cdb::ModeParameterHeader10 parameter_header;
 	scsi::cdb::ReadWriteErrorRecoveryModePage page_data;
@@ -359,18 +340,21 @@ enum class TrackTypeEx {
 	DATA_MODE_2_FORM_2
 };
 
-auto get_track_type_ex(HANDLE handle, const scsi::cdb::ReadTOCResponseFullTOC &toc, int index)
--> TrackTypeEx {
-	auto &track = toc.entries[index];
+auto get_track_type_ex(
+	const scsi::drive::Drive& drive,
+	const scsi::cdb::ReadTOCResponseFullTOC& toc,
+	int track_index
+) -> TrackTypeEx {
+	auto& track = toc.entries[track_index];
 	auto session_type = scsi::cdb::get_session_type(toc);
 	if (session_type == scsi::cdb::SessionType::CDDA_OR_CDROM) {
 		auto is_audio = (track.control & 0b0100) == 0;
 		if (is_audio) {
 			return TrackTypeEx::AUDIO;
 		} else {
-			auto sector = scsi::cdb::ReadCDResponseDataA();
-			read_sector_sptd(handle, sector, iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR);
-			auto &cdrom_sector = *(discs::cdrom::Sector*)(void*)&sector.data;
+			auto data = scsi::cdb::ReadCDResponseDataA();
+			drive.read_sector(iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR, &data.sector_data, nullptr, nullptr);
+			auto& cdrom_sector = *reinterpret_cast<discs::cdrom::Sector*>(&data.sector_data);
 			if (cdrom_sector.base.header.mode == 0) {
 				return TrackTypeEx::DATA_MODE_0;
 			} else if (cdrom_sector.base.header.mode == 1) {
@@ -380,9 +364,9 @@ auto get_track_type_ex(HANDLE handle, const scsi::cdb::ReadTOCResponseFullTOC &t
 			}
 		}
 	} else if (session_type == scsi::cdb::SessionType::CDXA_OR_DDCD) {
-		auto sector = scsi::cdb::ReadCDResponseDataA();
-		read_sector_sptd(handle, sector, iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR);
-		auto &cdxa_sector = *(discs::cdxa::Sector*)(void*)&sector.data;
+		auto data = scsi::cdb::ReadCDResponseDataA();
+		drive.read_sector(iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR, &data.sector_data, nullptr, nullptr);
+		auto& cdxa_sector = *reinterpret_cast<discs::cdxa::Sector*>(&data.sector_data);
 		if (cdxa_sector.base.header.mode == 2) {
 			if (cdxa_sector.base.header_1.form_2 == 0) {
 				return TrackTypeEx::DATA_MODE_2_FORM_1;
@@ -392,27 +376,6 @@ auto get_track_type_ex(HANDLE handle, const scsi::cdb::ReadTOCResponseFullTOC &t
 		}
 	}
 	throw EXIT_FAILURE;
-}
-
-auto deinterleave_subchannel_data(const UCHAR* sector_subchannel_data)
--> discs::cd::SubchannelData {
-	auto subchannel_data = discs::cd::SubchannelData();
-	for (auto subchannel_index = 7; subchannel_index >= 0; subchannel_index -= 1) {
-		auto channel_right_shift = 7 - subchannel_index;
-		auto offset = 0;
-		for (auto byte_index = 0; byte_index < 12; byte_index += 1) {
-			auto byte = 0;
-			for (auto bit_index = 0; bit_index < 8; bit_index += 1) {
-				auto subchannel_byte = sector_subchannel_data[offset];
-				auto subchannel_bit = (subchannel_byte >> channel_right_shift) & 1;
-				byte <<= 1;
-				byte |= subchannel_bit;
-				offset += 1;
-			}
-			subchannel_data.channels[subchannel_index][byte_index] = byte;
-		}
-	}
-	return subchannel_data;
 }
 
 namespace mds {
@@ -578,7 +541,7 @@ class ImageFormat {
 
 	virtual auto write_sector_data(const scsi::cdb::ReadTOCResponseNormalTOCEntry& track, const uint8_t* data, size_t size) -> bool = 0;
 	virtual auto write_subchannel_data(const scsi::cdb::ReadTOCResponseNormalTOCEntry& track, const uint8_t* data) -> bool = 0;
-	virtual auto write_index(HANDLE handle, const scsi::cdb::ReadTOCResponseNormalTOC& toc, const scsi::cdb::ReadTOCResponseFullTOC& toc_ex, bool subchannels, const std::vector<int>& bad_sector_numbers, const std::vector<unsigned int>& track_pregap_sectors_list, const std::vector<unsigned int>& track_length_sectors_list) -> void = 0;
+	virtual auto write_index(const scsi::drive::Drive& drive, const scsi::cdb::ReadTOCResponseNormalTOC& toc, const scsi::cdb::ReadTOCResponseFullTOC& toc_ex, bool subchannels, const std::vector<int>& bad_sector_numbers, const std::vector<unsigned int>& track_pregap_sectors_list, const std::vector<unsigned int>& track_length_sectors_list) -> void = 0;
 
 	protected:
 };
@@ -622,7 +585,7 @@ class MDSImageFormat: ImageFormat {
 		return bytes_returned == bytes_expected;
 	}
 
-	auto write_index(HANDLE handle, const scsi::cdb::ReadTOCResponseNormalTOC& toc, const scsi::cdb::ReadTOCResponseFullTOC& toc_ex, bool subchannels, const std::vector<int>& bad_sector_numbers, const std::vector<unsigned int>& track_pregap_sectors_list, const std::vector<unsigned int>& track_length_sectors_list) -> void {
+	auto write_index(const scsi::drive::Drive& drive, const scsi::cdb::ReadTOCResponseNormalTOC& toc, const scsi::cdb::ReadTOCResponseFullTOC& toc_ex, bool subchannels, const std::vector<int>& bad_sector_numbers, const std::vector<unsigned int>& track_pregap_sectors_list, const std::vector<unsigned int>& track_length_sectors_list) -> void {
 		auto &first_track = toc.entries[toc.header.first_track_or_session_number - 1];
 		auto &lead_out_track = toc.entries[toc.header.last_track_or_session_number + 1 - 1];
 		auto track_count = toc.header.last_track_or_session_number - toc.header.first_track_or_session_number + 1;
@@ -666,7 +629,7 @@ class MDSImageFormat: ImageFormat {
 				}
 			} else {
 				auto current_track_entry = mds::EntryTypeB();
-				auto current_track_type = get_track_type_ex(handle, toc_ex, toc_ex_track_index);
+				auto current_track_type = get_track_type_ex(drive, toc_ex, toc_ex_track_index);
 				auto current_track_mode = this->get_track_mode(current_track_type);
 				current_track_entry.track_mode = current_track_mode;
 				current_track_entry.track_mode_flags = current_track_mode == mds::TrackMode::MODE2_FORM1 || current_track_mode == mds::TrackMode::MODE2_FORM2 ? mds::TrackModeFlags::UNKNOWN_E : mds::TrackModeFlags::UNKNOWN_A;
@@ -805,8 +768,8 @@ class BINCUEImageFormat: ImageFormat {
 		return bytes_returned == bytes_expected;
 	}
 
-	auto write_index(HANDLE handle, const scsi::cdb::ReadTOCResponseNormalTOC& toc, const scsi::cdb::ReadTOCResponseFullTOC& toc_ex, bool subchannels, const std::vector<int>& bad_sector_numbers, const std::vector<unsigned int>& track_pregap_sectors_list, const std::vector<unsigned int>& track_length_sectors_list) -> void {
-		(void)handle;
+	auto write_index(const scsi::drive::Drive& drive, const scsi::cdb::ReadTOCResponseNormalTOC& toc, const scsi::cdb::ReadTOCResponseFullTOC& toc_ex, bool subchannels, const std::vector<int>& bad_sector_numbers, const std::vector<unsigned int>& track_pregap_sectors_list, const std::vector<unsigned int>& track_length_sectors_list) -> void {
+		(void)drive;
 		(void)toc_ex;
 		(void)subchannels;
 		(void)bad_sector_numbers;
@@ -931,78 +894,6 @@ auto get_image_format(FileFormat format, const std::string& directory, const std
 		return std::shared_ptr<ImageFormat>((ImageFormat*)new MDSImageFormat(directory, filename));
 	}
 	return std::shared_ptr<ImageFormat>((ImageFormat*)new BINCUEImageFormat(std::string(directory), std::string(filename), split_tracks, add_wave_headers, complete_data_sectors));
-}
-
-auto get_subchannel_offset(HANDLE handle)
--> unsigned int {
-	fprintf(stderr, "Detecting subchannel offset\n");
-	auto sector = scsi::cdb::ReadCDResponseDataA();
-	try {
-		auto offset = offsetof(scsi::cdb::ReadCDResponseDataA, subchannel_data);
-		fprintf(stderr, "Testing subchannel offset %llu\n", offset);
-		int delta_lbas[10];
-		auto delta_lba_index = 0u;
-		for (auto target_lba = 0u; target_lba < 10u; target_lba += 1) {
-			read_sector_sptd(handle, sector, target_lba);
-			auto sector_data = *(scsi::cdb::ReadCDResponseDataA*)&sector;
-			auto subchannel_data = deinterleave_subchannel_data(sector_data.subchannel_data);
-			auto q = (discs::cd::SubchannelQ*)subchannel_data.channels[discs::cd::SUBCHANNEL_Q_INDEX];
-			if (q->adr == 1) {
-				auto actual_lba = discs::cd::get_sector_from_address({ utils::bcd::decode(q->mode1.absolute_address_bcd.m), utils::bcd::decode(q->mode1.absolute_address_bcd.s), utils::bcd::decode(q->mode1.absolute_address_bcd.f) }) - 150;
-				auto delta_lba = (int)target_lba - (int)actual_lba;
-				if (delta_lba < -10 || delta_lba > 10) {
-					fprintf(stderr, "The subchannel position difference of %i is too large\n", delta_lba);
-					throw EXIT_FAILURE;
-				}
-				if (delta_lba_index > 0) {
-					if (delta_lbas[delta_lba_index - 1] != delta_lba) {
-						fprintf(stderr, "The subchannel position difference is not consistent\n");
-						throw EXIT_FAILURE;
-					}
-				}
-				delta_lbas[delta_lba_index] = delta_lba;
-				delta_lba_index += 1;
-			}
-		}
-		fprintf(stderr, "Got %u identical subchannel position difference values\n", delta_lba_index);
-		if (delta_lba_index >= 9) {
-			return offset;
-		}
-	} catch (...) {}
-	try {
-		auto offset = offsetof(scsi::cdb::ReadCDResponseDataB, subchannel_data);
-		fprintf(stderr, "Testing subchannel offset %llu\n", offset);
-		int delta_lbas[10];
-		auto delta_lba_index = 0u;
-		for (auto target_lba = 0u; target_lba < 10u; target_lba += 1) {
-			read_sector_sptd(handle, sector, target_lba);
-			auto sector_data = *(scsi::cdb::ReadCDResponseDataB*)&sector;
-			auto subchannel_data = deinterleave_subchannel_data(sector_data.subchannel_data);
-			auto q = (discs::cd::SubchannelQ*)subchannel_data.channels[discs::cd::SUBCHANNEL_Q_INDEX];
-			if (q->adr == 1) {
-				auto actual_lba = discs::cd::get_sector_from_address({ utils::bcd::decode(q->mode1.absolute_address_bcd.m), utils::bcd::decode(q->mode1.absolute_address_bcd.s), utils::bcd::decode(q->mode1.absolute_address_bcd.f) }) - 150;
-				auto delta_lba = (int)target_lba - (int)actual_lba;
-				if (delta_lba < -10 || delta_lba > 10) {
-					fprintf(stderr, "The subchannel position difference of %i is too large\n", delta_lba);
-					throw EXIT_FAILURE;
-				}
-				if (delta_lba_index > 0) {
-					if (delta_lbas[delta_lba_index - 1] != delta_lba) {
-						fprintf(stderr, "The subchannel position difference is not consistent\n");
-						throw EXIT_FAILURE;
-					}
-				}
-				delta_lbas[delta_lba_index] = delta_lba;
-				delta_lba_index += 1;
-			}
-		}
-		fprintf(stderr, "Got %u identical subchannel position difference values\n", delta_lba_index);
-		if (delta_lba_index >= 9) {
-			return offset;
-		}
-	} catch (...) {}
-	fprintf(stderr, "Subchannel offset detection failed!\n");
-	throw EXIT_FAILURE;
 }
 
 auto save(int argc, char **argv)
@@ -1200,14 +1091,14 @@ auto save(int argc, char **argv)
 				read_offset_correction = rac;
 			}
 		}
-		auto subchannel_offset = get_subchannel_offset(handle);
-		fprintf(stderr, "Subchannel data offset is %u\n", subchannel_offset);
-		auto c2_offset = subchannel_offset == discs::cd::SECTOR_LENGTH ? discs::cd::SECTOR_LENGTH + discs::cd::SUBCHANNELS_LENGTH : discs::cd::SECTOR_LENGTH;
-		fprintf(stderr, "C2 data offset is %llu\n", c2_offset);
-		auto scsi_drive = scsi::drive::Drive(handle, pass_through_direct);
+		auto scsi_drive = scsi::drive::create_drive(handle, pass_through_direct);
 		auto toc = scsi_drive.get_toc();
 		validate_cdrom_toc(toc);
 		auto toc_ex = scsi_drive.get_full_toc();
+		auto subchannel_offset = scsi_drive.get_subchannels_data_offset();
+		fprintf(stderr, "Subchannel data offset is %llu\n", subchannel_offset);
+		auto c2_offset = scsi_drive.get_c2_data_offset();
+		fprintf(stderr, "C2 data offset is %llu\n", c2_offset);
 		{
 			auto mode_sense = ModeSense();
 			sptd_mode_sense(handle, mode_sense);
@@ -1307,7 +1198,7 @@ auto save(int argc, char **argv)
 					for (auto sector_index = adjusted_first_sector; sector_index < adjusted_last_sector; sector_index += 1) {
 						try {
 							auto c2_data = (UCHAR*)&cd_sector + c2_offset;
-							read_sector_sptd(handle, cd_sector, sector_index);
+							scsi_drive.read_sector(sector_index, &cd_sector.sector_data, &cd_sector.subchannels_data, &cd_sector.c2_data);
 							for (auto i = 0; i < (int)sizeof(cd_sector.c2_data); i++) {
 								if (c2_data[i] != 0) {
 									c2_errors = true;
@@ -1315,7 +1206,7 @@ auto save(int argc, char **argv)
 								}
 							}
 							auto target = track_data.data() + (sector_index - adjusted_first_sector) * discs::cd::SECTOR_LENGTH;
-							std::memcpy(target, cd_sector.data, sizeof(cd_sector.data));
+							std::memcpy(target, cd_sector.sector_data, sizeof(cd_sector.sector_data));
 						} catch (...) {
 							fprintf(stderr, "Error reading sector %i!\n", sector_index);
 							if (sector_index >= 0 && sector_index < (int)sector_count) {
@@ -1367,14 +1258,14 @@ auto save(int argc, char **argv)
 			} else {
 				fprintf(stderr, "Current track contains data\n");
 				auto file_system = iso9660::FileSystem([&](size_t sector, void* user_data) -> void {
-					read_sector_sptd(handle, cd_sector, sector);
-					std::memcpy(user_data, cd_sector.data + data_offset, discs::cdrom::MODE1_DATA_LENGTH);
+					scsi_drive.read_sector(sector, &cd_sector.sector_data, &cd_sector.subchannels_data, &cd_sector.c2_data);
+					std::memcpy(user_data, cd_sector.sector_data + data_offset, discs::cdrom::MODE1_DATA_LENGTH);
 				});
 				fprintf(stderr, "Extracting %u sectors from %u to %u\n", track_length_sectors, first_sector, last_sector - 1);
 				for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
 					try {
-						read_sector_sptd(handle, cd_sector, sector_index);
-						auto outcome = image_format->write_sector_data(current_track, cd_sector.data + data_offset, data_length);
+						scsi_drive.read_sector(sector_index, &cd_sector.sector_data, &cd_sector.subchannels_data, &cd_sector.c2_data);
+						auto outcome = image_format->write_sector_data(current_track, cd_sector.sector_data + data_offset, data_length);
 						if (!outcome) {
 							fprintf(stderr, "Error writing sector data %u to file!\n", sector_index);
 							throw EXIT_FAILURE;
@@ -1407,7 +1298,7 @@ auto save(int argc, char **argv)
 							fprintf(stderr, "Sector does not belong to specific file.\n");
 						}
 						bad_sector_numbers.push_back(sector_index);
-						auto outcome = image_format->write_sector_data(current_track, empty_cd_sector.data + data_offset, data_length);
+						auto outcome = image_format->write_sector_data(current_track, empty_cd_sector.sector_data + data_offset, data_length);
 						if (!outcome) {
 							fprintf(stderr, "Error writing sector data %u to file!\n", sector_index);
 							throw EXIT_FAILURE;
@@ -1425,7 +1316,7 @@ auto save(int argc, char **argv)
 		}
 		auto duration_ms = get_timestamp_ms() - start_ms;
 		fprintf(stderr, "Extraction took %llu seconds\n", duration_ms / 1000);
-		image_format->write_index(handle, toc, toc_ex, subchannels, bad_sector_numbers, track_pregap_sectors_list, track_length_sectors_list);
+		image_format->write_index(scsi_drive, toc, toc_ex, subchannels, bad_sector_numbers, track_pregap_sectors_list, track_length_sectors_list);
 	}
 }
 
@@ -1449,7 +1340,7 @@ auto main(int argc, char **argv)
 		fprintf(stderr, "error opening drive\n");
 		return EXIT_FAILURE;
 	}
-	auto scsi_drive = scsi::drive::Drive(hCD, pass_through_direct);
+	auto scsi_drive = scsi::drive::create_drive(hCD, pass_through_direct);
 	auto toc = scsi_drive.get_toc();
 	if (false) {
 	} else if (strcmp(command, "drive") == 0) {

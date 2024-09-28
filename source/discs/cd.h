@@ -21,7 +21,7 @@ namespace cd {
 	const auto SUBCHANNEL_V_INDEX = size_t(6);
 	const auto SUBCHANNEL_W_INDEX = size_t(7);
 	const auto SUBCHANNELS_LENGTH = size_t(SUBCHANNEL_COUNT * SUBCHANNEL_LENGTH);
-	const auto C2_ERROR_POINTERS_LENGTH = size_t(SECTOR_LENGTH / 8);
+	const auto C2_LENGTH = size_t(SECTOR_LENGTH / 8);
 
 	#pragma pack(push, 1)
 
@@ -33,11 +33,11 @@ namespace cd {
 
 	static_assert(sizeof(SectorAddress) == 3);
 
-	struct SubchannelData {
+	struct Subchannels {
 		byte_t channels[SUBCHANNEL_COUNT][SUBCHANNEL_LENGTH];
 	};
 
-	static_assert(sizeof(SubchannelData) == SUBCHANNELS_LENGTH);
+	static_assert(sizeof(Subchannels) == SUBCHANNELS_LENGTH);
 
 	enum class Control: ui08_t {
 		AUDIO_2_CHANNELS_COPY_PROTECTED = 0b0000,
@@ -133,5 +133,9 @@ namespace cd {
 	auto get_address_from_sector(
 		ui_t sector
 	) -> SectorAddress;
+
+	auto deinterleave_subchannel_data(
+		reference<array<SUBCHANNELS_LENGTH, byte_t>> data
+	) -> Subchannels;
 }
 }

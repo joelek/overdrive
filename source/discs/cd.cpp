@@ -31,5 +31,27 @@ namespace cd {
 		address.f = f;
 		return address;
 	}
+
+	auto deinterleave_subchannel_data(
+		reference<array<SUBCHANNELS_LENGTH, byte_t>> data
+	) -> Subchannels {
+		auto subchannel_data = Subchannels();
+		for (auto subchannel_index = 7; subchannel_index >= 0; subchannel_index -= 1) {
+			auto shift = 7 - subchannel_index;
+			auto offset = 0;
+			for (auto byte_index = 0; byte_index < SUBCHANNEL_LENGTH; byte_index += 1) {
+				auto byte = 0;
+				for (auto bit_index = 0; bit_index < 8; bit_index += 1) {
+					auto subchannel_byte = data[offset];
+					auto subchannel_bit = (subchannel_byte >> shift) & 1;
+					byte <<= 1;
+					byte |= subchannel_bit;
+					offset += 1;
+				}
+				subchannel_data.channels[subchannel_index][byte_index] = byte;
+			}
+		}
+		return subchannel_data;
+	}
 }
 }

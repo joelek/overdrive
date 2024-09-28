@@ -7,6 +7,8 @@ namespace scsi {
 namespace cdb {
 	using namespace type;
 
+	const auto READ_CD_LENGTH = size_t(discs::cd::SECTOR_LENGTH + discs::cd::SUBCHANNELS_LENGTH + discs::cd::C2_LENGTH);
+
 	#pragma pack(push, 1)
 
 	enum class SessionType: ui08_t {
@@ -506,20 +508,20 @@ namespace cdb {
 	static_assert(sizeof(ReadCD12) == 12);
 
 	struct ReadCDResponseDataA {
-		byte_t data[discs::cd::SECTOR_LENGTH];
-		byte_t c2_data[discs::cd::C2_ERROR_POINTERS_LENGTH];
-		byte_t subchannel_data[discs::cd::SUBCHANNELS_LENGTH];
+		byte_t sector_data[discs::cd::SECTOR_LENGTH];
+		byte_t c2_data[discs::cd::C2_LENGTH];
+		byte_t subchannels_data[discs::cd::SUBCHANNELS_LENGTH];
 	};
 
-	static_assert(sizeof(ReadCDResponseDataA) == discs::cd::SECTOR_LENGTH + discs::cd::C2_ERROR_POINTERS_LENGTH + discs::cd::SUBCHANNELS_LENGTH);
+	static_assert(sizeof(ReadCDResponseDataA) == READ_CD_LENGTH);
 
 	struct ReadCDResponseDataB {
-		byte_t data[discs::cd::SECTOR_LENGTH];
-		byte_t subchannel_data[discs::cd::SUBCHANNELS_LENGTH];
-		byte_t c2_data[discs::cd::C2_ERROR_POINTERS_LENGTH];
+		byte_t sector_data[discs::cd::SECTOR_LENGTH];
+		byte_t subchannels_data[discs::cd::SUBCHANNELS_LENGTH];
+		byte_t c2_data[discs::cd::C2_LENGTH];
 	};
 
-	static_assert(sizeof(ReadCDResponseDataB) == discs::cd::SECTOR_LENGTH + discs::cd::SUBCHANNELS_LENGTH +  discs::cd::C2_ERROR_POINTERS_LENGTH);
+	static_assert(sizeof(ReadCDResponseDataB) == READ_CD_LENGTH);
 
 	#pragma pack(pop)
 
