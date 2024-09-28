@@ -6,10 +6,10 @@ namespace scsi {
 namespace drive {
 	Drive::Drive(
 		void* handle,
-		const std::function<void(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)>& sptd
+		const std::function<void(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)>& ioctl
 	) {
 		this->handle = handle;
-		this->sptd = sptd;
+		this->ioctl = ioctl;
 	}
 
 	auto Drive::get_toc(
@@ -19,7 +19,7 @@ namespace drive {
 		cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(data));
 		cdb.format = cdb::ReadTOCFormat::NORMAL_TOC;
 		cdb.time = 1;
-		this->sptd(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		return data;
 	}
 
@@ -30,7 +30,7 @@ namespace drive {
 		cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(data));
 		cdb.format = cdb::ReadTOCFormat::SESSION_INFO;
 		cdb.time = 1;
-		this->sptd(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		return data;
 	}
 
@@ -41,7 +41,7 @@ namespace drive {
 		cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(data));
 		cdb.format = cdb::ReadTOCFormat::FULL_TOC;
 		cdb.time = 1;
-		this->sptd(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		return data;
 	}
 
@@ -52,7 +52,7 @@ namespace drive {
 		cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(data));
 		cdb.format = cdb::ReadTOCFormat::PMA;
 		cdb.time = 1;
-		this->sptd(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		return data;
 	}
 
@@ -63,7 +63,7 @@ namespace drive {
 		cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(data));
 		cdb.format = cdb::ReadTOCFormat::ATIP;
 		cdb.time = 1;
-		this->sptd(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		return data;
 	}
 }

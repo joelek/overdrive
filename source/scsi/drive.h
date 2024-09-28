@@ -17,7 +17,7 @@ namespace drive {
 
 		Drive(
 			void* handle,
-			const std::function<void(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)>& sptd
+			const std::function<void(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)>& ioctl
 		);
 
 		auto get_toc(
@@ -38,7 +38,7 @@ namespace drive {
 		protected:
 
 		void* handle;
-		std::function<void(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)> sptd;
+		std::function<void(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)> ioctl;
 	};
 }
 }
