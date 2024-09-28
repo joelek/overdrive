@@ -9,6 +9,14 @@ namespace cdb {
 
 	#pragma pack(push, 1)
 
+	enum class SessionType: ui08_t {
+		CDDA_OR_CDROM = 0x00,
+		CDI = 0x10,
+		CDXA_OR_DDCD = 0x20
+	};
+
+	static_assert(sizeof(SessionType) == 1);
+
 	enum class ReadTOCFormat: ui08_t {
 		NORMAL_TOC = 0b0000,
 		SESSION_INFO = 0b0001,
@@ -514,5 +522,9 @@ namespace cdb {
 	static_assert(sizeof(ReadCDResponseDataB) == discs::cd::SECTOR_LENGTH + discs::cd::SUBCHANNELS_LENGTH +  discs::cd::C2_ERROR_POINTERS_LENGTH);
 
 	#pragma pack(pop)
+
+	auto get_session_type(
+		const ReadTOCResponseFullTOC& toc
+	) -> SessionType;
 }
 }

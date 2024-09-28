@@ -136,19 +136,6 @@ auto get_cdrom_handle(std::string &drive)
 	return handle;
 }
 
-auto get_session_type(const scsi::cdb::ReadTOCResponseFullTOC& toc)
--> discs::cd::SessionType {
-	auto toc_length = utils::byteswap::byteswap16(toc.header.data_length_be);
-	auto track_count = (toc_length - sizeof(toc.header.data_length_be)) / sizeof(scsi::cdb::ReadTOCResponseFullTOCEntry);
-	for (auto track_index = size_t(0); track_index < track_count; track_index += 1) {
-		auto &track = toc.entries[track_index];
-		if (track.point == 0xA0) {
-			return static_cast<discs::cd::SessionType>(track.paddress.s);
-		}
-	}
-	throw exceptions::MissingValueException();
-};
-
 auto validate_cdrom_toc(scsi::cdb::ReadTOCResponseNormalTOC &toc)
 -> void {
 	auto length = utils::byteswap::byteswap16(toc.header.data_length_be);
@@ -392,8 +379,8 @@ enum class TrackTypeEx {
 auto get_track_type_ex(HANDLE handle, const scsi::cdb::ReadTOCResponseFullTOC &toc, int index)
 -> TrackTypeEx {
 	auto &track = toc.entries[index];
-	auto session_type = get_session_type(toc);
-	if (session_type == discs::cd::SessionType::CDDA_OR_CDROM) {
+	auto session_type = scsi::cdb::get_session_type(toc);
+	if (session_type == scsi::cdb::SessionType::CDDA_OR_CDROM) {
 		auto is_audio = (track.control & 0b0100) == 0;
 		if (is_audio) {
 			return TrackTypeEx::AUDIO;
@@ -409,7 +396,7 @@ auto get_track_type_ex(HANDLE handle, const scsi::cdb::ReadTOCResponseFullTOC &t
 				return TrackTypeEx::DATA_MODE_2;
 			}
 		}
-	} else if (session_type == discs::cd::SessionType::CDXA_OR_DDCD) {
+	} else if (session_type == scsi::cdb::SessionType::CDXA_OR_DDCD) {
 		auto sector = scsi::cdb::ReadCDResponseDataA();
 		read_sector_sptd(handle, sector, iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR);
 		auto &cdxa_sector = *(discs::cdxa::Sector*)(void*)&sector.data;
@@ -1244,23 +1231,23 @@ auto save(int argc, char **argv)
 			mode_sense.page_data.read_retry_count = max_read_retries;
 			sptd_mode_select(handle, mode_sense);
 		}
-		auto session_type = get_session_type(toc_ex);
-		if (session_type == discs::cd::SessionType::CDDA_OR_CDROM) {
+		auto session_type = scsi::cdb::get_session_type(toc_ex);
+		if (session_type == scsi::cdb::SessionType::CDDA_OR_CDROM) {
 			fprintf(stderr, "Disc contains a CDDA or CDROM session\n");
-		} else if (session_type == discs::cd::SessionType::CDI) {
+		} else if (session_type == scsi::cdb::SessionType::CDI) {
 			fprintf(stderr, "Disc contains a CDI session\n");
-		} else if (session_type == discs::cd::SessionType::CDXA_OR_DDCD) {
+		} else if (session_type == scsi::cdb::SessionType::CDXA_OR_DDCD) {
 			fprintf(stderr, "Disc contains a CDXA or DDCD session\n");
 		}
 		auto data_offset = size_t(0);
 		auto data_length = size_t(discs::cd::SECTOR_LENGTH);
 		if (!complete_data_sectors) {
 			data_length = discs::cdrom::MODE1_DATA_LENGTH;
-			if (session_type == discs::cd::SessionType::CDDA_OR_CDROM) {
+			if (session_type == scsi::cdb::SessionType::CDDA_OR_CDROM) {
 				data_offset = offsetof(discs::cdrom::Mode1Sector, user_data);
-			} else if (session_type == discs::cd::SessionType::CDI) {
+			} else if (session_type == scsi::cdb::SessionType::CDI) {
 				throw EXIT_FAILURE;
-			} else if (session_type == discs::cd::SessionType::CDXA_OR_DDCD) {
+			} else if (session_type == scsi::cdb::SessionType::CDXA_OR_DDCD) {
 				data_offset = offsetof(discs::cdxa::Mode2Form1Sector, user_data);
 			}
 		}
