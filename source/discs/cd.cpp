@@ -39,7 +39,7 @@ namespace cd {
 		for (auto subchannel_index = 7; subchannel_index >= 0; subchannel_index -= 1) {
 			auto shift = 7 - subchannel_index;
 			auto offset = 0;
-			for (auto byte_index = 0; byte_index < SUBCHANNEL_LENGTH; byte_index += 1) {
+			for (auto byte_index = 0; byte_index < si_t(SUBCHANNEL_LENGTH); byte_index += 1) {
 				auto byte = 0;
 				for (auto bit_index = 0; bit_index < 8; bit_index += 1) {
 					auto subchannel_byte = data[offset];
