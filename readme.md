@@ -30,7 +30,7 @@ The [AccurateRip drive database](https://www.accuraterip.com/driveoffsets.htm) p
 
 ## References
 
-* https://www.seagate.com/files/staticfiles/support/docs/manual/Interface%20manuals/100293068j.pdf
-* https://www.13thmonkey.org/documentation/SCSI/mmc3r10g.pdf
-* https://enos.itcollege.ee/~edmund/storage/loengud/varasem/SAN_IPSAN_NAS_CAS/SCSI-command-reference-manual.pdf
-* https://www.t10.org/ftp/t10/document.05/05-344r0.pdf
+* [Seagate SCSI Reference J](https://www.seagate.com/files/staticfiles/support/docs/manual/Interface%20manuals/100293068j.pdf)
+* [NCITS SCSI Multi Media Commands 3 Reference](https://www.13thmonkey.org/documentation/SCSI/mmc3r10g.pdf)
+* [Seagate SCSI Reference D](https://enos.itcollege.ee/~edmund/storage/loengud/varasem/SAN_IPSAN_NAS_CAS/SCSI-command-reference-manual.pdf)
+* [INCITS SCSI Block Commands 3 Reference](https://www.t10.org/ftp/t10/document.05/05-344r0.pdf)
