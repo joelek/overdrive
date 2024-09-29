@@ -159,20 +159,10 @@ auto validate_cdrom_toc(scsi::cdb::ReadTOCResponseNormalTOC &toc)
 	}
 }
 
-enum class TrackType {
-	AUDIO,
-	DATA
-};
-
 enum class FileFormat {
 	MDF_MDS,
 	BIN_CUE
 };
-
-auto get_track_type(const scsi::cdb::ReadTOCResponseNormalTOCEntry &track)
--> TrackType {
-	return (track.control & 0b0100) == 0 ? TrackType::AUDIO : TrackType::DATA;
-}
 
 enum class TrackTypeEx {
 	AUDIO,
@@ -620,11 +610,11 @@ class BINCUEImageFormat: ImageFormat {
 			auto offset = 0;
 			for (auto track_number = toc.header.first_track_or_session_number; track_number <= toc.header.last_track_or_session_number; track_number += 1) {
 				auto &current_track = toc.entries[track_number - 1];
-				auto current_track_type = get_track_type(current_track);
-				auto extension = this->add_wave_headers && current_track_type == TrackType::AUDIO ? ".wav" : ".bin";
-				auto tag = this->add_wave_headers && current_track_type == TrackType::AUDIO ? "WAVE" : "BINARY";
+				auto current_track_type = discs::cd::get_track_category(current_track.control);
+				auto extension = this->add_wave_headers && discs::cd::is_audio_category(current_track_type) ? ".wav" : ".bin";
+				auto tag = this->add_wave_headers && discs::cd::is_audio_category(current_track_type) ? "WAVE" : "BINARY";
 				fprintf(this->target_handle_cue, "FILE \"%s_%.2i%s\" %s\n", this->filename.c_str(), track_number, extension, tag);
-				fprintf(this->target_handle_cue, "\tTRACK %.2i %s\n", track_number, current_track_type == TrackType::AUDIO ? "AUDIO" : this->complete_data_sectors ? "MODE1/2352" : "MODE1/2048");
+				fprintf(this->target_handle_cue, "\tTRACK %.2i %s\n", track_number, discs::cd::is_audio_category(current_track_type) ? "AUDIO" : this->complete_data_sectors ? "MODE1/2352" : "MODE1/2048");
 				auto track_pregap_sectors = track_pregap_sectors_list.at(track_number - 1);
 				auto track_pregap_sectors_to_write = track_number == toc.header.first_track_or_session_number ? 0 : track_pregap_sectors;
 				auto pregap_address = discs::cd::get_address_from_sector(track_pregap_sectors_to_write);
@@ -637,8 +627,8 @@ class BINCUEImageFormat: ImageFormat {
 			auto offset = 0;
 			for (auto track_number = toc.header.first_track_or_session_number; track_number <= toc.header.last_track_or_session_number; track_number += 1) {
 				auto &current_track = toc.entries[track_number - 1];
-				auto current_track_type = get_track_type(current_track);
-				fprintf(this->target_handle_cue, "\tTRACK %.2i %s\n", track_number, current_track_type == TrackType::AUDIO ? "AUDIO" : this->complete_data_sectors ? "MODE1/2352" : "MODE1/2048");
+				auto current_track_type = discs::cd::get_track_category(current_track.control);
+				fprintf(this->target_handle_cue, "\tTRACK %.2i %s\n", track_number, discs::cd::is_audio_category(current_track_type) ? "AUDIO" : this->complete_data_sectors ? "MODE1/2352" : "MODE1/2048");
 				auto track_pregap_sectors = track_pregap_sectors_list.at(track_number - 1);
 				auto track_length_sectors = track_length_sectors_list.at(track_number - 1);
 				auto track_pregap_sectors_to_write = track_number == toc.header.first_track_or_session_number ? 0 : track_pregap_sectors;
@@ -654,7 +644,7 @@ class BINCUEImageFormat: ImageFormat {
 	protected:
 
 	auto update_wave_header() -> void {
-		if (this->target_handle_bin != nullptr && this->add_wave_headers && get_track_type(this->current_track) == TrackType::AUDIO) {
+		if (this->target_handle_bin != nullptr && this->add_wave_headers && discs::cd::is_audio_category(discs::cd::get_track_category(this->current_track.control))) {
 			auto header = audio::wav::Header();
 			auto file_size = ftell(this->target_handle_bin);
 			fseek(this->target_handle_bin, 0, SEEK_SET);
@@ -683,17 +673,17 @@ class BINCUEImageFormat: ImageFormat {
 			if (this->target_handle_bin != nullptr) {
 				return this->target_handle_bin;
 			} else {
-				auto track_type = get_track_type(track);
+				auto track_type = discs::cd::get_track_category(track.control);
 				char buffer[3] = {};
 				snprintf(buffer, sizeof(buffer), "%.2u", track.track_number);
-				auto extension = this->add_wave_headers && track_type == TrackType::AUDIO ? ".wav" : ".bin";
+				auto extension = this->add_wave_headers && discs::cd::is_audio_category(track_type) ? ".wav" : ".bin";
 				auto target_path_bin = this->directory + this->filename + "_" + buffer + extension;
 				auto target_handle_bin = fopen(target_path_bin.c_str(), "wb+");
 				if (target_handle_bin == nullptr) {
 					fprintf(stderr, "Failed opening file \"%s\"!\n", target_path_bin.c_str());
 					throw EXIT_FAILURE;
 				}
-				if (this->add_wave_headers && track_type == TrackType::AUDIO) {
+				if (this->add_wave_headers && discs::cd::is_audio_category(track_type)) {
 					auto wave_header = audio::wav::Header();
 					auto bytes_expected = sizeof(wave_header);
 					auto bytes_returned = fwrite(&wave_header, 1, bytes_expected, target_handle_bin);
@@ -992,8 +982,8 @@ auto save(int argc, char **argv)
 		for (auto i = toc.header.first_track_or_session_number + 1; i <= toc.header.last_track_or_session_number; i += 1) {
 			auto &last_track = toc.entries[i - 1 - 1];
 			auto &current_track = toc.entries[i - 1];
-			auto last_track_type = get_track_type(last_track);
-			auto current_track_type = get_track_type(current_track);
+			auto last_track_type = discs::cd::get_track_category(last_track.control);
+			auto current_track_type = discs::cd::get_track_category(current_track.control);
 			auto track_type_change = current_track_type != last_track_type;
 			auto track_pregap_seconds = track_type_change ? 2 : 0;
 			auto track_pregap_sectors = track_pregap_seconds * discs::cd::SECTORS_PER_SECOND;
@@ -1019,8 +1009,8 @@ auto save(int argc, char **argv)
 			auto track_length_sectors = last_sector - first_sector;
 			fprintf(stderr, "Track length is %u sectors\n", track_length_sectors);
 			track_length_sectors_list.push_back(track_length_sectors);
-			auto current_track_type = get_track_type(current_track);
-			if (current_track_type == TrackType::AUDIO) {
+			auto current_track_type = discs::cd::get_track_category(current_track.control);
+			if (discs::cd::is_audio_category(current_track_type)) {
 				fprintf(stderr, "Current track contains audio\n");
 				auto start_offset_bytes = (first_sector * discs::cd::SECTOR_LENGTH) + read_offset_correction_bytes;
 				auto end_offset_bytes = (last_sector * discs::cd::SECTOR_LENGTH) + read_offset_correction_bytes;

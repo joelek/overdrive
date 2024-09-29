@@ -53,5 +53,40 @@ namespace cd {
 		}
 		return subchannels;
 	}
+
+	auto get_track_category(
+		ui_t control
+	) -> TrackCategory {
+		auto category = (control >> 2) & 0b11;
+		if (category == 0b00) {
+			return TrackCategory::AUDIO_2_CHANNELS;
+		}
+		if (category == 0b01) {
+			return TrackCategory::DATA;
+		}
+		if (category == 0b10) {
+			return TrackCategory::AUDIO_4_CHANNELS;
+		}
+		if (category == 0b11) {
+			return TrackCategory::RESERVED;
+		}
+	}
+
+	auto is_audio_category(
+		TrackCategory category
+	) -> bool_t {
+		if (category == TrackCategory::AUDIO_2_CHANNELS) {
+			return true;
+		}
+		if (category == TrackCategory::DATA) {
+			return false;
+		}
+		if (category == TrackCategory::AUDIO_4_CHANNELS) {
+			return true;
+		}
+		if (category == TrackCategory::RESERVED) {
+			return false;
+		}
+	}
 }
 }

@@ -39,6 +39,15 @@ namespace cd {
 
 	static_assert(sizeof(Subchannels) == SUBCHANNELS_LENGTH);
 
+	enum class TrackCategory: ui08_t {
+		AUDIO_2_CHANNELS,
+		DATA,
+		AUDIO_4_CHANNELS,
+		RESERVED,
+	};
+
+	static_assert(sizeof(TrackCategory) == 1);
+
 	enum class Control: ui08_t {
 		AUDIO_2_CHANNELS_COPY_PROTECTED = 0b0000,
 		AUDIO_2_CHANNELS_COPY_PROTECTED_WITH_PRE_EMPHASIS = 0b0001,
@@ -137,5 +146,13 @@ namespace cd {
 	auto deinterleave_subchannel_data(
 		reference<array<SUBCHANNELS_LENGTH, byte_t>> data
 	) -> Subchannels;
+
+	auto get_track_category(
+		ui_t control
+	) -> TrackCategory;
+
+	auto is_audio_category(
+		TrackCategory category
+	) -> bool_t;
 }
 }
