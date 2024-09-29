@@ -16,7 +16,7 @@ namespace cdb {
 				return static_cast<SessionType>(track.paddress.s);
 			}
 		}
-		throw overdrive::exceptions::MissingValueException();
+		throw overdrive::exceptions::MissingValueException("point 0xA0");
 	}
 }
 }

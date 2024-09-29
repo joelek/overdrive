@@ -149,7 +149,7 @@ namespace iso9660 {
 	) const -> const std::vector<FileSystemEntry>& {
 		auto iterator = this->children.find(entry.first_sector);
 		if (iterator == this->children.end()) {
-			throw exceptions::MissingValueException();
+			throw exceptions::MissingValueException("children");
 		}
 		return iterator->second;
 	}
@@ -165,7 +165,7 @@ namespace iso9660 {
 	) const -> const std::vector<FileSystemEntry>& {
 		auto iterator = this->hierarchies.find(entry.first_sector);
 		if (iterator == this->hierarchies.end()) {
-			throw exceptions::MissingValueException();
+			throw exceptions::MissingValueException("hierarchy");
 		}
 		return iterator->second;
 	}

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdexcept>
+#include <string>
 #include "../type.h"
 
 namespace overdrive {
@@ -11,6 +12,7 @@ namespace exceptions {
 		public:
 
 		InvalidValueException(
+			const std::string& name,
 			si_t value,
 			si_t min,
 			si_t max
@@ -22,7 +24,9 @@ namespace exceptions {
 	class MissingValueException: public std::runtime_error {
 		public:
 
-		MissingValueException();
+		MissingValueException(
+			const std::string& name
+		);
 
 		protected:
 	};
@@ -30,7 +34,9 @@ namespace exceptions {
 	class AutoDetectFailureException: public std::runtime_error {
 		public:
 
-		AutoDetectFailureException();
+		AutoDetectFailureException(
+			const std::string& name
+		);
 
 		protected:
 	};

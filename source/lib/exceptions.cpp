@@ -5,16 +5,19 @@
 namespace overdrive {
 namespace exceptions {
 	InvalidValueException::InvalidValueException(
+		const std::string& name,
 		si_t value,
 		si_t min,
 		si_t max
-	): std::runtime_error(std::format("Expected value {} to be at least {} and at most {}!", value, min, max)) {}
+	): std::runtime_error(std::format("Expected value for \"{}\" {} to be at least {} and at most {}!", name, value, min, max)) {}
 
 	MissingValueException::MissingValueException(
-	): std::runtime_error(std::format("Expected value to be present!")) {}
+		const std::string& name
+	): std::runtime_error(std::format("Expected value for \"{}\" to be present!", name)) {}
 
 	AutoDetectFailureException::AutoDetectFailureException(
-	): std::runtime_error(std::format("Expected value to be auto-detected!")) {}
+		const std::string& name
+	): std::runtime_error(std::format("Expected value for \"{}\" to be auto-detected!", name)) {}
 
 	UnreachableCodeReachedException::UnreachableCodeReachedException(
 	): std::runtime_error(std::format("Expected code to be unreachable!")) {}

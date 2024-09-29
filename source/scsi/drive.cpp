@@ -35,11 +35,11 @@ namespace drive {
 				auto decoded_sector_index = discs::cd::get_sector_from_address({ utils::bcd::decode(q.mode1.absolute_address_bcd.m), utils::bcd::decode(q.mode1.absolute_address_bcd.s), utils::bcd::decode(q.mode1.absolute_address_bcd.f) }) - 150;
 				auto delta = static_cast<si_t>(sector_index) - static_cast<si_t>(decoded_sector_index);
 				if (delta < -10 || delta > 10) {
-					throw overdrive::exceptions::AutoDetectFailureException();
+					throw overdrive::exceptions::AutoDetectFailureException("subchannel timing offset");
 				}
 				if (deltas_index > 0) {
 					if (deltas[deltas_index - 1] != delta) {
-						throw overdrive::exceptions::AutoDetectFailureException();
+						throw overdrive::exceptions::AutoDetectFailureException("subchannel timing offset");
 					}
 				}
 				deltas[deltas_index] = delta;
@@ -49,7 +49,7 @@ namespace drive {
 		if (deltas_index >= 9) {
 			return deltas[0];
 		}
-		throw overdrive::exceptions::AutoDetectFailureException();
+		throw overdrive::exceptions::AutoDetectFailureException("subchannel timing offset");
 	}
 
 	auto Drive::get_subchannels_data_offset(
@@ -198,7 +198,7 @@ namespace drive {
 			drive.detect_subchannel_timing_offset();
 			return drive;
 		} catch (...) {}
-		throw overdrive::exceptions::AutoDetectFailureException();
+		throw overdrive::exceptions::AutoDetectFailureException("drive parameters");
 	}
 }
 }

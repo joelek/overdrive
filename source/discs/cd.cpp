@@ -9,7 +9,7 @@ namespace cd {
 	) -> ui_t {
 		auto sector = (address.m * MINUTES_PER_SECOND + address.s) * SECTORS_PER_SECOND + address.f;
 		if (sector > MAX_SECTOR) {
-			throw overdrive::exceptions::InvalidValueException(sector, 0, MAX_SECTOR);
+			throw overdrive::exceptions::InvalidValueException("sector", sector, 0, MAX_SECTOR);
 		}
 		return sector;
 	}
@@ -18,7 +18,7 @@ namespace cd {
 		ui_t sector
 	) -> SectorAddress {
 		if (sector > MAX_SECTOR) {
-			throw overdrive::exceptions::InvalidValueException(sector, 0, MAX_SECTOR);
+			throw overdrive::exceptions::InvalidValueException("sector", sector, 0, MAX_SECTOR);
 		}
 		auto f = sector;
 		auto s = sector / SECTORS_PER_SECOND;
