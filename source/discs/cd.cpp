@@ -70,6 +70,7 @@ namespace cd {
 		if (category == 0b11) {
 			return TrackCategory::RESERVED;
 		}
+		throw overdrive::exceptions::UnreachableCodeReachedException();
 	}
 
 	auto is_audio_category(
@@ -87,6 +88,7 @@ namespace cd {
 		if (category == TrackCategory::RESERVED) {
 			return false;
 		}
+		throw overdrive::exceptions::UnreachableCodeReachedException();
 	}
 }
 }

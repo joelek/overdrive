@@ -34,5 +34,13 @@ namespace exceptions {
 
 		protected:
 	};
+
+	class UnreachableCodeReachedException: public std::runtime_error {
+		public:
+
+		UnreachableCodeReachedException();
+
+		protected:
+	};
 }
 }

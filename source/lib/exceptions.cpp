@@ -15,5 +15,8 @@ namespace exceptions {
 
 	AutoDetectFailureException::AutoDetectFailureException(
 	): std::runtime_error(std::format("Expected value to be auto-detected!")) {}
+
+	UnreachableCodeReachedException::UnreachableCodeReachedException(
+	): std::runtime_error(std::format("Expected code to be unreachable!")) {}
 }
 }
