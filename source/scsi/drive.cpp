@@ -192,12 +192,12 @@ namespace drive {
 			auto drive = Drive(handle, 0, offsetof(cdb::ReadCDResponseDataA, subchannels_data), offsetof(cdb::ReadCDResponseDataA, c2_data), ioctl);
 			drive.detect_subchannel_timing_offset();
 			return drive;
-		} catch (...) {}
+		} catch (const overdrive::exceptions::AutoDetectFailureException& e) {}
 		try {
 			auto drive = Drive(handle, 0, offsetof(cdb::ReadCDResponseDataB, subchannels_data), offsetof(cdb::ReadCDResponseDataB, c2_data), ioctl);
 			drive.detect_subchannel_timing_offset();
 			return drive;
-		} catch (...) {}
+		} catch (const overdrive::exceptions::AutoDetectFailureException& e) {}
 		throw overdrive::exceptions::AutoDetectFailureException("drive parameters");
 	}
 }
