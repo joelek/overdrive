@@ -189,7 +189,7 @@ namespace cdb {
 
 	static_assert(sizeof(Inquiry6) == 6);
 
-	struct Inquiry6Response {
+	struct StandardInquiryResponse {
 		ui08_t peripheral_device_type: 5;
 		ui08_t peripheral_qualifier: 3;
 		ui08_t : 7;
@@ -235,9 +235,10 @@ namespace cdb {
 		ui08_t : 8;
 		ui16_t vendor_descriptor_be[8];
 		ui08_t reserved[22];
+		ch08_t copyright_notice[32]; // Note: Size is unspecified.
 	};
 
-	static_assert(sizeof(Inquiry6Response) == 96);
+	static_assert(sizeof(StandardInquiryResponse) == 128);
 
 	enum class SensePage: ui08_t {
 		ReadWriteErrorRecoveryModePage = 0x01,
@@ -311,7 +312,7 @@ namespace cdb {
 
 	static_assert(sizeof(ModeSense10) == 10);
 
-	struct ModeParameterHeader10 {
+	struct ModeParameterResponseHeader {
 		ui16_t mode_data_length_be;
 		ui08_t : 8;
 		ui08_t : 8;
@@ -320,7 +321,7 @@ namespace cdb {
 		ui16_t block_descriptor_length_be;
 	};
 
-	static_assert(sizeof(ModeParameterHeader10) == 8);
+	static_assert(sizeof(ModeParameterResponseHeader) == 8);
 
 	struct ModeSelect10 {
 		ui08_t operation_code = 0x55;
@@ -522,6 +523,20 @@ namespace cdb {
 	};
 
 	static_assert(sizeof(ReadCDResponseDataB) == READ_CD_LENGTH);
+
+	struct ModeSenseReadWriteErrorRecoveryModePageResponse {
+		ModeParameterResponseHeader header;
+		ReadWriteErrorRecoveryModePage page;
+	};
+
+	static_assert(sizeof(ModeSenseReadWriteErrorRecoveryModePageResponse) == 20);
+
+	struct ModeSenseCapabilitiesAndMechanicalStatusPageResponse {
+		ModeParameterResponseHeader header;
+		CapabilitiesAndMechanicalStatusPage page;
+	};
+
+	static_assert(sizeof(ModeSenseCapabilitiesAndMechanicalStatusPageResponse) == 40);
 
 	#pragma pack(pop)
 

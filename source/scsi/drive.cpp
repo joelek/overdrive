@@ -62,7 +62,7 @@ namespace drive {
 		return this->c2_data_offset;
 	}
 
-	auto Drive::get_toc(
+	auto Drive::read_toc(
 	) const	-> cdb::ReadTOCResponseNormalTOC {
 		auto cdb = cdb::ReadTOC10();
 		auto data = cdb::ReadTOCResponseNormalTOC();
@@ -73,7 +73,7 @@ namespace drive {
 		return data;
 	}
 
-	auto Drive::get_session_info(
+	auto Drive::read_session_info(
 	) const	-> cdb::ReadTOCResponseSessionInfo {
 		auto cdb = cdb::ReadTOC10();
 		auto data = cdb::ReadTOCResponseSessionInfo();
@@ -84,7 +84,7 @@ namespace drive {
 		return data;
 	}
 
-	auto Drive::get_full_toc(
+	auto Drive::read_full_toc(
 	) const	-> cdb::ReadTOCResponseFullTOC {
 		auto cdb = cdb::ReadTOC10();
 		auto data = cdb::ReadTOCResponseFullTOC();
@@ -95,7 +95,7 @@ namespace drive {
 		return data;
 	}
 
-	auto Drive::get_pma(
+	auto Drive::read_pma(
 	) const	-> cdb::ReadTOCResponsePMA {
 		auto cdb = cdb::ReadTOC10();
 		auto data = cdb::ReadTOCResponsePMA();
@@ -106,13 +106,51 @@ namespace drive {
 		return data;
 	}
 
-	auto Drive::get_atip(
+	auto Drive::read_atip(
 	) const	-> cdb::ReadTOCResponseATIP {
 		auto cdb = cdb::ReadTOC10();
 		auto data = cdb::ReadTOCResponseATIP();
 		cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(data));
 		cdb.format = cdb::ReadTOCFormat::ATIP;
 		cdb.time = 1;
+		this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		return data;
+	}
+
+	auto Drive::read_error_recovery_mode_page(
+	) const -> cdb::ModeSenseReadWriteErrorRecoveryModePageResponse {
+		auto cdb = cdb::ModeSense10();
+		auto data = cdb::ModeSenseReadWriteErrorRecoveryModePageResponse();
+		cdb.page_code = cdb::SensePage::ReadWriteErrorRecoveryModePage;
+		cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(data));
+		this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		return data;
+	}
+
+	auto Drive::write_error_recovery_mode_page(
+		cdb::ModeSenseReadWriteErrorRecoveryModePageResponse& data
+	) const -> void {
+		auto cdb = cdb::ModeSelect10();
+		cdb.page_format = 1;
+		cdb.parameter_list_length_be = utils::byteswap::byteswap16(sizeof(data));
+		this->ioctl(handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), true);
+	}
+
+	auto Drive::read_capabilites_and_mechanical_status_page(
+	) const -> cdb::ModeSenseCapabilitiesAndMechanicalStatusPageResponse {
+		auto cdb = cdb::ModeSense10();
+		auto data = cdb::ModeSenseCapabilitiesAndMechanicalStatusPageResponse();
+		cdb.page_code = cdb::SensePage::CapabilitiesAndMechanicalStatusPage;
+		cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(data));
+		this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		return data;
+	}
+
+	auto Drive::read_standard_inquiry(
+	) const -> cdb::StandardInquiryResponse {
+		auto cdb = cdb::Inquiry6();
+		auto data = cdb::StandardInquiryResponse();
+		cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(data));
 		this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		return data;
 	}

@@ -159,163 +159,6 @@ auto validate_cdrom_toc(scsi::cdb::ReadTOCResponseNormalTOC &toc)
 	}
 }
 
-typedef struct {
-	scsi::cdb::ModeParameterHeader10 parameter_header;
-	scsi::cdb::ReadWriteErrorRecoveryModePage page_data;
-} ModeSense;
-
-auto sptd_mode_sense(
-	HANDLE handle,
-	ModeSense& mode_sense
-) -> void {
-	auto data = SPTDWithSenseBuffer();
-	auto cdb = scsi::cdb::ModeSense10();
-	cdb.page_code = scsi::cdb::SensePage::ReadWriteErrorRecoveryModePage;
-	cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(mode_sense));
-	data.sptd.Length = sizeof(data.sptd);
-	data.sptd.CdbLength = sizeof(cdb);
-	data.sptd.DataIn = SCSI_IOCTL_DATA_IN;
-	data.sptd.TimeOutValue = 10;
-	data.sptd.DataBuffer = &mode_sense;
-	data.sptd.DataTransferLength = sizeof(mode_sense);
-	data.sptd.SenseInfoLength = sizeof(data.sense);
-	data.sptd.SenseInfoOffset = offsetof(SPTDWithSenseBuffer, sense);
-	memcpy(data.sptd.Cdb, &cdb, sizeof(cdb));
-	auto bytes_returned = ULONG(0);
-	auto bytes_expected = ULONG(sizeof(data.sptd));
-	SetLastError(ERROR_SUCCESS);
-	auto outcome = DeviceIoControl(
-		handle,
-		IOCTL_SCSI_PASS_THROUGH_DIRECT,
-		&data,
-		sizeof(data),
-		&data,
-		sizeof(data),
-		&bytes_returned,
-		nullptr
-	);
-	WINAPI_CHECK_STATUS();
-	if (!outcome || (bytes_returned != bytes_expected)) {
-		throw EXIT_FAILURE;
-	}
-}
-
-auto sptd_mode_select(
-	HANDLE handle,
-	ModeSense& mode_sense
-) -> void {
-	auto data = SPTDWithSenseBuffer();
-	auto cdb = scsi::cdb::ModeSelect10();
-	cdb.page_format = 1;
-	cdb.parameter_list_length_be = utils::byteswap::byteswap16(sizeof(mode_sense));
-	data.sptd.Length = sizeof(data.sptd);
-	data.sptd.CdbLength = sizeof(cdb);
-	data.sptd.DataIn = SCSI_IOCTL_DATA_OUT;
-	data.sptd.TimeOutValue = 10;
-	data.sptd.DataBuffer = &mode_sense;
-	data.sptd.DataTransferLength = sizeof(mode_sense);
-	data.sptd.SenseInfoLength = sizeof(data.sense);
-	data.sptd.SenseInfoOffset = offsetof(SPTDWithSenseBuffer, sense);
-	memcpy(data.sptd.Cdb, &cdb, sizeof(cdb));
-	auto bytes_returned = ULONG();
-	auto bytes_expected = ULONG(sizeof(data.sptd));
-	SetLastError(ERROR_SUCCESS);
-	auto outcome = DeviceIoControl(
-		handle,
-		IOCTL_SCSI_PASS_THROUGH_DIRECT,
-		&data,
-		sizeof(data),
-		&data,
-		sizeof(data),
-		&bytes_returned,
-		nullptr
-	);
-	WINAPI_CHECK_STATUS();
-	if (!outcome || (bytes_returned != bytes_expected)) {
-		throw EXIT_FAILURE;
-	}
-}
-
-typedef struct {
-	scsi::cdb::ModeParameterHeader10 parameter_header;
-	scsi::cdb::CapabilitiesAndMechanicalStatusPage page_data;
-} ModeSense2;
-
-auto sptd_mode_sense2(
-	HANDLE handle,
-	ModeSense2& mode_sense
-) -> void {
-	auto data = SPTDWithSenseBuffer();
-	auto cdb = scsi::cdb::ModeSense10();
-	cdb.page_code = scsi::cdb::SensePage::CapabilitiesAndMechanicalStatusPage;
-	cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(mode_sense));
-	data.sptd.Length = sizeof(data.sptd);
-	data.sptd.CdbLength = sizeof(cdb);
-	data.sptd.DataIn = SCSI_IOCTL_DATA_IN;
-	data.sptd.TimeOutValue = 10;
-	data.sptd.DataBuffer = &mode_sense;
-	data.sptd.DataTransferLength = sizeof(mode_sense);
-	data.sptd.SenseInfoLength = sizeof(data.sense);
-	data.sptd.SenseInfoOffset = offsetof(SPTDWithSenseBuffer, sense);
-	memcpy(data.sptd.Cdb, &cdb, sizeof(cdb));
-	auto bytes_returned = ULONG(0);
-	auto bytes_expected = ULONG(sizeof(data.sptd));
-	SetLastError(ERROR_SUCCESS);
-	auto outcome = DeviceIoControl(
-		handle,
-		IOCTL_SCSI_PASS_THROUGH_DIRECT,
-		&data,
-		sizeof(data),
-		&data,
-		sizeof(data),
-		&bytes_returned,
-		nullptr
-	);
-	WINAPI_CHECK_STATUS();
-	if (!outcome || (bytes_returned != bytes_expected)) {
-		throw EXIT_FAILURE;
-	}
-}
-
-typedef struct {
-	scsi::cdb::Inquiry6Response response;
-} Inquiry;
-
-auto sptd_inquiry(
-	HANDLE handle,
-	Inquiry& inquiry
-) -> void {
-	auto data = SPTDWithSenseBuffer();
-	auto cdb = scsi::cdb::Inquiry6();
-	cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(inquiry));
-	data.sptd.Length = sizeof(data.sptd);
-	data.sptd.CdbLength = sizeof(cdb);
-	data.sptd.DataIn = SCSI_IOCTL_DATA_IN;
-	data.sptd.TimeOutValue = 10;
-	data.sptd.DataBuffer = &inquiry;
-	data.sptd.DataTransferLength = sizeof(inquiry);
-	data.sptd.SenseInfoLength = sizeof(data.sense);
-	data.sptd.SenseInfoOffset = offsetof(SPTDWithSenseBuffer, sense);
-	memcpy(data.sptd.Cdb, &cdb, sizeof(cdb));
-	auto bytes_returned = ULONG(0);
-	auto bytes_expected = ULONG(sizeof(data.sptd));
-	SetLastError(ERROR_SUCCESS);
-	auto outcome = DeviceIoControl(
-		handle,
-		IOCTL_SCSI_PASS_THROUGH_DIRECT,
-		&data,
-		sizeof(data),
-		&data,
-		sizeof(data),
-		&bytes_returned,
-		nullptr
-	);
-	WINAPI_CHECK_STATUS();
-	if (!outcome || (bytes_returned != bytes_expected)) {
-		throw EXIT_FAILURE;
-	}
-}
-
 enum class TrackType {
 	AUDIO,
 	DATA
@@ -1076,14 +919,14 @@ auto save(int argc, char **argv)
 		throw EXIT_FAILURE;
 	} else {
 		auto handle = get_cdrom_handle(drive_argument.value());
-		auto inquiry = Inquiry();
-		sptd_inquiry(handle, inquiry);
-		auto vendor = std::string(inquiry.response.vendor_identification, sizeof(inquiry.response.vendor_identification));
-		auto product = std::string(inquiry.response.product_identification, sizeof(inquiry.response.product_identification));
+		auto scsi_drive = scsi::drive::create_drive(handle, pass_through_direct);
+		auto standard_inquiry = scsi_drive.read_standard_inquiry();
+		auto vendor = std::string(standard_inquiry.vendor_identification, sizeof(standard_inquiry.vendor_identification));
+		auto product = std::string(standard_inquiry.product_identification, sizeof(standard_inquiry.product_identification));
 		fprintf(stderr, "Vendor is \"%s\"\n", utils::string::trim(vendor).c_str());
 		fprintf(stderr, "Product is \"%s\"\n", utils::string::trim(product).c_str());
 		auto accuraterip_database = accuraterip::Database();
-		auto optional_rac = accuraterip_database.get_read_offset_correction_value(inquiry.response.vendor_identification, inquiry.response.product_identification);
+		auto optional_rac = accuraterip_database.get_read_offset_correction_value(standard_inquiry.vendor_identification, standard_inquiry.product_identification);
 		if (optional_rac) {
 			auto rac = *optional_rac;
 			fprintf(stderr, "Detected read offset correction as %i samples (%llu bytes)\n", rac, (rac * discs::cdda::STEREO_SAMPLE_LENGTH));
@@ -1091,19 +934,17 @@ auto save(int argc, char **argv)
 				read_offset_correction = rac;
 			}
 		}
-		auto scsi_drive = scsi::drive::create_drive(handle, pass_through_direct);
-		auto toc = scsi_drive.get_toc();
+		auto toc = scsi_drive.read_toc();
 		validate_cdrom_toc(toc);
-		auto toc_ex = scsi_drive.get_full_toc();
+		auto toc_ex = scsi_drive.read_full_toc();
 		auto subchannel_offset = scsi_drive.get_subchannels_data_offset();
 		fprintf(stderr, "Subchannel data offset is %llu\n", subchannel_offset);
 		auto c2_offset = scsi_drive.get_c2_data_offset();
 		fprintf(stderr, "C2 data offset is %llu\n", c2_offset);
 		{
-			auto mode_sense = ModeSense();
-			sptd_mode_sense(handle, mode_sense);
-			mode_sense.page_data.read_retry_count = max_read_retries;
-			sptd_mode_select(handle, mode_sense);
+			auto error_recovery_mode_page = scsi_drive.read_error_recovery_mode_page();
+			error_recovery_mode_page.page.read_retry_count = max_read_retries;
+			scsi_drive.write_error_recovery_mode_page(error_recovery_mode_page);
 		}
 		auto session_type = scsi::cdb::get_session_type(toc_ex);
 		if (session_type == scsi::cdb::SessionType::CDDA_OR_CDROM) {
@@ -1128,12 +969,11 @@ auto save(int argc, char **argv)
 		fprintf(stderr, "Data track sector offset is %llu\n", data_offset);
 		fprintf(stderr, "Data track sector length is %llu\n", data_length);
 		{
-			auto mode_sense = ModeSense2();
-			sptd_mode_sense2(handle, mode_sense);
-			fprintf(stderr, "Drive has a read cache size of %u kB\n", utils::byteswap::byteswap16(mode_sense.page_data.buffer_size_supported_be));
-			fprintf(stderr, "Drive %s read audio streams accurately\n", mode_sense.page_data.cdda_stream_is_accurate ? "can" : "cannot");
-			fprintf(stderr, "Drive %s support for reading C2 error pointers\n", mode_sense.page_data.c2_pointers_supported ? "has" : "lacks");
-			if (!mode_sense.page_data.cdda_stream_is_accurate) {
+			auto mode_sense = scsi_drive.read_capabilites_and_mechanical_status_page();
+			fprintf(stderr, "Drive has a read cache size of %u kB\n", utils::byteswap::byteswap16(mode_sense.page.buffer_size_supported_be));
+			fprintf(stderr, "Drive %s read audio streams accurately\n", mode_sense.page.cdda_stream_is_accurate ? "can" : "cannot");
+			fprintf(stderr, "Drive %s support for reading C2 error pointers\n", mode_sense.page.c2_pointers_supported ? "has" : "lacks");
+			if (!mode_sense.page.cdda_stream_is_accurate) {
 				throw EXIT_FAILURE;
 			}
 		}
@@ -1341,7 +1181,7 @@ auto main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 	auto scsi_drive = scsi::drive::create_drive(hCD, pass_through_direct);
-	auto toc = scsi_drive.get_toc();
+	auto toc = scsi_drive.read_toc();
 	if (false) {
 	} else if (strcmp(command, "drive") == 0) {
 		STORAGE_PROPERTY_QUERY storagePropertyQuery;

@@ -33,20 +33,33 @@ namespace drive {
 		auto get_c2_data_offset(
 		) const -> size_t;
 
-		auto get_toc(
+		auto read_toc(
 		) const -> cdb::ReadTOCResponseNormalTOC;
 
-		auto get_session_info(
+		auto read_session_info(
 		) const -> cdb::ReadTOCResponseSessionInfo;
 
-		auto get_full_toc(
+		auto read_full_toc(
 		) const -> cdb::ReadTOCResponseFullTOC;
 
-		auto get_pma(
+		auto read_pma(
 		) const -> cdb::ReadTOCResponsePMA;
 
-		auto get_atip(
+		auto read_atip(
 		) const -> cdb::ReadTOCResponseATIP;
+
+		auto read_error_recovery_mode_page(
+		) const -> cdb::ModeSenseReadWriteErrorRecoveryModePageResponse;
+
+		auto write_error_recovery_mode_page(
+			cdb::ModeSenseReadWriteErrorRecoveryModePageResponse& data
+		) const -> void;
+
+		auto read_capabilites_and_mechanical_status_page(
+		) const -> cdb::ModeSenseCapabilitiesAndMechanicalStatusPageResponse;
+
+		auto read_standard_inquiry(
+		) const -> cdb::StandardInquiryResponse;
 
 		auto read_sector(
 			size_t sector_index,
