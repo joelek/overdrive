@@ -2,7 +2,10 @@
 
 #include <array>
 #include <cstring>
+#include "../discs/cdrom.h"
+#include "../discs/cdxa.h"
 #include "../lib/exceptions.h"
+#include "../lib/iso9660.h"
 #include "../utils/bcd.h"
 #include "../utils/byteswap.h"
 
@@ -24,12 +27,12 @@ namespace drive {
 
 	auto Drive::detect_subchannel_timing_offset(
 	) -> si_t {
-		auto sector = cdb::ReadCDResponseDataA();
+		auto data = cdb::ReadCDResponseDataA();
 		auto deltas = std::array<si_t, 10>();
 		auto deltas_index = size_t(0);
 		for (auto sector_index = size_t(0); sector_index < size_t(10); sector_index += 1) {
-			this->read_sector(sector_index, nullptr, &sector.subchannels_data, nullptr);
-			auto subchannels = discs::cd::deinterleave_subchannel_data(sector.subchannels_data);
+			this->read_sector(sector_index, nullptr, &data.subchannels_data, nullptr);
+			auto subchannels = discs::cd::deinterleave_subchannel_data(data.subchannels_data);
 			auto& q = *reinterpret_cast<discs::cd::SubchannelQ*>(subchannels.channels[discs::cd::SUBCHANNEL_Q_INDEX]);
 			if (q.adr == 1) {
 				auto decoded_sector_index = discs::cd::get_sector_from_address({ utils::bcd::decode(q.mode1.absolute_address_bcd.m), utils::bcd::decode(q.mode1.absolute_address_bcd.s), utils::bcd::decode(q.mode1.absolute_address_bcd.f) }) - 150;
@@ -60,6 +63,53 @@ namespace drive {
 	auto Drive::get_c2_data_offset(
 	) const -> size_t {
 		return this->c2_data_offset;
+	}
+
+	auto Drive::get_track_type(
+		const scsi::cdb::ReadTOCResponseFullTOC& toc,
+		ui_t track_index
+	) const -> TrackType {
+		auto& track = toc.entries[track_index];
+		auto category = discs::cd::get_track_category(track.control);
+		if (category == discs::cd::TrackCategory::AUDIO_2_CHANNELS) {
+			return TrackType::AUDIO_2_CHANNELS;
+		} else if (category == discs::cd::TrackCategory::AUDIO_4_CHANNELS) {
+			return TrackType::AUDIO_4_CHANNELS;
+		} else if (category == discs::cd::TrackCategory::DATA) {
+			auto session_type = scsi::cdb::get_session_type(toc);
+			if (session_type == scsi::cdb::SessionType::CDDA_OR_CDROM) {
+				auto data = scsi::cdb::ReadCDResponseDataA();
+				this->read_sector(overdrive::iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR, &data.sector_data, nullptr, nullptr);
+				auto& sector = *reinterpret_cast<discs::cdrom::Sector*>(&data.sector_data);
+				if (sector.base.header.mode == 0) {
+					return TrackType::DATA_MODE0;
+				} else if (sector.base.header.mode == 1) {
+					return TrackType::DATA_MODE1;
+				} else if (sector.base.header.mode == 2) {
+					return TrackType::DATA_MODE2;
+				} else {
+					throw overdrive::exceptions::InvalidValueException("sector mode", sector.base.header.mode, 0, 2);
+				}
+			} else if (session_type == scsi::cdb::SessionType::CDI) {
+				throw overdrive::exceptions::UnsupportedValueException("session type CDI");
+			} else if (session_type == scsi::cdb::SessionType::CDXA_OR_DDCD) {
+				auto data = scsi::cdb::ReadCDResponseDataA();
+				this->read_sector(overdrive::iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR, &data.sector_data, nullptr, nullptr);
+				auto& sector = *reinterpret_cast<discs::cdxa::Sector*>(&data.sector_data);
+				if (sector.base.header.mode == 2) {
+					if (sector.base.header_1.form_2 == 0) {
+						return TrackType::DATA_MODE2_FORM1;
+					} else {
+						return TrackType::DATA_MODE2_FORM2;
+					}
+				} else {
+					throw overdrive::exceptions::InvalidValueException("sector mode", sector.base.header.mode, 2, 2);
+				}
+			}
+		} else if (category == discs::cd::TrackCategory::RESERVED) {
+			throw overdrive::exceptions::UnsupportedValueException("track category reserved");
+		}
+		throw overdrive::exceptions::UnreachableCodeReachedException();
 	}
 
 	auto Drive::read_toc(

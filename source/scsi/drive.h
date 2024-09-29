@@ -13,6 +13,16 @@ namespace drive {
 
 	#pragma pack(pop)
 
+	enum class TrackType {
+		AUDIO_2_CHANNELS,
+		AUDIO_4_CHANNELS,
+		DATA_MODE0,
+		DATA_MODE1,
+		DATA_MODE2,
+		DATA_MODE2_FORM1,
+		DATA_MODE2_FORM2
+	};
+
 	class Drive {
 		public:
 
@@ -32,6 +42,11 @@ namespace drive {
 
 		auto get_c2_data_offset(
 		) const -> size_t;
+
+		auto get_track_type(
+			const cdb::ReadTOCResponseFullTOC& toc,
+			ui_t track_index
+		) const -> TrackType;
 
 		auto read_toc(
 		) const -> cdb::ReadTOCResponseNormalTOC;

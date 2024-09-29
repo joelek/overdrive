@@ -141,53 +141,6 @@ enum class FileFormat {
 	BIN_CUE
 };
 
-enum class TrackTypeEx {
-	AUDIO,
-	DATA_MODE_0,
-	DATA_MODE_1,
-	DATA_MODE_2,
-	DATA_MODE_2_FORM_1,
-	DATA_MODE_2_FORM_2
-};
-
-auto get_track_type_ex(
-	const scsi::drive::Drive& drive,
-	const scsi::cdb::ReadTOCResponseFullTOC& toc,
-	int track_index
-) -> TrackTypeEx {
-	auto& track = toc.entries[track_index];
-	auto session_type = scsi::cdb::get_session_type(toc);
-	if (session_type == scsi::cdb::SessionType::CDDA_OR_CDROM) {
-		auto is_audio = (track.control & 0b0100) == 0;
-		if (is_audio) {
-			return TrackTypeEx::AUDIO;
-		} else {
-			auto data = scsi::cdb::ReadCDResponseDataA();
-			drive.read_sector(iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR, &data.sector_data, nullptr, nullptr);
-			auto& cdrom_sector = *reinterpret_cast<discs::cdrom::Sector*>(&data.sector_data);
-			if (cdrom_sector.base.header.mode == 0) {
-				return TrackTypeEx::DATA_MODE_0;
-			} else if (cdrom_sector.base.header.mode == 1) {
-				return TrackTypeEx::DATA_MODE_1;
-			} else if (cdrom_sector.base.header.mode == 2) {
-				return TrackTypeEx::DATA_MODE_2;
-			}
-		}
-	} else if (session_type == scsi::cdb::SessionType::CDXA_OR_DDCD) {
-		auto data = scsi::cdb::ReadCDResponseDataA();
-		drive.read_sector(iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR, &data.sector_data, nullptr, nullptr);
-		auto& cdxa_sector = *reinterpret_cast<discs::cdxa::Sector*>(&data.sector_data);
-		if (cdxa_sector.base.header.mode == 2) {
-			if (cdxa_sector.base.header_1.form_2 == 0) {
-				return TrackTypeEx::DATA_MODE_2_FORM_1;
-			} else {
-				return TrackTypeEx::DATA_MODE_2_FORM_2;
-			}
-		}
-	}
-	throw EXIT_FAILURE;
-}
-
 namespace mds {
 	#pragma pack(push, 1)
 
@@ -439,7 +392,7 @@ class MDSImageFormat: ImageFormat {
 				}
 			} else {
 				auto current_track_entry = mds::EntryTypeB();
-				auto current_track_type = get_track_type_ex(drive, toc_ex, toc_ex_track_index);
+				auto current_track_type = drive.get_track_type(toc_ex, toc_ex_track_index);
 				auto current_track_mode = this->get_track_mode(current_track_type);
 				current_track_entry.track_mode = current_track_mode;
 				current_track_entry.track_mode_flags = current_track_mode == mds::TrackMode::MODE2_FORM1 || current_track_mode == mds::TrackMode::MODE2_FORM2 ? mds::TrackModeFlags::UNKNOWN_E : mds::TrackModeFlags::UNKNOWN_A;
@@ -512,23 +465,26 @@ class MDSImageFormat: ImageFormat {
 
 	protected:
 
-	auto get_track_mode(TrackTypeEx track_type) -> mds::TrackMode {
-		if (track_type == TrackTypeEx::AUDIO) {
+	auto get_track_mode(scsi::drive::TrackType track_type) -> mds::TrackMode {
+		if (track_type == scsi::drive::TrackType::AUDIO_2_CHANNELS) {
 			return mds::TrackMode::AUDIO;
 		}
-		if (track_type == TrackTypeEx::DATA_MODE_0) {
+		if (track_type == scsi::drive::TrackType::AUDIO_4_CHANNELS) {
+			return mds::TrackMode::AUDIO;
+		}
+		if (track_type == scsi::drive::TrackType::DATA_MODE0) {
 			return mds::TrackMode::NONE;
 		}
-		if (track_type == TrackTypeEx::DATA_MODE_1) {
+		if (track_type == scsi::drive::TrackType::DATA_MODE1) {
 			return mds::TrackMode::MODE1;
 		}
-		if (track_type == TrackTypeEx::DATA_MODE_2) {
+		if (track_type == scsi::drive::TrackType::DATA_MODE2) {
 			return mds::TrackMode::MODE2;
 		}
-		if (track_type == TrackTypeEx::DATA_MODE_2_FORM_1) {
+		if (track_type == scsi::drive::TrackType::DATA_MODE2_FORM1) {
 			return mds::TrackMode::MODE2_FORM1;
 		}
-		if (track_type == TrackTypeEx::DATA_MODE_2_FORM_2) {
+		if (track_type == scsi::drive::TrackType::DATA_MODE2_FORM2) {
 			return mds::TrackMode::MODE2_FORM2;
 		}
 		throw EXIT_FAILURE;

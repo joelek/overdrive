@@ -4,6 +4,10 @@
 
 namespace overdrive {
 namespace exceptions {
+	UnsupportedValueException::UnsupportedValueException(
+		const std::string& name
+	): std::runtime_error(std::format("Expected \"{}\" to not be supported!", name)) {}
+
 	InvalidValueException::InvalidValueException(
 		const std::string& name,
 		si_t value,
