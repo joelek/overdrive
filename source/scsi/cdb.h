@@ -543,5 +543,9 @@ namespace cdb {
 	auto get_session_type(
 		const ReadTOCResponseFullTOC& toc
 	) -> SessionType;
+
+	auto validate_toc(
+		const ReadTOCResponseNormalTOC& toc
+	) -> void;
 }
 }

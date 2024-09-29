@@ -136,29 +136,6 @@ auto get_cdrom_handle(std::string &drive)
 	return handle;
 }
 
-auto validate_cdrom_toc(scsi::cdb::ReadTOCResponseNormalTOC &toc)
--> void {
-	auto length = utils::byteswap::byteswap16(toc.header.data_length_be);
-	auto max_length = sizeof(toc) - sizeof(toc.header.data_length_be);
-	if (length > max_length) {
-		fprintf(stderr, "Expected TOC length of %u to be at most %llu!\n", length, max_length);
-		throw EXIT_FAILURE;
-	}
-	if (toc.header.first_track_or_session_number < 1 || toc.header.first_track_or_session_number > 99) {
-		fprintf(stderr, "Expected first track %i to be a value between 1 and 99!\n", toc.header.first_track_or_session_number);
-		throw EXIT_FAILURE;
-	}
-	if (toc.header.last_track_or_session_number < 1 || toc.header.last_track_or_session_number > 99) {
-		fprintf(stderr, "Expected last track %i to be a value between 1 and 99!\n", toc.header.last_track_or_session_number);
-		throw EXIT_FAILURE;
-	}
-	auto number_of_tracks = toc.header.last_track_or_session_number - toc.header.first_track_or_session_number + 1;
-	if (number_of_tracks < 1) {
-		fprintf(stderr, "Expected the disc to contain at least one track!\n");
-		throw EXIT_FAILURE;
-	}
-}
-
 enum class FileFormat {
 	MDF_MDS,
 	BIN_CUE
@@ -925,7 +902,7 @@ auto save(int argc, char **argv)
 			}
 		}
 		auto toc = scsi_drive.read_toc();
-		validate_cdrom_toc(toc);
+		scsi::cdb::validate_toc(toc);
 		auto toc_ex = scsi_drive.read_full_toc();
 		auto subchannel_offset = scsi_drive.get_subchannels_data_offset();
 		fprintf(stderr, "Subchannel data offset is %llu\n", subchannel_offset);
