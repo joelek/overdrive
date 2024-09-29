@@ -35,7 +35,7 @@ namespace cd {
 	auto deinterleave_subchannel_data(
 		reference<array<SUBCHANNELS_LENGTH, byte_t>> data
 	) -> Subchannels {
-		auto subchannel_data = Subchannels();
+		auto subchannels = Subchannels();
 		for (auto subchannel_index = 7; subchannel_index >= 0; subchannel_index -= 1) {
 			auto shift = 7 - subchannel_index;
 			auto offset = 0;
@@ -48,10 +48,10 @@ namespace cd {
 					byte |= subchannel_bit;
 					offset += 1;
 				}
-				subchannel_data.channels[subchannel_index][byte_index] = byte;
+				subchannels.channels[subchannel_index][byte_index] = byte;
 			}
 		}
-		return subchannel_data;
+		return subchannels;
 	}
 }
 }
