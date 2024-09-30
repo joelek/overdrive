@@ -30,5 +30,23 @@ namespace bcd {
 		auto encoded = (hi << 4) | (lo << 0);
 		return encoded;
 	}
+
+	auto decode_address(
+		const cd::SectorAddress& address
+	) -> cd::SectorAddress {
+		auto m = decode(address.m);
+		auto s = decode(address.s);
+		auto f = decode(address.f);
+		return { m, s, f };
+	}
+
+	auto encode_address(
+		const cd::SectorAddress& address
+	) -> cd::SectorAddress {
+		auto m = encode(address.m);
+		auto s = encode(address.s);
+		auto f = encode(address.f);
+		return { m, s, f };
+	}
 }
 }

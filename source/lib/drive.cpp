@@ -35,7 +35,7 @@ namespace drive {
 			auto subchannels = cd::deinterleave_subchannel_data(data.subchannels_data);
 			auto& q = *reinterpret_cast<cd::SubchannelQ*>(subchannels.channels[cd::SUBCHANNEL_Q_INDEX]);
 			if (q.adr == 1) {
-				auto decoded_sector_index = cd::get_sector_from_address({ bcd::decode(q.mode1.absolute_address_bcd.m), bcd::decode(q.mode1.absolute_address_bcd.s), bcd::decode(q.mode1.absolute_address_bcd.f) }) - 150;
+				auto decoded_sector_index = cd::get_sector_from_address(bcd::decode_address(q.mode1.absolute_address_bcd)) - 150;
 				auto delta = static_cast<si_t>(sector_index) - static_cast<si_t>(decoded_sector_index);
 				if (delta < -10 || delta > 10) {
 					throw exceptions::AutoDetectFailureException("subchannel timing offset");
