@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 #include <string>
-#include "../type.h"
+#include "type.h"
 
 namespace overdrive {
 namespace exceptions {

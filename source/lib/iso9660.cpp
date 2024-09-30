@@ -4,7 +4,7 @@
 #include <array>
 #include <cstring>
 #include "exceptions.h"
-#include "../utils/namespace.h"
+#include "idiv.h"
 
 namespace overdrive {
 namespace iso9660 {
@@ -14,7 +14,7 @@ namespace iso9660 {
 			const FileSystemEntry& fse
 		) -> std::vector<byte_t> {
 			auto user_data = std::array<byte_t, 2048>();
-			auto length_sectors = utils::idiv::ceil(fse.length_bytes, 2048);
+			auto length_sectors = idiv::ceil(fse.length_bytes, 2048);
 			auto buffer = std::vector<byte_t>(fse.length_bytes);
 			auto buffer_offset = buffer.data();
 			auto buffer_length = fse.length_bytes;
@@ -58,7 +58,7 @@ namespace iso9660 {
 					}
 				} else {
 					auto bytes_parsed = fse.length_bytes - buffer_length;
-					auto next_sector = utils::idiv::ceil(bytes_parsed, 2048) * 2048;
+					auto next_sector = idiv::ceil(bytes_parsed, 2048) * 2048;
 					auto skip_bytes = next_sector - bytes_parsed;
 					record_length = skip_bytes;
 				}
@@ -99,7 +99,7 @@ namespace iso9660 {
 		) -> std::optional<FileSystemEntry> {
 			if (lower_index_inclusive + 1 == upper_index_exclusive) {
 				auto& fse = entries.at(lower_index_inclusive);
-				auto length_sectors = utils::idiv::ceil(fse.length_bytes, 2048);
+				auto length_sectors = idiv::ceil(fse.length_bytes, 2048);
 				if (sector >= fse.first_sector && sector < fse.first_sector + length_sectors) {
 					return fse;
 				}

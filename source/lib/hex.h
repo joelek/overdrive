@@ -1,9 +1,9 @@
 #pragma once
 
 #include <string>
-#include "../type.h"
+#include "type.h"
 
-#define HEXDUMP(var) fprintf(stderr, "%s\n", overdrive::hex::create_hex_dump(reinterpret_cast<const uint8_t*>(&var), sizeof(var)).c_str())
+#define HEXDUMP(var) fprintf(stderr, "%s\n", hex::create_hex_dump(reinterpret_cast<const uint8_t*>(&var), sizeof(var)).c_str())
 
 namespace overdrive {
 namespace hex {

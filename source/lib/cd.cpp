@@ -1,15 +1,15 @@
 #include "cd.h"
 
-#include "../lib/exceptions.h"
+#include "exceptions.h"
 
-namespace discs {
+namespace overdrive {
 namespace cd {
 	auto get_sector_from_address(
 		const SectorAddress& address
 	) -> ui_t {
 		auto sector = (address.m * MINUTES_PER_SECOND + address.s) * SECTORS_PER_SECOND + address.f;
 		if (sector > MAX_SECTOR) {
-			throw overdrive::exceptions::InvalidValueException("sector", sector, 0, MAX_SECTOR);
+			throw exceptions::InvalidValueException("sector", sector, 0, MAX_SECTOR);
 		}
 		return sector;
 	}
@@ -18,7 +18,7 @@ namespace cd {
 		ui_t sector
 	) -> SectorAddress {
 		if (sector > MAX_SECTOR) {
-			throw overdrive::exceptions::InvalidValueException("sector", sector, 0, MAX_SECTOR);
+			throw exceptions::InvalidValueException("sector", sector, 0, MAX_SECTOR);
 		}
 		auto f = sector;
 		auto s = sector / SECTORS_PER_SECOND;
@@ -70,7 +70,7 @@ namespace cd {
 		if (category == 0b11) {
 			return TrackCategory::RESERVED;
 		}
-		throw overdrive::exceptions::UnreachableCodeReachedException();
+		throw exceptions::UnreachableCodeReachedException();
 	}
 
 	auto is_audio_category(
@@ -88,7 +88,7 @@ namespace cd {
 		if (category == TrackCategory::RESERVED) {
 			return false;
 		}
-		throw overdrive::exceptions::UnreachableCodeReachedException();
+		throw exceptions::UnreachableCodeReachedException();
 	}
 }
 }

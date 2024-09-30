@@ -1,11 +1,11 @@
 #pragma once
 
 #include <functional>
-#include "../type.h"
-#include "../discs/cd.h"
+#include "cd.h"
 #include "cdb.h"
+#include "type.h"
 
-namespace scsi {
+namespace overdrive {
 namespace drive {
 	using namespace type;
 
@@ -78,9 +78,9 @@ namespace drive {
 
 		auto read_sector(
 			size_t sector_index,
-			pointer<array<discs::cd::SECTOR_LENGTH, byte_t>> sector_data,
-			pointer<array<discs::cd::SUBCHANNELS_LENGTH, byte_t>> subchannels_data,
-			pointer<array<discs::cd::C2_LENGTH, byte_t>> c2_data
+			pointer<array<cd::SECTOR_LENGTH, byte_t>> sector_data,
+			pointer<array<cd::SUBCHANNELS_LENGTH, byte_t>> subchannels_data,
+			pointer<array<cd::C2_LENGTH, byte_t>> c2_data
 		) const -> void;
 
 		protected:

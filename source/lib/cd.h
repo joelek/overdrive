@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../type.h"
+#include "type.h"
 
-namespace discs {
+namespace overdrive {
 namespace cd {
 	using namespace type;
 

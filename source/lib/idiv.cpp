@@ -1,6 +1,6 @@
 #include "idiv.h"
 
-namespace utils {
+namespace overdrive {
 namespace idiv {
 	auto ceil(
 		si_t num,

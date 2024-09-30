@@ -1,6 +1,6 @@
 #include "byteswap.h"
 
-namespace utils {
+namespace overdrive {
 namespace byteswap {
 	auto byteswap16(
 		ui16_t value

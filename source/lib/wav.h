@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../type.h"
+#include "type.h"
 
-namespace audio {
+namespace overdrive {
 namespace wav {
 	using namespace type;
 

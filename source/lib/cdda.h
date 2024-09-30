@@ -1,9 +1,9 @@
 #pragma once
 
 #include "cd.h"
-#include "../type.h"
+#include "type.h"
 
-namespace discs {
+namespace overdrive {
 namespace cdda {
 	using namespace type;
 

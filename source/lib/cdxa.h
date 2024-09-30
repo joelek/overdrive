@@ -2,9 +2,9 @@
 
 #include "cd.h"
 #include "cdrom.h"
-#include "../type.h"
+#include "type.h"
 
-namespace discs {
+namespace overdrive {
 namespace cdxa {
 	using namespace type;
 

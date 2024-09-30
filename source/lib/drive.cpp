@@ -2,14 +2,14 @@
 
 #include <array>
 #include <cstring>
-#include "../discs/cdrom.h"
-#include "../discs/cdxa.h"
-#include "../lib/exceptions.h"
-#include "../lib/iso9660.h"
-#include "../utils/bcd.h"
-#include "../utils/byteswap.h"
+#include "bcd.h"
+#include "byteswap.h"
+#include "cdrom.h"
+#include "cdxa.h"
+#include "exceptions.h"
+#include "iso9660.h"
 
-namespace scsi {
+namespace overdrive {
 namespace drive {
 	Drive::Drive(
 		void* handle,
@@ -32,17 +32,17 @@ namespace drive {
 		auto deltas_index = size_t(0);
 		for (auto sector_index = size_t(0); sector_index < size_t(10); sector_index += 1) {
 			this->read_sector(sector_index, nullptr, &data.subchannels_data, nullptr);
-			auto subchannels = discs::cd::deinterleave_subchannel_data(data.subchannels_data);
-			auto& q = *reinterpret_cast<discs::cd::SubchannelQ*>(subchannels.channels[discs::cd::SUBCHANNEL_Q_INDEX]);
+			auto subchannels = cd::deinterleave_subchannel_data(data.subchannels_data);
+			auto& q = *reinterpret_cast<cd::SubchannelQ*>(subchannels.channels[cd::SUBCHANNEL_Q_INDEX]);
 			if (q.adr == 1) {
-				auto decoded_sector_index = discs::cd::get_sector_from_address({ utils::bcd::decode(q.mode1.absolute_address_bcd.m), utils::bcd::decode(q.mode1.absolute_address_bcd.s), utils::bcd::decode(q.mode1.absolute_address_bcd.f) }) - 150;
+				auto decoded_sector_index = cd::get_sector_from_address({ bcd::decode(q.mode1.absolute_address_bcd.m), bcd::decode(q.mode1.absolute_address_bcd.s), bcd::decode(q.mode1.absolute_address_bcd.f) }) - 150;
 				auto delta = static_cast<si_t>(sector_index) - static_cast<si_t>(decoded_sector_index);
 				if (delta < -10 || delta > 10) {
-					throw overdrive::exceptions::AutoDetectFailureException("subchannel timing offset");
+					throw exceptions::AutoDetectFailureException("subchannel timing offset");
 				}
 				if (deltas_index > 0) {
 					if (deltas[deltas_index - 1] != delta) {
-						throw overdrive::exceptions::AutoDetectFailureException("subchannel timing offset");
+						throw exceptions::AutoDetectFailureException("subchannel timing offset");
 					}
 				}
 				deltas[deltas_index] = delta;
@@ -52,7 +52,7 @@ namespace drive {
 		if (deltas_index >= 9) {
 			return deltas[0];
 		}
-		throw overdrive::exceptions::AutoDetectFailureException("subchannel timing offset");
+		throw exceptions::AutoDetectFailureException("subchannel timing offset");
 	}
 
 	auto Drive::get_subchannels_data_offset(
@@ -66,21 +66,21 @@ namespace drive {
 	}
 
 	auto Drive::get_track_type(
-		const scsi::cdb::ReadTOCResponseFullTOC& toc,
+		const cdb::ReadTOCResponseFullTOC& toc,
 		ui_t track_index
 	) const -> TrackType {
 		auto& track = toc.entries[track_index];
-		auto category = discs::cd::get_track_category(track.control);
-		if (category == discs::cd::TrackCategory::AUDIO_2_CHANNELS) {
+		auto category = cd::get_track_category(track.control);
+		if (category == cd::TrackCategory::AUDIO_2_CHANNELS) {
 			return TrackType::AUDIO_2_CHANNELS;
-		} else if (category == discs::cd::TrackCategory::AUDIO_4_CHANNELS) {
+		} else if (category == cd::TrackCategory::AUDIO_4_CHANNELS) {
 			return TrackType::AUDIO_4_CHANNELS;
-		} else if (category == discs::cd::TrackCategory::DATA) {
-			auto session_type = scsi::cdb::get_session_type(toc);
-			if (session_type == scsi::cdb::SessionType::CDDA_OR_CDROM) {
-				auto data = scsi::cdb::ReadCDResponseDataA();
-				this->read_sector(overdrive::iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR, &data.sector_data, nullptr, nullptr);
-				auto& sector = *reinterpret_cast<discs::cdrom::Sector*>(&data.sector_data);
+		} else if (category == cd::TrackCategory::DATA) {
+			auto session_type = cdb::get_session_type(toc);
+			if (session_type == cdb::SessionType::CDDA_OR_CDROM) {
+				auto data = cdb::ReadCDResponseDataA();
+				this->read_sector(iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR, &data.sector_data, nullptr, nullptr);
+				auto& sector = *reinterpret_cast<cdrom::Sector*>(&data.sector_data);
 				if (sector.base.header.mode == 0) {
 					return TrackType::DATA_MODE0;
 				} else if (sector.base.header.mode == 1) {
@@ -88,14 +88,14 @@ namespace drive {
 				} else if (sector.base.header.mode == 2) {
 					return TrackType::DATA_MODE2;
 				} else {
-					throw overdrive::exceptions::InvalidValueException("sector mode", sector.base.header.mode, 0, 2);
+					throw exceptions::InvalidValueException("sector mode", sector.base.header.mode, 0, 2);
 				}
-			} else if (session_type == scsi::cdb::SessionType::CDI) {
-				throw overdrive::exceptions::UnsupportedValueException("session type CDI");
-			} else if (session_type == scsi::cdb::SessionType::CDXA_OR_DDCD) {
-				auto data = scsi::cdb::ReadCDResponseDataA();
-				this->read_sector(overdrive::iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR, &data.sector_data, nullptr, nullptr);
-				auto& sector = *reinterpret_cast<discs::cdxa::Sector*>(&data.sector_data);
+			} else if (session_type == cdb::SessionType::CDI) {
+				throw exceptions::UnsupportedValueException("session type CDI");
+			} else if (session_type == cdb::SessionType::CDXA_OR_DDCD) {
+				auto data = cdb::ReadCDResponseDataA();
+				this->read_sector(iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR, &data.sector_data, nullptr, nullptr);
+				auto& sector = *reinterpret_cast<cdxa::Sector*>(&data.sector_data);
 				if (sector.base.header.mode == 2) {
 					if (sector.base.header_1.form_2 == 0) {
 						return TrackType::DATA_MODE2_FORM1;
@@ -103,20 +103,20 @@ namespace drive {
 						return TrackType::DATA_MODE2_FORM2;
 					}
 				} else {
-					throw overdrive::exceptions::InvalidValueException("sector mode", sector.base.header.mode, 2, 2);
+					throw exceptions::InvalidValueException("sector mode", sector.base.header.mode, 2, 2);
 				}
 			}
-		} else if (category == discs::cd::TrackCategory::RESERVED) {
-			throw overdrive::exceptions::UnsupportedValueException("track category reserved");
+		} else if (category == cd::TrackCategory::RESERVED) {
+			throw exceptions::UnsupportedValueException("track category reserved");
 		}
-		throw overdrive::exceptions::UnreachableCodeReachedException();
+		throw exceptions::UnreachableCodeReachedException();
 	}
 
 	auto Drive::read_toc(
 	) const	-> cdb::ReadTOCResponseNormalTOC {
 		auto cdb = cdb::ReadTOC10();
 		auto data = cdb::ReadTOCResponseNormalTOC();
-		cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(data));
+		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
 		cdb.format = cdb::ReadTOCFormat::NORMAL_TOC;
 		cdb.time = 1;
 		this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
@@ -127,7 +127,7 @@ namespace drive {
 	) const	-> cdb::ReadTOCResponseSessionInfo {
 		auto cdb = cdb::ReadTOC10();
 		auto data = cdb::ReadTOCResponseSessionInfo();
-		cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(data));
+		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
 		cdb.format = cdb::ReadTOCFormat::SESSION_INFO;
 		cdb.time = 1;
 		this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
@@ -138,7 +138,7 @@ namespace drive {
 	) const	-> cdb::ReadTOCResponseFullTOC {
 		auto cdb = cdb::ReadTOC10();
 		auto data = cdb::ReadTOCResponseFullTOC();
-		cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(data));
+		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
 		cdb.format = cdb::ReadTOCFormat::FULL_TOC;
 		cdb.time = 1;
 		this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
@@ -149,7 +149,7 @@ namespace drive {
 	) const	-> cdb::ReadTOCResponsePMA {
 		auto cdb = cdb::ReadTOC10();
 		auto data = cdb::ReadTOCResponsePMA();
-		cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(data));
+		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
 		cdb.format = cdb::ReadTOCFormat::PMA;
 		cdb.time = 1;
 		this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
@@ -160,7 +160,7 @@ namespace drive {
 	) const	-> cdb::ReadTOCResponseATIP {
 		auto cdb = cdb::ReadTOC10();
 		auto data = cdb::ReadTOCResponseATIP();
-		cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(data));
+		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
 		cdb.format = cdb::ReadTOCFormat::ATIP;
 		cdb.time = 1;
 		this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
@@ -172,7 +172,7 @@ namespace drive {
 		auto cdb = cdb::ModeSense10();
 		auto data = cdb::ModeSenseReadWriteErrorRecoveryModePageResponse();
 		cdb.page_code = cdb::SensePage::ReadWriteErrorRecoveryModePage;
-		cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(data));
+		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
 		this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		return data;
 	}
@@ -182,7 +182,7 @@ namespace drive {
 	) const -> void {
 		auto cdb = cdb::ModeSelect10();
 		cdb.page_format = 1;
-		cdb.parameter_list_length_be = utils::byteswap::byteswap16(sizeof(data));
+		cdb.parameter_list_length_be = byteswap::byteswap16(sizeof(data));
 		this->ioctl(handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), true);
 	}
 
@@ -191,7 +191,7 @@ namespace drive {
 		auto cdb = cdb::ModeSense10();
 		auto data = cdb::ModeSenseCapabilitiesAndMechanicalStatusPageResponse();
 		cdb.page_code = cdb::SensePage::CapabilitiesAndMechanicalStatusPage;
-		cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(data));
+		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
 		this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		return data;
 	}
@@ -200,20 +200,20 @@ namespace drive {
 	) const -> cdb::StandardInquiryResponse {
 		auto cdb = cdb::Inquiry6();
 		auto data = cdb::StandardInquiryResponse();
-		cdb.allocation_length_be = utils::byteswap::byteswap16(sizeof(data));
+		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
 		this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		return data;
 	}
 
 	auto Drive::read_sector(
 		size_t sector_index,
-		pointer<array<discs::cd::SECTOR_LENGTH, byte_t>> sector_data,
-		pointer<array<discs::cd::SUBCHANNELS_LENGTH, byte_t>> subchannels_data,
-		pointer<array<discs::cd::C2_LENGTH, byte_t>> c2_data
+		pointer<array<cd::SECTOR_LENGTH, byte_t>> sector_data,
+		pointer<array<cd::SUBCHANNELS_LENGTH, byte_t>> subchannels_data,
+		pointer<array<cd::C2_LENGTH, byte_t>> c2_data
 	) const -> void {
 		auto cdb = cdb::ReadCD12();
 		cdb.expected_sector_type = cdb::ReadCD12ExpectedSectorType::ANY;
-		cdb.lba_be = utils::byteswap::byteswap32(sector_index);
+		cdb.lba_be = byteswap::byteswap32(sector_index);
 		cdb.transfer_length_be[2] = 1;
 		cdb.errors = cdb::ReadCD12Errors::C2_ERROR_BLOCK_DATA;
 		cdb.edc_and_ecc = 1;
@@ -242,13 +242,13 @@ namespace drive {
 			auto drive = Drive(handle, 0, offsetof(cdb::ReadCDResponseDataA, subchannels_data), offsetof(cdb::ReadCDResponseDataA, c2_data), ioctl);
 			drive.detect_subchannel_timing_offset();
 			return drive;
-		} catch (const overdrive::exceptions::AutoDetectFailureException& e) {}
+		} catch (const exceptions::AutoDetectFailureException& e) {}
 		try {
 			auto drive = Drive(handle, 0, offsetof(cdb::ReadCDResponseDataB, subchannels_data), offsetof(cdb::ReadCDResponseDataB, c2_data), ioctl);
 			drive.detect_subchannel_timing_offset();
 			return drive;
-		} catch (const overdrive::exceptions::AutoDetectFailureException& e) {}
-		throw overdrive::exceptions::AutoDetectFailureException("drive parameters");
+		} catch (const exceptions::AutoDetectFailureException& e) {}
+		throw exceptions::AutoDetectFailureException("drive parameters");
 	}
 }
 }

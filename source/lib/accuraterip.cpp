@@ -1,6 +1,6 @@
 #include "accuraterip.h"
 
-#include "../utils/namespace.h"
+#include "string.h"
 
 const std::string CSV = std::string(
 	"16X DVD-,ROM,738\n"
@@ -4523,15 +4523,15 @@ namespace accuraterip {
 			const std::string& vendor,
 			const std::string& product
 		) -> std::string {
-			return utils::string::trim(vendor + " - " + product);
+			return string::trim(vendor + " - " + product);
 		}
 
 		auto create_read_offset_correction_values(
 		) -> std::map<std::string, si_t> {
 			auto read_offset_correction_values = std::map<std::string, si_t>();
-			auto lines = utils::string::split(CSV, "\n");
+			auto lines = string::split(CSV, "\n");
 			for (const auto& line : lines) {
-				auto tokens = utils::string::split(line, ",");
+				auto tokens = string::split(line, ",");
 				if (tokens.size() == 3) {
 					auto& vendor = tokens.at(0);
 					auto& product = tokens.at(1);

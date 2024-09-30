@@ -1,13 +1,13 @@
 #pragma once
 
-#include "../discs/cd.h"
-#include "../type.h"
+#include "cd.h"
+#include "type.h"
 
-namespace scsi {
+namespace overdrive {
 namespace cdb {
 	using namespace type;
 
-	const auto READ_CD_LENGTH = size_t(discs::cd::SECTOR_LENGTH + discs::cd::SUBCHANNELS_LENGTH + discs::cd::C2_LENGTH);
+	const auto READ_CD_LENGTH = size_t(cd::SECTOR_LENGTH + cd::SUBCHANNELS_LENGTH + cd::C2_LENGTH);
 
 	#pragma pack(push, 1)
 
@@ -63,7 +63,7 @@ namespace cdb {
 		ui08_t track_number: 8;
 		ui08_t : 8;
 		ui08_t : 8;
-		discs::cd::SectorAddress track_start_address;
+		cd::SectorAddress track_start_address;
 	};
 
 	static_assert(sizeof(ReadTOCResponseNormalTOCEntry) == 8);
@@ -82,7 +82,7 @@ namespace cdb {
 		ui08_t first_track_number_in_last_complete_session: 8;
 		ui08_t : 8;
 		ui08_t : 8;
-		discs::cd::SectorAddress track_start_address;
+		cd::SectorAddress track_start_address;
 	};
 
 	static_assert(sizeof(ReadTOCResponseSessionInfoEntry) == 8);
@@ -100,10 +100,10 @@ namespace cdb {
 		ui08_t adr: 4;
 		ui08_t tno: 8;
 		ui08_t point: 8;
-		discs::cd::SectorAddress address;
+		cd::SectorAddress address;
 		ui08_t phour: 4;
 		ui08_t hour: 4;
-		discs::cd::SectorAddress paddress;
+		cd::SectorAddress paddress;
 	};
 
 	static_assert(sizeof(ReadTOCResponseFullTOCEntry) == 11);
@@ -154,9 +154,9 @@ namespace cdb {
 		ui08_t disc_type: 1;
 		ui08_t : 1;
 		ui08_t : 8;
-		discs::cd::SectorAddress astart_time_of_lead_in;
+		cd::SectorAddress astart_time_of_lead_in;
 		ui08_t : 8;
-		discs::cd::SectorAddress last_possible_start_time_of_lead_out;
+		cd::SectorAddress last_possible_start_time_of_lead_out;
 		ui08_t : 8;
 		ui08_t a1_values[3];
 		ui08_t : 8;
@@ -509,17 +509,17 @@ namespace cdb {
 	static_assert(sizeof(ReadCD12) == 12);
 
 	struct ReadCDResponseDataA {
-		byte_t sector_data[discs::cd::SECTOR_LENGTH];
-		byte_t c2_data[discs::cd::C2_LENGTH];
-		byte_t subchannels_data[discs::cd::SUBCHANNELS_LENGTH];
+		byte_t sector_data[cd::SECTOR_LENGTH];
+		byte_t c2_data[cd::C2_LENGTH];
+		byte_t subchannels_data[cd::SUBCHANNELS_LENGTH];
 	};
 
 	static_assert(sizeof(ReadCDResponseDataA) == READ_CD_LENGTH);
 
 	struct ReadCDResponseDataB {
-		byte_t sector_data[discs::cd::SECTOR_LENGTH];
-		byte_t subchannels_data[discs::cd::SUBCHANNELS_LENGTH];
-		byte_t c2_data[discs::cd::C2_LENGTH];
+		byte_t sector_data[cd::SECTOR_LENGTH];
+		byte_t subchannels_data[cd::SUBCHANNELS_LENGTH];
+		byte_t c2_data[cd::C2_LENGTH];
 	};
 
 	static_assert(sizeof(ReadCDResponseDataB) == READ_CD_LENGTH);

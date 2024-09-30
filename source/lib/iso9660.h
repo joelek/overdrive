@@ -5,7 +5,7 @@
 #include <optional>
 #include <string>
 #include <vector>
-#include "../type.h"
+#include "type.h"
 
 namespace overdrive {
 namespace iso9660 {

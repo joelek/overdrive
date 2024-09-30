@@ -2,6 +2,7 @@
 
 #include <cstdint>
 
+namespace overdrive {
 namespace type {
 	typedef int8_t si08_t;
 	typedef uint8_t ui08_t;
@@ -27,4 +28,5 @@ namespace type {
 	template <typename A> using constant = A const;
 	template <unsigned B, typename A> using array = A[B];
 	template <typename A, typename... B> using function = A(B...);
+}
 }

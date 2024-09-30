@@ -2,9 +2,9 @@
 
 #include <string>
 #include <vector>
-#include "../type.h"
+#include "type.h"
 
-namespace utils {
+namespace overdrive {
 namespace string {
 	using namespace type;
 

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../type.h"
+#include "type.h"
 
-namespace scsi {
+namespace overdrive {
 namespace sense {
 	using namespace type;
 
