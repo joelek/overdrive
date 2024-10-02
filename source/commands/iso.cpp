@@ -65,6 +65,7 @@ namespace commands {
 			fprintf(stderr, "%s\n", std::format("Drive buffer size: {} bytes", drive_info.buffer_size).c_str());
 			fprintf(stderr, "%s\n", std::format("Drive supports accurate stream: {}", drive_info.supports_accurate_stream).c_str());
 			fprintf(stderr, "%s\n", std::format("Drive supports c2 error reporting: {}", drive_info.supports_c2_error_reporting).c_str());
+			fprintf(stderr, "%s\n", std::format("Drive read offset correction: {}", drive_info.read_offset_correction ? std::format("{}", drive_info.read_offset_correction.value()) : "unknown").c_str());
 
 
 			auto toc = drive.read_full_toc();

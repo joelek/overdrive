@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <optional>
 #include <string>
 #include "cd.h"
 #include "cdb.h"
@@ -35,6 +36,7 @@ namespace drive {
 		size_t buffer_size;
 		bool_t supports_accurate_stream;
 		bool_t supports_c2_error_reporting;
+		std::optional<si_t> read_offset_correction;
 
 		protected:
 	};

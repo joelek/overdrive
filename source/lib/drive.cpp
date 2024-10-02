@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstring>
+#include "accuraterip.h"
 #include "bcd.h"
 #include "byteswap.h"
 #include "cdrom.h"
@@ -11,6 +12,8 @@
 
 namespace overdrive {
 namespace drive {
+	const auto ACCURATERIP = accuraterip::Database();
+
 	Drive::Drive(
 		void* handle,
 		size_t sector_data_offset,
@@ -251,6 +254,7 @@ namespace drive {
 		auto buffer_size = size_t(byteswap::byteswap16(capabilites_and_mechanical_status_page.page.buffer_size_supported_be)) * 1024;
 		auto supports_accurate_stream = capabilites_and_mechanical_status_page.page.cdda_stream_is_accurate == 1;
 		auto supports_c2_error_reporting = capabilites_and_mechanical_status_page.page.c2_pointers_supported == 1;
+		auto read_offset_correction = ACCURATERIP.get_read_offset_correction_value(standard_inquiry.vendor_identification, standard_inquiry.product_identification);
 		return {
 			vendor,
 			product,
@@ -259,7 +263,8 @@ namespace drive {
 			c2_data_offset,
 			buffer_size,
 			supports_accurate_stream,
-			supports_c2_error_reporting
+			supports_c2_error_reporting,
+			read_offset_correction
 		};
 	}
 
