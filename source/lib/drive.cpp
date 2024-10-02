@@ -244,9 +244,22 @@ namespace drive {
 		auto standard_inquiry = this->read_standard_inquiry();
 		auto vendor = std::string(standard_inquiry.vendor_identification, sizeof(standard_inquiry.vendor_identification));
 		auto product = std::string(standard_inquiry.product_identification, sizeof(standard_inquiry.product_identification));
+		auto sector_data_offset = this->sector_data_offset;
+		auto subchannels_data_offset = this->subchannels_data_offset;
+		auto c2_data_offset = this->c2_data_offset;
+		auto capabilites_and_mechanical_status_page = this->read_capabilites_and_mechanical_status_page();
+		auto buffer_size = size_t(byteswap::byteswap16(capabilites_and_mechanical_status_page.page.buffer_size_supported_be)) * 1024;
+		auto supports_accurate_stream = capabilites_and_mechanical_status_page.page.cdda_stream_is_accurate == 1;
+		auto supports_c2_error_reporting = capabilites_and_mechanical_status_page.page.c2_pointers_supported == 1;
 		return {
 			vendor,
-			product
+			product,
+			sector_data_offset,
+			subchannels_data_offset,
+			c2_data_offset,
+			buffer_size,
+			supports_accurate_stream,
+			supports_c2_error_reporting
 		};
 	}
 

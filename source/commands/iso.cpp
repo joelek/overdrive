@@ -54,8 +54,14 @@ namespace commands {
 			auto handle = get_handle(options.drive);
 			auto drive = drive::create_drive(handle, ioctl);
 			auto drive_info = drive.read_drive_info();
-			fprintf(stderr, "%s\n", std::format("Drive vendor is \"{}\"", string::trim(drive_info.vendor)).c_str());
-			fprintf(stderr, "%s\n", std::format("Drive product is \"{}\"", string::trim(drive_info.product)).c_str());
+			fprintf(stderr, "%s\n", std::format("Drive vendor: \"{}\"", string::trim(drive_info.vendor)).c_str());
+			fprintf(stderr, "%s\n", std::format("Drive product: \"{}\"", string::trim(drive_info.product)).c_str());
+			fprintf(stderr, "%s\n", std::format("Drive sector data offset: {}", drive_info.sector_data_offset).c_str());
+			fprintf(stderr, "%s\n", std::format("Drive subchannels data offset: {}", drive_info.subchannels_data_offset).c_str());
+			fprintf(stderr, "%s\n", std::format("Drive c2 data offset: {}", drive_info.c2_data_offset).c_str());
+			fprintf(stderr, "%s\n", std::format("Drive buffer size: {} bytes", drive_info.buffer_size).c_str());
+			fprintf(stderr, "%s\n", std::format("Drive supports accurate stream: {}", drive_info.supports_accurate_stream).c_str());
+			fprintf(stderr, "%s\n", std::format("Drive supports c2 error reporting: {}", drive_info.supports_c2_error_reporting).c_str());
 
 
 			auto toc = drive.read_full_toc();

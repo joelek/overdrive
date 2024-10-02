@@ -29,6 +29,12 @@ namespace drive {
 
 		std::string vendor;
 		std::string product;
+		size_t sector_data_offset;
+		size_t subchannels_data_offset;
+		size_t c2_data_offset;
+		size_t buffer_size;
+		bool_t supports_accurate_stream;
+		bool_t supports_c2_error_reporting;
 
 		protected:
 	};
