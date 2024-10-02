@@ -2,7 +2,7 @@
 
 #include "string.h"
 
-const std::string CSV = std::string(
+const auto CSV = std::string(
 	"16X DVD-,ROM,738\n"
 	"24X     ,SATA DVDRW,6\n"
 	"52XATAPI,  CD-ROM,108\n"
