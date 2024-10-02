@@ -66,12 +66,8 @@ namespace commands {
 			fprintf(stderr, "%s\n", std::format("Drive supports accurate stream: {}", drive_info.supports_accurate_stream).c_str());
 			fprintf(stderr, "%s\n", std::format("Drive supports c2 error reporting: {}", drive_info.supports_c2_error_reporting).c_str());
 			fprintf(stderr, "%s\n", std::format("Drive read offset correction (samples): {}", drive_info.read_offset_correction ? std::format("{}", drive_info.read_offset_correction.value()) : "unknown").c_str());
-
-
-			auto toc = drive.read_full_toc();
-			fprintf(stderr, "%s\n", "");
-			auto session_type = cdb::get_session_type(toc);
-			fprintf(stderr, "%s\n", "");
+			auto disc_info = drive.read_disc_info();
+			fprintf(stderr, "%s\n", std::format("Disc session type: {}", enums::SessionType(disc_info.session_type)).c_str());
 		} catch (const exceptions::ArgumentException& e) {
 			fprintf(stderr, "%s\n", "Arguments:");
 			throw e;

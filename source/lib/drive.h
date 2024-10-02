@@ -41,6 +41,14 @@ namespace drive {
 		protected:
 	};
 
+	class DiscInfo {
+		public:
+
+		cdb::SessionType session_type;
+
+		protected:
+	};
+
 	class Drive {
 		public:
 
@@ -106,6 +114,9 @@ namespace drive {
 
 		auto read_drive_info(
 		) const -> DriveInfo;
+
+		auto read_disc_info(
+		) const -> DiscInfo;
 
 		protected:
 

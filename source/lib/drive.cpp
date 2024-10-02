@@ -271,6 +271,15 @@ namespace drive {
 		};
 	}
 
+	auto Drive::read_disc_info(
+	) const -> DiscInfo {
+		auto toc = this->read_full_toc();
+		auto session_type = cdb::get_session_type(toc);
+		return {
+			session_type
+		};
+	}
+
 	auto create_drive(
 		void* handle,
 		const std::function<void(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)>& ioctl
