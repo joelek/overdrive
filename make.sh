@@ -32,6 +32,7 @@ SOURCES=(
 	"lib/cdrom"
 	"lib/cdxa"
 	"lib/drive"
+	"lib/enums"
 	"lib/exceptions"
 	"lib/hex"
 	"lib/idiv"
