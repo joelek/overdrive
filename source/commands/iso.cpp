@@ -9,6 +9,7 @@ namespace commands {
 		public:
 
 		std::string drive;
+		std::optional<si_t> read_offset_correction;
 
 		protected:
 	};
@@ -18,6 +19,7 @@ namespace commands {
 			const std::vector<std::string>& arguments
 		) -> ISOOptions {
 			auto drive = std::optional<std::string>();
+			auto read_offset_correction = std::optional<si_t>();
 			for (auto argument_index = size_t(2); argument_index < arguments.size(); argument_index += 1) {
 				auto& argument = arguments[argument_index];
 				if (false) {
@@ -39,7 +41,8 @@ namespace commands {
 				throw exceptions::MissingArgumentException("drive");
 			}
 			return {
-				drive.value()
+				drive.value(),
+				read_offset_correction
 			};
 		}
 	}
