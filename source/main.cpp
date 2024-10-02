@@ -125,8 +125,9 @@ auto get_timestamp_ms()
 	return current_time_ms;
 }
 
-auto get_cdrom_handle(std::string &drive)
--> HANDLE {
+auto get_handle(
+	const std::string& drive
+) -> void* {
 	auto filename = std::string("\\\\.\\") + drive + ":";
 	SetLastError(ERROR_SUCCESS);
 	auto handle = CreateFileA(filename.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, 0, nullptr);
@@ -416,7 +417,7 @@ class MDSImageFormat: ImageFormat {
 				}
 			} else {
 				auto current_track_entry = mds::EntryTypeB();
-				auto current_track_type = drive.get_track_type(toc_ex, toc_ex_track_index);
+				auto current_track_type = drive.determine_track_type(toc_ex, toc_ex_track_index);
 				auto current_track_mode = this->get_track_mode(current_track_type);
 				current_track_entry.track_mode = current_track_mode;
 				current_track_entry.track_mode_flags = current_track_mode == mds::TrackMode::MODE2_FORM1 || current_track_mode == mds::TrackMode::MODE2_FORM2 ? mds::TrackModeFlags::UNKNOWN_E : mds::TrackModeFlags::UNKNOWN_A;
@@ -908,7 +909,7 @@ auto save(
 		fprintf(stderr, "\t\tStore complete sectors for data tracks (true by default).\n");
 		throw EXIT_FAILURE;
 	} else {
-		auto handle = get_cdrom_handle(drive_argument.value());
+		auto handle = get_handle(drive_argument.value());
 		auto scsi_drive = drive::create_drive(handle, pass_through_direct);
 		auto standard_inquiry = scsi_drive.read_standard_inquiry();
 		auto vendor = std::string(standard_inquiry.vendor_identification, sizeof(standard_inquiry.vendor_identification));
@@ -1177,7 +1178,7 @@ auto main(
 		} else if (command == "cue") {
 			commands::cue(arguments);
 		} else if (command == "iso") {
-			commands::iso(arguments);
+			commands::iso(arguments, get_handle, pass_through_direct);
 		} else if (command == "mds") {
 			commands::mds(arguments);
 		} else {
@@ -1186,6 +1187,7 @@ auto main(
 		fprintf(stderr, "%s\n", "Program completed successfully.");
 		return EXIT_SUCCESS;
 	} catch (const std::exception& e) {
+		fprintf(stderr, "%s\n", "");
 		fprintf(stderr, "%s\n", e.what());
 	}
 	fprintf(stderr, "%s\n", "Program did not complete successfully!");

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <string>
 #include "cd.h"
 #include "cdb.h"
 #include "type.h"
@@ -23,6 +24,15 @@ namespace drive {
 		DATA_MODE2_FORM2
 	};
 
+	class DriveInfo {
+		public:
+
+		std::string vendor;
+		std::string product;
+
+		protected:
+	};
+
 	class Drive {
 		public:
 
@@ -37,13 +47,16 @@ namespace drive {
 		auto detect_subchannel_timing_offset(
 		) -> si_t;
 
+		auto get_sector_data_offset(
+		) const -> size_t;
+
 		auto get_subchannels_data_offset(
 		) const -> size_t;
 
 		auto get_c2_data_offset(
 		) const -> size_t;
 
-		auto get_track_type(
+		auto determine_track_type(
 			const cdb::ReadTOCResponseFullTOC& toc,
 			ui_t track_index
 		) const -> TrackType;
@@ -82,6 +95,9 @@ namespace drive {
 			pointer<array<cd::SUBCHANNELS_LENGTH, byte_t>> subchannels_data,
 			pointer<array<cd::C2_LENGTH, byte_t>> c2_data
 		) const -> void;
+
+		auto read_drive_info(
+		) const -> DriveInfo;
 
 		protected:
 

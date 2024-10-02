@@ -55,6 +55,11 @@ namespace drive {
 		throw exceptions::AutoDetectFailureException("subchannel timing offset");
 	}
 
+	auto Drive::get_sector_data_offset(
+	) const -> size_t {
+		return this->sector_data_offset;
+	}
+
 	auto Drive::get_subchannels_data_offset(
 	) const -> size_t {
 		return this->subchannels_data_offset;
@@ -65,7 +70,7 @@ namespace drive {
 		return this->c2_data_offset;
 	}
 
-	auto Drive::get_track_type(
+	auto Drive::determine_track_type(
 		const cdb::ReadTOCResponseFullTOC& toc,
 		ui_t track_index
 	) const -> TrackType {
@@ -232,6 +237,17 @@ namespace drive {
 		if (c2_data != nullptr) {
 			std::memcpy(*c2_data, buffer.data() + this->c2_data_offset, sizeof(*c2_data));
 		}
+	}
+
+	auto Drive::read_drive_info(
+	) const -> DriveInfo {
+		auto standard_inquiry = this->read_standard_inquiry();
+		auto vendor = std::string(standard_inquiry.vendor_identification, sizeof(standard_inquiry.vendor_identification));
+		auto product = std::string(standard_inquiry.product_identification, sizeof(standard_inquiry.product_identification));
+		return {
+			vendor,
+			product
+		};
 	}
 
 	auto create_drive(
