@@ -1,5 +1,6 @@
 #pragma once
 
+#include <regex>
 #include <string>
 #include <vector>
 #include "type.h"
@@ -7,6 +8,12 @@
 namespace overdrive {
 namespace string {
 	using namespace type;
+
+	auto match(
+		const std::string& string,
+		std::vector<std::string>& matches,
+		const std::regex& regex
+	) -> bool_t;
 
 	auto split(
 		const std::string& string,

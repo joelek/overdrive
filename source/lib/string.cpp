@@ -2,6 +2,23 @@
 
 namespace overdrive {
 namespace string {
+	auto match(
+		const std::string& string,
+		std::vector<std::string>& matches,
+		const std::regex& regex
+	) -> bool_t {
+		matches.clear();
+		auto smatch = std::smatch();
+		if (std::regex_search(string, smatch, regex)) {
+			for (auto match_index = size_t(0); match_index < smatch.size(); match_index += 1) {
+				matches.push_back(smatch[match_index]);
+			}
+			return true;
+		} else {
+			return false;
+		}
+	}
+
 	auto split(
 		const std::string& string,
 		const std::string& delimiter
