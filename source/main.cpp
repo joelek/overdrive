@@ -16,6 +16,9 @@
 #include <memory>
 #include <algorithm>
 
+#include "commands/cue.h"
+#include "commands/iso.h"
+#include "commands/mds.h"
 #include "lib.h"
 
 using namespace overdrive;
@@ -304,6 +307,32 @@ class ImageFormat {
 	protected:
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class MDSImageFormat: ImageFormat {
 	public:
 
@@ -489,6 +518,26 @@ class MDSImageFormat: ImageFormat {
 	FILE* target_handle_mdf;
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class BINCUEImageFormat: ImageFormat {
 	public:
 
@@ -657,8 +706,31 @@ auto get_image_format(FileFormat format, const std::string& directory, const std
 	return std::shared_ptr<ImageFormat>((ImageFormat*)new BINCUEImageFormat(std::string(directory), std::string(filename), split_tracks, add_wave_headers, complete_data_sectors));
 }
 
-auto save(int argc, char **argv)
--> void {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+auto save(
+	si_t argc,
+	ch08_t** argv
+) -> void {
 	auto subchannels = false;
 	auto directory = std::string(".\\private\\");
 	auto filename = std::string("image");
@@ -1078,21 +1150,69 @@ auto save(int argc, char **argv)
 	}
 }
 
-auto main(int argc, char **argv)
--> int {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+auto main(
+	si_t argc,
+	ch08_t** argv
+) -> si_t {
+	try {
+		auto arguments = std::vector<std::string>(argv + 0, argv + argc);
+		auto command = arguments.size() >= 2 ? arguments[1] : "";
+		if (false) {
+		} else if (command == "cue") {
+			commands::cue(arguments);
+		} else if (command == "iso") {
+			commands::iso(arguments);
+		} else if (command == "mds") {
+			commands::mds(arguments);
+		} else {
+			fprintf(stderr, "%s\n", "Expected a valid command!");
+		}
+		fprintf(stderr, "%s\n", "Program completed successfully.");
+		return EXIT_SUCCESS;
+	} catch (const std::exception& e) {
+		fprintf(stderr, "%s\n", e.what());
+	}
+	fprintf(stderr, "%s\n", "Program did not complete successfully!");
+	return EXIT_FAILURE;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	auto command = argc >= 2 ? argv[1] : "";
 	if (strcmp(command, "save") == 0) {
-		try {
-			save(argc, argv);
-			fprintf(stderr, "Program completed successfully.\n");
-			return EXIT_SUCCESS;
-		} catch (...) {
-			fprintf(stderr, "Program did not complete successfully!\n");
-			return EXIT_FAILURE;
-		}
+		save(argc, argv);
+		return EXIT_SUCCESS;
 	}
-
-
 	HANDLE hCD = CreateFileA("\\\\.\\F:", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, 0, nullptr);
 	if (hCD == NULL) {
 		fprintf(stderr, "error opening drive\n");

@@ -58,5 +58,46 @@ namespace exceptions {
 
 		protected:
 	};
+
+	class ArgumentException: public std::runtime_error {
+		public:
+
+		ArgumentException(
+			const std::string& message
+		);
+
+		protected:
+	};
+
+	class BadArgumentException: public ArgumentException {
+		public:
+
+		BadArgumentException(
+			const std::string& name,
+			const std::string& format
+		);
+
+		protected:
+	};
+
+	class MissingArgumentException: public ArgumentException {
+		public:
+
+		MissingArgumentException(
+			const std::string& name
+		);
+
+		protected:
+	};
+
+	class UnknownArgumentException: public ArgumentException {
+		public:
+
+		UnknownArgumentException(
+			const std::string& name
+		);
+
+		protected:
+	};
 }
 }

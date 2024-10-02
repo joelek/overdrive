@@ -20,6 +20,9 @@ if [ $1 = "release" ]; then
 fi
 
 SOURCES=(
+	"commands/cue"
+	"commands/iso"
+	"commands/mds"
 	"lib/accuraterip"
 	"lib/bcd"
 	"lib/byteswap"

@@ -25,5 +25,22 @@ namespace exceptions {
 
 	UnreachableCodeReachedException::UnreachableCodeReachedException(
 	): std::runtime_error(std::format("Expected code to be unreachable!")) {}
+
+	ArgumentException::ArgumentException(
+		const std::string& message
+	): std::runtime_error(message) {}
+
+	BadArgumentException::BadArgumentException(
+		const std::string& name,
+		const std::string& format
+	): ArgumentException(std::format("Expected argument \"{}\" to have format \"{}\"!", name, format)) {}
+
+	MissingArgumentException::MissingArgumentException(
+		const std::string& name
+	): ArgumentException(std::format("Expected argument \"{}\" to be specified!", name)) {}
+
+	UnknownArgumentException::UnknownArgumentException(
+		const std::string& name
+	): ArgumentException(std::format("Expected argument \"{}\" to be known!", name)) {}
 }
 }
