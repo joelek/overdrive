@@ -77,20 +77,20 @@ namespace drive {
 			ui_t track_index
 		) const -> TrackType;
 
-		auto read_toc(
+		auto read_normal_toc(
 		) const -> cdb::ReadTOCResponseNormalTOC;
 
-		auto read_session_info(
-		) const -> cdb::ReadTOCResponseSessionInfo;
+		auto read_session_info_toc(
+		) const -> cdb::ReadTOCResponseSessionInfoTOC;
 
 		auto read_full_toc(
 		) const -> cdb::ReadTOCResponseFullTOC;
 
-		auto read_pma(
-		) const -> cdb::ReadTOCResponsePMA;
+		auto read_pma_toc(
+		) const -> cdb::ReadTOCResponsePMATOC;
 
-		auto read_atip(
-		) const -> cdb::ReadTOCResponseATIP;
+		auto read_atip_toc(
+		) const -> cdb::ReadTOCResponseATIPTOC;
 
 		auto read_error_recovery_mode_page(
 		) const -> cdb::ModeSenseReadWriteErrorRecoveryModePageResponse;

@@ -123,7 +123,7 @@ namespace drive {
 		throw exceptions::UnreachableCodeReachedException();
 	}
 
-	auto Drive::read_toc(
+	auto Drive::read_normal_toc(
 	) const	-> cdb::ReadTOCResponseNormalTOC {
 		auto cdb = cdb::ReadTOC10();
 		auto data = cdb::ReadTOCResponseNormalTOC();
@@ -134,10 +134,10 @@ namespace drive {
 		return data;
 	}
 
-	auto Drive::read_session_info(
-	) const	-> cdb::ReadTOCResponseSessionInfo {
+	auto Drive::read_session_info_toc(
+	) const	-> cdb::ReadTOCResponseSessionInfoTOC {
 		auto cdb = cdb::ReadTOC10();
-		auto data = cdb::ReadTOCResponseSessionInfo();
+		auto data = cdb::ReadTOCResponseSessionInfoTOC();
 		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
 		cdb.format = cdb::ReadTOCFormat::SESSION_INFO;
 		cdb.time = 1;
@@ -156,10 +156,10 @@ namespace drive {
 		return data;
 	}
 
-	auto Drive::read_pma(
-	) const	-> cdb::ReadTOCResponsePMA {
+	auto Drive::read_pma_toc(
+	) const	-> cdb::ReadTOCResponsePMATOC {
 		auto cdb = cdb::ReadTOC10();
-		auto data = cdb::ReadTOCResponsePMA();
+		auto data = cdb::ReadTOCResponsePMATOC();
 		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
 		cdb.format = cdb::ReadTOCFormat::PMA;
 		cdb.time = 1;
@@ -167,10 +167,10 @@ namespace drive {
 		return data;
 	}
 
-	auto Drive::read_atip(
-	) const	-> cdb::ReadTOCResponseATIP {
+	auto Drive::read_atip_toc(
+	) const	-> cdb::ReadTOCResponseATIPTOC {
 		auto cdb = cdb::ReadTOC10();
-		auto data = cdb::ReadTOCResponseATIP();
+		auto data = cdb::ReadTOCResponseATIPTOC();
 		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
 		cdb.format = cdb::ReadTOCFormat::ATIP;
 		cdb.time = 1;

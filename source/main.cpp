@@ -925,8 +925,8 @@ auto save(
 				read_offset_correction = rac;
 			}
 		}
-		auto toc = scsi_drive.read_toc();
-		cdb::validate_toc(toc);
+		auto toc = scsi_drive.read_normal_toc();
+		cdb::validate_normal_toc(toc);
 		auto toc_ex = scsi_drive.read_full_toc();
 		auto subchannel_offset = scsi_drive.get_subchannels_data_offset();
 		fprintf(stderr, "Subchannel data offset is %llu\n", subchannel_offset);
@@ -1221,7 +1221,7 @@ auto main(
 		return EXIT_FAILURE;
 	}
 	auto scsi_drive = drive::create_drive(hCD, pass_through_direct);
-	auto toc = scsi_drive.read_toc();
+	auto toc = scsi_drive.read_normal_toc();
 	if (false) {
 	} else if (strcmp(command, "drive") == 0) {
 		STORAGE_PROPERTY_QUERY storagePropertyQuery;
