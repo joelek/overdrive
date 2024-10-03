@@ -62,17 +62,23 @@ namespace commands {
 			fprintf(stderr, "%s\n", std::format("Drive sector data offset: {}", drive_info.sector_data_offset).c_str());
 			fprintf(stderr, "%s\n", std::format("Drive subchannels data offset: {}", drive_info.subchannels_data_offset).c_str());
 			fprintf(stderr, "%s\n", std::format("Drive c2 data offset: {}", drive_info.c2_data_offset).c_str());
-			fprintf(stderr, "%s\n", std::format("Drive buffer size (bytes): {}", drive_info.buffer_size).c_str());
+			fprintf(stderr, "%s\n", std::format("Drive buffer size [bytes]: {}", drive_info.buffer_size).c_str());
 			fprintf(stderr, "%s\n", std::format("Drive supports accurate stream: {}", drive_info.supports_accurate_stream).c_str());
 			fprintf(stderr, "%s\n", std::format("Drive supports c2 error reporting: {}", drive_info.supports_c2_error_reporting).c_str());
-			fprintf(stderr, "%s\n", std::format("Drive read offset correction (samples): {}", drive_info.read_offset_correction ? std::format("{}", drive_info.read_offset_correction.value()) : "unknown").c_str());
+			fprintf(stderr, "%s\n", std::format("Drive read offset correction [samples]: {}", drive_info.read_offset_correction ? std::format("{}", drive_info.read_offset_correction.value()) : "unknown").c_str());
 			auto disc_info = drive.read_disc_info();
 			fprintf(stderr, "%s\n", std::format("Disc sessions: {}", disc_info.sessions.size()).c_str());
-			for (auto& session : disc_info.sessions) {
+			for (auto session_index = size_t(0); session_index < disc_info.sessions.size(); session_index += 1) {
+				auto& session = disc_info.sessions.at(session_index);
+				fprintf(stderr, "%s\n", std::format("\tSession number: {}", session.number).c_str());
 				fprintf(stderr, "%s\n", std::format("\tSession type: {}", enums::SessionType(session.type)).c_str());
 				fprintf(stderr, "%s\n", std::format("\tSession tracks: {}", session.tracks.size()).c_str());
-				for (auto& track : session.tracks) {
+				for (auto track_index = size_t(0); track_index < session.tracks.size(); track_index += 1) {
+					auto& track = session.tracks.at(track_index);
+					fprintf(stderr, "%s\n", std::format("\t\tTrack number: {}", track.number).c_str());
 					fprintf(stderr, "%s\n", std::format("\t\tTrack type: {}", enums::TrackType(track.type)).c_str());
+					fprintf(stderr, "%s\n", std::format("\t\tTrack first sector (absolute): {}", track.first_sector_absolute).c_str());
+					fprintf(stderr, "%s\n", std::format("\t\tTrack sector length: {}", track.sector_length).c_str());
 				}
 			}
 		} catch (const exceptions::ArgumentException& e) {

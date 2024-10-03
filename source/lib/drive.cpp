@@ -274,24 +274,49 @@ namespace drive {
 
 	auto Drive::read_disc_info(
 	) const -> DiscInfo {
+		auto disc = DiscInfo();
 		auto toc = this->read_full_toc();
 		auto toc_count = cdb::validate_full_toc(toc);
-		auto sessions = std::vector<SessionInfo>();
+		auto lead_out_first_sector_absolute = std::optional<size_t>();
 		for (auto toc_index = size_t(0); toc_index < toc_count; toc_index += 1) {
 			auto& entry = toc.entries[toc_index];
-			sessions.resize(std::max<size_t>(entry.session_number, sessions.size()));
-			auto& session = sessions.at(entry.session_number - 1);
-			auto& tracks = session.tracks;
+			if (entry.point < 1 || entry.point > 99) {
+				if (entry.point == 0xA2) {
+					lead_out_first_sector_absolute = cd::get_sector_from_address(entry.paddress);
+				}
+				continue;
+			}
+			disc.sessions.resize(std::max<size_t>(entry.session_number, disc.sessions.size()));
+			auto& session = disc.sessions.at(entry.session_number - 1);
+			session.number = entry.session_number;
+			session.type = cdb::get_session_type(toc);
 			auto track = TrackInfo();
-			track.first_sector = cd::get_sector_from_address(entry.address);
-			track.sector_length = 0;
+			track.number = entry.point;
 			track.type = this->determine_track_type(toc, toc_index);
-			track.entry = entry;
-			tracks.push_back(track);
+			track.first_sector_absolute = cd::get_sector_from_address(entry.paddress);
+			track.sector_length = 0;
+			session.tracks.push_back(track);
 		}
-		return {
-			sessions
-		};
+		// Sort in increasing order.
+		std::sort(disc.sessions.begin(), disc.sessions.end(), [](const SessionInfo& one, const SessionInfo& two) -> bool_t {
+			return one.number < two.number;
+		});
+		for (auto& session : disc.sessions) {
+			// Sort in increasing order.
+			std::sort(session.tracks.begin(), session.tracks.end(), [](const TrackInfo& one, const TrackInfo& two) -> bool_t {
+				return one.first_sector_absolute < two.first_sector_absolute;
+			});
+			for (auto track_index = size_t(0); track_index < session.tracks.size(); track_index += 1) {
+				auto& track = session.tracks.at(track_index);
+				if (track_index + 1 < session.tracks.size()) {
+					auto& next_track = session.tracks.at(track_index + 1);
+					track.sector_length = next_track.first_sector_absolute - track.first_sector_absolute;
+				} else {
+					track.sector_length = lead_out_first_sector_absolute.value() - track.first_sector_absolute;
+				}
+			}
+		}
+		return disc;
 	}
 
 	auto create_drive(

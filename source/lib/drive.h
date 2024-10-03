@@ -45,10 +45,10 @@ namespace drive {
 	class TrackInfo {
 		public:
 
-		size_t first_sector;
-		size_t sector_length;
+		size_t number;
 		TrackType type;
-		cdb::ReadTOCResponseFullTOCEntry entry;
+		size_t first_sector_absolute;
+		size_t sector_length;
 
 		protected:
 	};
@@ -56,8 +56,9 @@ namespace drive {
 	class SessionInfo {
 		public:
 
-		std::vector<TrackInfo> tracks;
+		size_t number;
 		cdb::SessionType type;
+		std::vector<TrackInfo> tracks;
 
 		protected:
 	};
