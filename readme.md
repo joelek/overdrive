@@ -16,6 +16,7 @@ Utility for interfacing with optical drives. Written for the Windows platform.
 * Make utility platform-independent.
 * Add debug logging.
 * Show __FILE__ and __LINE__ in exception messages for DEBUG mode.
+* Move hexdump to type unit.
 
 ## Read offset correction
 
