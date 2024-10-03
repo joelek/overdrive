@@ -1,5 +1,6 @@
 #include "drive.h"
 
+#include <algorithm>
 #include <array>
 #include <cstring>
 #include "accuraterip.h"
@@ -274,9 +275,22 @@ namespace drive {
 	auto Drive::read_disc_info(
 	) const -> DiscInfo {
 		auto toc = this->read_full_toc();
-		auto session_type = cdb::get_session_type(toc);
+		auto toc_count = cdb::validate_full_toc(toc);
+		auto sessions = std::vector<SessionInfo>();
+		for (auto toc_index = size_t(0); toc_index < toc_count; toc_index += 1) {
+			auto& entry = toc.entries[toc_index];
+			sessions.resize(std::max<size_t>(entry.session_number, sessions.size()));
+			auto& session = sessions.at(entry.session_number - 1);
+			auto& tracks = session.tracks;
+			auto track = TrackInfo();
+			track.first_sector = cd::get_sector_from_address(entry.address);
+			track.sector_length = 0;
+			track.type = this->determine_track_type(toc, toc_index);
+			track.entry = entry;
+			tracks.push_back(track);
+		}
 		return {
-			session_type
+			sessions
 		};
 	}
 

@@ -67,7 +67,14 @@ namespace commands {
 			fprintf(stderr, "%s\n", std::format("Drive supports c2 error reporting: {}", drive_info.supports_c2_error_reporting).c_str());
 			fprintf(stderr, "%s\n", std::format("Drive read offset correction (samples): {}", drive_info.read_offset_correction ? std::format("{}", drive_info.read_offset_correction.value()) : "unknown").c_str());
 			auto disc_info = drive.read_disc_info();
-			fprintf(stderr, "%s\n", std::format("Disc session type: {}", enums::SessionType(disc_info.session_type)).c_str());
+			fprintf(stderr, "%s\n", std::format("Disc sessions: {}", disc_info.sessions.size()).c_str());
+			for (auto& session : disc_info.sessions) {
+				fprintf(stderr, "%s\n", std::format("\tSession type: {}", enums::SessionType(session.type)).c_str());
+				fprintf(stderr, "%s\n", std::format("\tSession tracks: {}", session.tracks.size()).c_str());
+				for (auto& track : session.tracks) {
+					fprintf(stderr, "%s\n", std::format("\t\tTrack type: {}", enums::TrackType(track.type)).c_str());
+				}
+			}
 		} catch (const exceptions::ArgumentException& e) {
 			fprintf(stderr, "%s\n", "Arguments:");
 			throw e;

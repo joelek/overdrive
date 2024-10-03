@@ -3,6 +3,7 @@
 #include <functional>
 #include <optional>
 #include <string>
+#include <vector>
 #include "cd.h"
 #include "cdb.h"
 #include "type.h"
@@ -41,10 +42,30 @@ namespace drive {
 		protected:
 	};
 
+	class TrackInfo {
+		public:
+
+		size_t first_sector;
+		size_t sector_length;
+		TrackType type;
+		cdb::ReadTOCResponseFullTOCEntry entry;
+
+		protected:
+	};
+
+	class SessionInfo {
+		public:
+
+		std::vector<TrackInfo> tracks;
+		cdb::SessionType type;
+
+		protected:
+	};
+
 	class DiscInfo {
 		public:
 
-		cdb::SessionType session_type;
+		std::vector<SessionInfo> sessions;
 
 		protected:
 	};
