@@ -281,7 +281,7 @@ namespace drive {
 		for (auto toc_index = size_t(0); toc_index < toc_count; toc_index += 1) {
 			auto& entry = toc.entries[toc_index];
 			if (entry.point < 1 || entry.point > 99) {
-				if (entry.point == 0xA2) {
+				if (entry.point == size_t(cdb::ReadTOCResponseFullTOCPoint::LEAD_OUT_TRACK)) {
 					lead_out_first_sector_absolute = cd::get_sector_from_address(entry.paddress);
 				}
 				continue;

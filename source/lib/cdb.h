@@ -8,6 +8,7 @@ namespace cdb {
 	using namespace type;
 
 	const auto READ_CD_LENGTH = size_t(cd::SECTOR_LENGTH + cd::SUBCHANNELS_LENGTH + cd::C2_LENGTH);
+	const auto LEAD_OUT_TRACK_NUMBER = size_t(0xAA);
 
 	#pragma pack(push, 1)
 
@@ -107,6 +108,21 @@ namespace cdb {
 	};
 
 	static_assert(sizeof(ReadTOCResponseFullTOCEntry) == 11);
+
+	enum class ReadTOCResponseFullTOCPoint: ui08_t {
+		FIRST_TRACK = 0xA0,
+		LAST_TRACK = 0xA1,
+		LEAD_OUT_TRACK = 0xA2,
+		B0 = 0xB0,
+		B1 = 0xB1,
+		B2 = 0xB2,
+		B3 = 0xB3,
+		B4 = 0xB4,
+		C0 = 0xC0,
+		C1 = 0xC1
+	};
+
+	static_assert(sizeof(ReadTOCResponseFullTOCPoint) == 1);
 
 	struct ReadTOCResponseFullTOC {
 		ReadTOCResponseParameterList header;

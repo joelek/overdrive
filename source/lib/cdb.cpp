@@ -12,11 +12,11 @@ namespace cdb {
 		auto track_count = (toc_length - sizeof(toc.header.data_length_be)) / sizeof(ReadTOCResponseFullTOCEntry);
 		for (auto track_index = size_t(0); track_index < track_count; track_index += 1) {
 			auto& track = toc.entries[track_index];
-			if (track.point == 0xA0) {
+			if (track.point == size_t(ReadTOCResponseFullTOCPoint::FIRST_TRACK)) {
 				return static_cast<SessionType>(track.paddress.s);
 			}
 		}
-		throw exceptions::MissingValueException("point 0xA0");
+		throw exceptions::MissingValueException("first track point");
 	}
 
 	auto validate_session_info_toc(
