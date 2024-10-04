@@ -8,6 +8,18 @@ namespace overdrive {
 namespace exceptions {
 	using namespace type;
 
+	class OverdriveException: public std::runtime_error {
+		public:
+
+		OverdriveException(
+			const std::string& file,
+			size_t line,
+			const std::string& message
+		);
+
+		protected:
+	};
+
 	class UnsupportedValueException: public std::runtime_error {
 		public:
 

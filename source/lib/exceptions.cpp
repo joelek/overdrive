@@ -4,6 +4,12 @@
 
 namespace overdrive {
 namespace exceptions {
+	OverdriveException::OverdriveException(
+		const std::string& file,
+		size_t line,
+		const std::string& message
+	): std::runtime_error(file != "" ? std::format("[{}:{}]: {}", file, line, message) : message) {}
+
 	UnsupportedValueException::UnsupportedValueException(
 		const std::string& name
 	): std::runtime_error(std::format("Expected \"{}\" to not be supported!", name)) {}
