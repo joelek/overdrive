@@ -45,11 +45,11 @@ namespace drive {
 				auto decoded_sector_index = cd::get_sector_from_address(bcd::decode_address(q.mode1.absolute_address_bcd)) - 150;
 				auto delta = static_cast<si_t>(sector_index) - static_cast<si_t>(decoded_sector_index);
 				if (delta < -10 || delta > 10) {
-					throw exceptions::AutoDetectFailureException("subchannel timing offset");
+					OVERDRIVE_THROW(exceptions::AutoDetectFailureException("subchannel timing offset"));
 				}
 				if (deltas_index > 0) {
 					if (deltas[deltas_index - 1] != delta) {
-						throw exceptions::AutoDetectFailureException("subchannel timing offset");
+						OVERDRIVE_THROW(exceptions::AutoDetectFailureException("subchannel timing offset"));
 					}
 				}
 				deltas[deltas_index] = delta;
@@ -59,7 +59,7 @@ namespace drive {
 		if (deltas_index >= 9) {
 			return deltas[0];
 		}
-		throw exceptions::AutoDetectFailureException("subchannel timing offset");
+		OVERDRIVE_THROW(exceptions::AutoDetectFailureException("subchannel timing offset"));
 	}
 
 	auto Drive::get_sector_data_offset(
@@ -100,10 +100,10 @@ namespace drive {
 				} else if (sector.base.header.mode == 2) {
 					return TrackType::DATA_MODE2;
 				} else {
-					throw exceptions::InvalidValueException("sector mode", sector.base.header.mode, 0, 2);
+					OVERDRIVE_THROW(exceptions::InvalidValueException("sector mode", sector.base.header.mode, 0, 2));
 				}
 			} else if (session_type == cdb::SessionType::CDI) {
-				throw exceptions::UnsupportedValueException("session type CDI");
+				OVERDRIVE_THROW(exceptions::UnsupportedValueException("session type CDI"));
 			} else if (session_type == cdb::SessionType::CDXA_OR_DDCD) {
 				auto data = cdb::ReadCDResponseDataA();
 				this->read_sector(iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR, &data.sector_data, nullptr, nullptr);
@@ -115,13 +115,13 @@ namespace drive {
 						return TrackType::DATA_MODE2_FORM2;
 					}
 				} else {
-					throw exceptions::InvalidValueException("sector mode", sector.base.header.mode, 2, 2);
+					OVERDRIVE_THROW(exceptions::InvalidValueException("sector mode", sector.base.header.mode, 2, 2));
 				}
 			}
 		} else if (category == cd::TrackCategory::RESERVED) {
-			throw exceptions::UnsupportedValueException("track category reserved");
+			OVERDRIVE_THROW(exceptions::UnsupportedValueException("track category reserved"));
 		}
-		throw exceptions::UnreachableCodeReachedException();
+		OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
 	}
 
 	auto Drive::read_normal_toc(
@@ -333,7 +333,7 @@ namespace drive {
 			drive.detect_subchannel_timing_offset();
 			return drive;
 		} catch (const exceptions::AutoDetectFailureException& e) {}
-		throw exceptions::AutoDetectFailureException("drive parameters");
+		OVERDRIVE_THROW(exceptions::AutoDetectFailureException("drive parameters"));
 	}
 }
 }

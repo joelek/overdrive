@@ -1,5 +1,6 @@
 #pragma once
 
+#include <format>
 #include <stdexcept>
 #include <string>
 #include "type.h"
@@ -8,19 +9,37 @@ namespace overdrive {
 namespace exceptions {
 	using namespace type;
 
+	template <typename A>
+	class DebugException: public A {
+		public:
+
+		DebugException(
+			const ch08_t* file,
+			size_t line,
+			A&& wrapped
+		): A(wrapped), message(std::format("[{}:{}]: {}", file, line, A::what())) {}
+
+		virtual auto what(
+		) const noexcept -> const ch08_t* {
+			return this->message.c_str();
+		}
+
+		protected:
+
+		std::string message;
+	};
+
 	class OverdriveException: public std::runtime_error {
 		public:
 
 		OverdriveException(
-			const std::string& file,
-			size_t line,
 			const std::string& message
 		);
 
 		protected:
 	};
 
-	class UnsupportedValueException: public std::runtime_error {
+	class UnsupportedValueException: public OverdriveException {
 		public:
 
 		UnsupportedValueException(
@@ -30,7 +49,7 @@ namespace exceptions {
 		protected:
 	};
 
-	class InvalidValueException: public std::runtime_error {
+	class InvalidValueException: public OverdriveException {
 		public:
 
 		InvalidValueException(
@@ -43,7 +62,7 @@ namespace exceptions {
 		protected:
 	};
 
-	class MissingValueException: public std::runtime_error {
+	class MissingValueException: public OverdriveException {
 		public:
 
 		MissingValueException(
@@ -53,7 +72,7 @@ namespace exceptions {
 		protected:
 	};
 
-	class AutoDetectFailureException: public std::runtime_error {
+	class AutoDetectFailureException: public OverdriveException {
 		public:
 
 		AutoDetectFailureException(
@@ -63,7 +82,7 @@ namespace exceptions {
 		protected:
 	};
 
-	class UnreachableCodeReachedException: public std::runtime_error {
+	class UnreachableCodeReachedException: public OverdriveException {
 		public:
 
 		UnreachableCodeReachedException();
@@ -71,7 +90,7 @@ namespace exceptions {
 		protected:
 	};
 
-	class ArgumentException: public std::runtime_error {
+	class ArgumentException: public OverdriveException {
 		public:
 
 		ArgumentException(

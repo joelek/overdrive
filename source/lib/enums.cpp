@@ -15,7 +15,7 @@ namespace enums {
 		});
 		auto iterator = names.find(value);
 		if (iterator == names.end()) {
-			throw exceptions::MissingValueException("name");
+			OVERDRIVE_THROW(exceptions::MissingValueException("name"));
 		}
 		return iterator->second;
 	}
@@ -34,7 +34,7 @@ namespace enums {
 		});
 		auto iterator = names.find(value);
 		if (iterator == names.end()) {
-			throw exceptions::MissingValueException("name");
+			OVERDRIVE_THROW(exceptions::MissingValueException("name"));
 		}
 		return iterator->second;
 	}

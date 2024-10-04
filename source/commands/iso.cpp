@@ -31,14 +31,14 @@ namespace commands {
 					} else if (string::match(value, matches, std::regex(format))) {
 						drive = matches[1];
 					} else {
-						throw exceptions::BadArgumentException("drive", format);
+						OVERDRIVE_THROW(exceptions::BadArgumentException("drive", format));
 					}
 				} else {
-					throw exceptions::UnknownArgumentException(argument);
+					OVERDRIVE_THROW(exceptions::UnknownArgumentException(argument));
 				}
 			}
 			if (!drive) {
-				throw exceptions::MissingArgumentException("drive");
+				OVERDRIVE_THROW(exceptions::MissingArgumentException("drive"));
 			}
 			return {
 				drive.value(),

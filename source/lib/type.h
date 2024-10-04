@@ -2,11 +2,10 @@
 
 #include <cstdint>
 
-// TODO: Use __VA_OPT__ when Intellisense works properly.
 #ifdef DEBUG
-	#define OVERDRIVE_THROW(exception, ...) throw exception(__FILE__, __LINE__,##__VA_ARGS__)
+	#define OVERDRIVE_THROW(exception) throw exceptions::DebugException(__FILE__, __LINE__, exception)
 #else
-	#define OVERDRIVE_THROW(exception, ...) throw exception("", 0,##__VA_ARGS__)
+	#define OVERDRIVE_THROW(exception) throw exception
 #endif
 
 namespace overdrive {

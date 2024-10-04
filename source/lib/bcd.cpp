@@ -9,11 +9,11 @@ namespace bcd {
 	) -> ui08_t {
 		auto hi = (byte & 0xF0) >> 4;
 		if (hi > 9) {
-			throw exceptions::InvalidValueException("digit", hi, 0, 9);
+			OVERDRIVE_THROW(exceptions::InvalidValueException("digit", hi, 0, 9));
 		}
 		auto lo = (byte & 0x0F) >> 0;
 		if (lo > 9) {
-			throw exceptions::InvalidValueException("digit", lo, 0, 9);
+			OVERDRIVE_THROW(exceptions::InvalidValueException("digit", lo, 0, 9));
 		}
 		auto decoded = (hi * 10) + lo;
 		return decoded;
@@ -23,7 +23,7 @@ namespace bcd {
 		ui08_t byte
 	) -> ui08_t {
 		if (byte > 99) {
-			throw exceptions::InvalidValueException("digits", byte, 0, 99);
+			OVERDRIVE_THROW(exceptions::InvalidValueException("digits", byte, 0, 99));
 		}
 		auto hi = (byte / 10);
 		auto lo = (byte % 10);
