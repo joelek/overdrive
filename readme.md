@@ -17,7 +17,6 @@ Utility for interfacing with optical drives. Written for the Windows platform.
 * Add debug logging.
 * Move hexdump to type unit.
 * Investigate using namespace with constants over enums.
-* Add disc and session sector lengths.
 
 ## Read offset correction
 
