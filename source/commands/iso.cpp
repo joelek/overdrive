@@ -83,7 +83,7 @@ namespace commands {
 			}
 		} catch (const exceptions::ArgumentException& e) {
 			fprintf(stderr, "%s\n", "Arguments:");
-			throw e;
+			throw;
 		}
 	};
 }
