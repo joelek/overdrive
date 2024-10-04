@@ -2,6 +2,13 @@
 
 #include <cstdint>
 
+// TODO: Use __VA_OPT__ when Intellisense works properly.
+#ifdef DEBUG
+	#define OVERDRIVE_THROW(exception, ...) throw exception(__FILE__, __LINE__,##__VA_ARGS__)
+#else
+	#define OVERDRIVE_THROW(exception, ...) throw exception("", 0,##__VA_ARGS__)
+#endif
+
 namespace overdrive {
 namespace type {
 	typedef int8_t si08_t;
