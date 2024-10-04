@@ -68,11 +68,13 @@ namespace commands {
 			fprintf(stderr, "%s\n", std::format("Drive read offset correction [samples]: {}", drive_info.read_offset_correction ? std::format("{}", drive_info.read_offset_correction.value()) : "unknown").c_str());
 			auto disc_info = drive.read_disc_info();
 			fprintf(stderr, "%s\n", std::format("Disc sessions: {}", disc_info.sessions.size()).c_str());
+			fprintf(stderr, "%s\n", std::format("Disc sector length: {}", disc_info.sector_length).c_str());
 			for (auto session_index = size_t(0); session_index < disc_info.sessions.size(); session_index += 1) {
 				auto& session = disc_info.sessions.at(session_index);
 				fprintf(stderr, "%s\n", std::format("\tSession number: {}", session.number).c_str());
 				fprintf(stderr, "%s\n", std::format("\tSession type: {}", enums::SessionType(session.type)).c_str());
 				fprintf(stderr, "%s\n", std::format("\tSession tracks: {}", session.tracks.size()).c_str());
+				fprintf(stderr, "%s\n", std::format("\tSession sector length: {}", session.sector_length).c_str());
 				for (auto track_index = size_t(0); track_index < session.tracks.size(); track_index += 1) {
 					auto& track = session.tracks.at(track_index);
 					fprintf(stderr, "%s\n", std::format("\t\tTrack number: {}", track.number).c_str());

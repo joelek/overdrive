@@ -314,7 +314,9 @@ namespace drive {
 				} else {
 					track.sector_length = lead_out_first_sector_absolute.value() - track.first_sector_absolute;
 				}
+				session.sector_length += track.sector_length;
 			}
+			disc.sector_length += session.sector_length;
 		}
 		return disc;
 	}

@@ -59,6 +59,7 @@ namespace drive {
 		size_t number;
 		cdb::SessionType type;
 		std::vector<TrackInfo> tracks;
+		size_t sector_length;
 
 		protected:
 	};
@@ -67,6 +68,7 @@ namespace drive {
 		public:
 
 		std::vector<SessionInfo> sessions;
+		size_t sector_length;
 
 		protected:
 	};
