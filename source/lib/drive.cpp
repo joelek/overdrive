@@ -294,7 +294,7 @@ namespace drive {
 			track.number = entry.point;
 			track.type = this->determine_track_type(toc, toc_index);
 			track.first_sector_absolute = cd::get_sector_from_address(entry.paddress);
-			track.sector_length = 0;
+			track.length_sectors = 0;
 			session.tracks.push_back(track);
 		}
 		// Sort in increasing order.
@@ -310,13 +310,13 @@ namespace drive {
 				auto& track = session.tracks.at(track_index);
 				if (track_index + 1 < session.tracks.size()) {
 					auto& next_track = session.tracks.at(track_index + 1);
-					track.sector_length = next_track.first_sector_absolute - track.first_sector_absolute;
+					track.length_sectors = next_track.first_sector_absolute - track.first_sector_absolute;
 				} else {
-					track.sector_length = lead_out_first_sector_absolute.value() - track.first_sector_absolute;
+					track.length_sectors = lead_out_first_sector_absolute.value() - track.first_sector_absolute;
 				}
-				session.sector_length += track.sector_length;
+				session.length_sectors += track.length_sectors;
 			}
-			disc.sector_length += session.sector_length;
+			disc.length_sectors += session.length_sectors;
 		}
 		return disc;
 	}
