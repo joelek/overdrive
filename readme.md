@@ -15,7 +15,6 @@ Utility for interfacing with optical drives. Written for the Windows platform.
 * Add support for custom user data sizes in iso9660 module.
 * Make utility platform-independent.
 * Add debug logging.
-* Show __FILE__ and __LINE__ in exception messages for DEBUG mode.
 * Move hexdump to type unit.
 * Investigate using namespace with constants over enums.
 * Add disc and session sector lengths.
