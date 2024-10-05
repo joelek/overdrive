@@ -337,5 +337,77 @@ namespace drive {
 		} catch (const exceptions::AutoDetectFailureException& e) {}
 		OVERDRIVE_THROW(exceptions::AutoDetectFailureException("drive parameters"));
 	}
+
+	auto is_audio_track(
+		TrackType type
+	) -> bool_t {
+		if (type == TrackType::AUDIO_2_CHANNELS) {
+			return true;
+		}
+		if (type == TrackType::AUDIO_4_CHANNELS) {
+			return true;
+		}
+		if (type == TrackType::DATA_MODE0) {
+			return false;
+		}
+		if (type == TrackType::DATA_MODE1) {
+			return false;
+		}
+		if (type == TrackType::DATA_MODE2) {
+			return false;
+		}
+		if (type == TrackType::DATA_MODE2_FORM1) {
+			return false;
+		}
+		if (type == TrackType::DATA_MODE2_FORM2) {
+			return false;
+		}
+		OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
+	}
+
+	auto is_data_track(
+		TrackType type
+	) -> bool_t {
+		if (type == TrackType::AUDIO_2_CHANNELS) {
+			return false;
+		}
+		if (type == TrackType::AUDIO_4_CHANNELS) {
+			return false;
+		}
+		if (type == TrackType::DATA_MODE0) {
+			return true;
+		}
+		if (type == TrackType::DATA_MODE1) {
+			return true;
+		}
+		if (type == TrackType::DATA_MODE2) {
+			return true;
+		}
+		if (type == TrackType::DATA_MODE2_FORM1) {
+			return true;
+		}
+		if (type == TrackType::DATA_MODE2_FORM2) {
+			return true;
+		}
+		OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
+	}
+
+	auto get_user_data_length(
+		TrackType type
+	) -> size_t {
+		if (type == TrackType::DATA_MODE1) {
+			return cdrom::MODE1_DATA_LENGTH;
+		}
+		if (type == TrackType::DATA_MODE2) {
+			return cdrom::MODE2_DATA_LENGTH;
+		}
+		if (type == TrackType::DATA_MODE2_FORM1) {
+			return cdxa::MODE2_FORM1_DATA_LENGTH;
+		}
+		if (type == TrackType::DATA_MODE2_FORM2) {
+			return cdxa::MODE2_FORM2_DATA_LENGTH;
+		}
+		OVERDRIVE_THROW(exceptions::MissingValueException("user data length"));
+	}
 }
 }

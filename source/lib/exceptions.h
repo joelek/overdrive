@@ -130,5 +130,27 @@ namespace exceptions {
 
 		protected:
 	};
+
+	class ExpectedDataTrackException: public OverdriveException {
+		public:
+
+		ExpectedDataTrackException(
+			size_t track_index,
+			const std::string& type
+		);
+
+		protected:
+	};
+
+	class ExpectedAudioTrackException: public OverdriveException {
+		public:
+
+		ExpectedAudioTrackException(
+			size_t track_index,
+			const std::string& type
+		);
+
+		protected:
+	};
 }
 }

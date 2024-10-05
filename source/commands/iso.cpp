@@ -45,6 +45,31 @@ namespace commands {
 				read_offset_correction
 			};
 		}
+
+		auto check_disc(
+			const drive::DiscInfo& disc_info
+		) -> void {
+			if (disc_info.sessions.size() != 1) {
+				OVERDRIVE_THROW(exceptions::InvalidValueException("sessions", disc_info.sessions.size(), 1, 1));
+			}
+			for (auto session_index = size_t(0); session_index < disc_info.sessions.size(); session_index += 1) {
+				auto& session = disc_info.sessions.at(session_index);
+				if (session.tracks.size() != 1) {
+					OVERDRIVE_THROW(exceptions::InvalidValueException("tracks", session.tracks.size(), 1, 1));
+				}
+				for (auto track_index = size_t(0); track_index < session.tracks.size(); track_index += 1) {
+					auto& track = session.tracks.at(track_index);
+					if (drive::is_data_track(track.type)) {
+						auto user_data_size = drive::get_user_data_length(track.type);
+						if (user_data_size != 2048) {
+							OVERDRIVE_THROW(exceptions::InvalidValueException("user data size", user_data_size, 2048, 2048));
+						}
+					} else {
+						OVERDRIVE_THROW(exceptions::ExpectedDataTrackException(track_index, enums::TrackType(track.type)));
+					}
+				}
+			}
+		}
 	}
 
 	auto iso(
@@ -83,6 +108,7 @@ namespace commands {
 					fprintf(stderr, "%s\n", std::format("\t\tTrack length [sectors]: {}", track.length_sectors).c_str());
 				}
 			}
+			internal::check_disc(disc_info);
 		} catch (const exceptions::ArgumentException& e) {
 			fprintf(stderr, "%s\n", "Arguments:");
 			throw;

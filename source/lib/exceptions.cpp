@@ -44,5 +44,16 @@ namespace exceptions {
 	UnknownArgumentException::UnknownArgumentException(
 		const std::string& name
 	): ArgumentException(std::format("Expected argument \"{}\" to be known!", name)) {}
+
+	ExpectedDataTrackException::ExpectedDataTrackException(
+		size_t track_index,
+		const std::string& type
+	): OverdriveException(std::format("Expected data track at index {} instead of {}!", track_index, type)) {}
+
+	ExpectedAudioTrackException::ExpectedAudioTrackException(
+		size_t track_index,
+		const std::string& type
+	): OverdriveException(std::format("Expected audio track at index {} instead of {}!", track_index, type)) {}
+
 }
 }
