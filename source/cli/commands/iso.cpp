@@ -120,35 +120,12 @@ namespace commands {
 			auto handle = get_handle(options.drive);
 			auto drive = drive::create_drive(handle, ioctl);
 			auto drive_info = drive.read_drive_info();
-			fprintf(stderr, "%s\n", std::format("Drive vendor: \"{}\"", string::trim(drive_info.vendor)).c_str());
-			fprintf(stderr, "%s\n", std::format("Drive product: \"{}\"", string::trim(drive_info.product)).c_str());
-			fprintf(stderr, "%s\n", std::format("Drive sector data offset: {}", drive_info.sector_data_offset).c_str());
-			fprintf(stderr, "%s\n", std::format("Drive subchannels data offset: {}", drive_info.subchannels_data_offset).c_str());
-			fprintf(stderr, "%s\n", std::format("Drive c2 data offset: {}", drive_info.c2_data_offset).c_str());
-			fprintf(stderr, "%s\n", std::format("Drive buffer size [bytes]: {}", drive_info.buffer_size).c_str());
-			fprintf(stderr, "%s\n", std::format("Drive supports accurate stream: {}", drive_info.supports_accurate_stream).c_str());
-			fprintf(stderr, "%s\n", std::format("Drive supports c2 error reporting: {}", drive_info.supports_c2_error_reporting).c_str());
-			fprintf(stderr, "%s\n", std::format("Drive read offset correction [samples]: {}", drive_info.read_offset_correction ? std::format("{}", drive_info.read_offset_correction.value()) : "unknown").c_str());
+			drive_info.print();
 			auto disc_info = drive.read_disc_info();
-			fprintf(stderr, "%s\n", std::format("Disc sessions: {}", disc_info.sessions.size()).c_str());
-			fprintf(stderr, "%s\n", std::format("Disc length [sectors]: {}", disc_info.length_sectors).c_str());
-			for (auto session_index = size_t(0); session_index < disc_info.sessions.size(); session_index += 1) {
-				auto& session = disc_info.sessions.at(session_index);
-				fprintf(stderr, "%s\n", std::format("\tSession number: {}", session.number).c_str());
-				fprintf(stderr, "%s\n", std::format("\tSession type: {}", enums::SessionType(session.type)).c_str());
-				fprintf(stderr, "%s\n", std::format("\tSession tracks: {}", session.tracks.size()).c_str());
-				fprintf(stderr, "%s\n", std::format("\tSession length [sectors]: {}", session.length_sectors).c_str());
-				for (auto track_index = size_t(0); track_index < session.tracks.size(); track_index += 1) {
-					auto& track = session.tracks.at(track_index);
-					fprintf(stderr, "%s\n", std::format("\t\tTrack number: {}", track.number).c_str());
-					fprintf(stderr, "%s\n", std::format("\t\tTrack type: {}", enums::TrackType(track.type)).c_str());
-					fprintf(stderr, "%s\n", std::format("\t\tTrack first sector (absolute): {}", track.first_sector_absolute).c_str());
-					fprintf(stderr, "%s\n", std::format("\t\tTrack length [sectors]: {}", track.length_sectors).c_str());
-				}
-			}
 			if (options.tracks) {
 				disc_info = disc::truncate_disc(disc_info, options.tracks.value());
 			}
+			disc_info.print();
 			internal::check_disc(disc_info);
 			auto read_offset_correction = options.read_offset_correction ? options.read_offset_correction.value() : drive_info.read_offset_correction ? drive_info.read_offset_correction.value() : 0;
 			fprintf(stderr, "%s\n", std::format("Using read offset correction [samples]: {}", read_offset_correction).c_str());

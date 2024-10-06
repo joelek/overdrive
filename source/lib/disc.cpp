@@ -1,12 +1,48 @@
 #include "disc.h"
 
 #include <algorithm>
+#include <format>
 #include "cdrom.h"
 #include "cdxa.h"
+#include "enums.h"
 #include "exceptions.h"
+#include "string.h"
 
 namespace overdrive {
 namespace disc {
+	auto DriveInfo::print(
+	) const -> void {
+		fprintf(stderr, "%s\n", std::format("Drive vendor: \"{}\"", string::trim(this->vendor)).c_str());
+		fprintf(stderr, "%s\n", std::format("Drive product: \"{}\"", string::trim(this->product)).c_str());
+		fprintf(stderr, "%s\n", std::format("Drive sector data offset: {}", this->sector_data_offset).c_str());
+		fprintf(stderr, "%s\n", std::format("Drive subchannels data offset: {}", this->subchannels_data_offset).c_str());
+		fprintf(stderr, "%s\n", std::format("Drive c2 data offset: {}", this->c2_data_offset).c_str());
+		fprintf(stderr, "%s\n", std::format("Drive buffer size [bytes]: {}", this->buffer_size).c_str());
+		fprintf(stderr, "%s\n", std::format("Drive supports accurate stream: {}", this->supports_accurate_stream).c_str());
+		fprintf(stderr, "%s\n", std::format("Drive supports c2 error reporting: {}", this->supports_c2_error_reporting).c_str());
+		fprintf(stderr, "%s\n", std::format("Drive read offset correction [samples]: {}", this->read_offset_correction ? std::format("{}", this->read_offset_correction.value()) : "unknown").c_str());
+	}
+
+	auto DiscInfo::print(
+	) const -> void {
+		fprintf(stderr, "%s\n", std::format("Disc sessions: {}", this->sessions.size()).c_str());
+		fprintf(stderr, "%s\n", std::format("Disc length [sectors]: {}", this->length_sectors).c_str());
+		for (auto session_index = size_t(0); session_index < this->sessions.size(); session_index += 1) {
+			auto& session = this->sessions.at(session_index);
+			fprintf(stderr, "%s\n", std::format("\tSession number: {}", session.number).c_str());
+			fprintf(stderr, "%s\n", std::format("\tSession type: {}", enums::SessionType(session.type)).c_str());
+			fprintf(stderr, "%s\n", std::format("\tSession tracks: {}", session.tracks.size()).c_str());
+			fprintf(stderr, "%s\n", std::format("\tSession length [sectors]: {}", session.length_sectors).c_str());
+			for (auto track_index = size_t(0); track_index < session.tracks.size(); track_index += 1) {
+				auto& track = session.tracks.at(track_index);
+				fprintf(stderr, "%s\n", std::format("\t\tTrack number: {}", track.number).c_str());
+				fprintf(stderr, "%s\n", std::format("\t\tTrack type: {}", enums::TrackType(track.type)).c_str());
+				fprintf(stderr, "%s\n", std::format("\t\tTrack first sector (absolute): {}", track.first_sector_absolute).c_str());
+				fprintf(stderr, "%s\n", std::format("\t\tTrack length [sectors]: {}", track.length_sectors).c_str());
+			}
+		}
+	}
+
 	auto is_audio_track(
 		TrackType type
 	) -> bool_t {

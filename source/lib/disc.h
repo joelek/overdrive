@@ -33,6 +33,9 @@ namespace disc {
 		bool_t supports_c2_error_reporting;
 		std::optional<si_t> read_offset_correction;
 
+		auto print(
+		) const -> void;
+
 		protected:
 	};
 
@@ -63,6 +66,9 @@ namespace disc {
 
 		std::vector<SessionInfo> sessions;
 		size_t length_sectors;
+
+		auto print(
+		) const -> void;
 
 		protected:
 	};
