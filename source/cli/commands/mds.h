@@ -2,13 +2,13 @@
 
 #include <string>
 #include <vector>
-#include "../lib.h"
+#include "../../lib/overdrive.h"
 
 using namespace overdrive;
 using namespace type;
 
 namespace commands {
-	auto cue(
+	auto mds(
 		const std::vector<std::string>& arguments
 	) -> void;
 }

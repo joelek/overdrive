@@ -20,9 +20,9 @@ if [ $1 = "release" ]; then
 fi
 
 SOURCES=(
-	"commands/cue"
-	"commands/iso"
-	"commands/mds"
+	"cli/commands/cue"
+	"cli/commands/iso"
+	"cli/commands/mds"
 	"lib/accuraterip"
 	"lib/bcd"
 	"lib/byteswap"
@@ -40,11 +40,11 @@ SOURCES=(
 	"lib/string"
 	"lib/type"
 	"lib/wav"
-	"lib"
+	"lib/overdrive"
 )
 
 TARGETS=(
-	"main"
+	"cli/overdrive"
 )
 
 mkdir -p build/objects

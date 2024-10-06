@@ -19,7 +19,7 @@
 #include "commands/cue.h"
 #include "commands/iso.h"
 #include "commands/mds.h"
-#include "lib.h"
+#include "../lib/overdrive.h"
 
 using namespace overdrive;
 using namespace type;
