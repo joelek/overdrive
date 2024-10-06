@@ -135,8 +135,7 @@ namespace exceptions {
 		public:
 
 		ExpectedDataTrackException(
-			size_t track_index,
-			const std::string& type
+			size_t track_number
 		);
 
 		protected:
@@ -146,8 +145,7 @@ namespace exceptions {
 		public:
 
 		ExpectedAudioTrackException(
-			size_t track_index,
-			const std::string& type
+			size_t track_number
 		);
 
 		protected:

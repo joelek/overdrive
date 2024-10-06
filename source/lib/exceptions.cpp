@@ -46,14 +46,12 @@ namespace exceptions {
 	): ArgumentException(std::format("Expected argument \"{}\" to be known!", name)) {}
 
 	ExpectedDataTrackException::ExpectedDataTrackException(
-		size_t track_index,
-		const std::string& type
-	): OverdriveException(std::format("Expected data track at index {} instead of {}!", track_index, type)) {}
+		size_t track_number
+	): OverdriveException(std::format("Expected track {} to contain data!", track_number)) {}
 
 	ExpectedAudioTrackException::ExpectedAudioTrackException(
-		size_t track_index,
-		const std::string& type
-	): OverdriveException(std::format("Expected audio track at index {} instead of {}!", track_index, type)) {}
+		size_t track_number
+	): OverdriveException(std::format("Expected track {} to contain audio!", track_number)) {}
 
 }
 }

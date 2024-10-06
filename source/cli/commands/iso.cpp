@@ -65,7 +65,7 @@ namespace commands {
 							OVERDRIVE_THROW(exceptions::InvalidValueException("user data size", user_data_size, 2048, 2048));
 						}
 					} else {
-						OVERDRIVE_THROW(exceptions::ExpectedDataTrackException(track_index, enums::TrackType(track.type)));
+						OVERDRIVE_THROW(exceptions::ExpectedDataTrackException(track.number));
 					}
 				}
 			}
