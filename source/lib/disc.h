@@ -78,5 +78,10 @@ namespace disc {
 	auto get_user_data_length(
 		TrackType type
 	) -> size_t;
+
+	auto truncate_disc(
+		DiscInfo disc,
+		size_t tracks
+	) -> DiscInfo;
 }
 }

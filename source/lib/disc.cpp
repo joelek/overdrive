@@ -1,5 +1,6 @@
 #include "disc.h"
 
+#include <algorithm>
 #include "cdrom.h"
 #include "cdxa.h"
 #include "exceptions.h"
@@ -76,6 +77,29 @@ namespace disc {
 			return cdxa::MODE2_FORM2_DATA_LENGTH;
 		}
 		OVERDRIVE_THROW(exceptions::MissingValueException("user data length"));
+	}
+
+	auto truncate_disc(
+		DiscInfo disc,
+		size_t tracks
+	) -> DiscInfo {
+		auto tracks_left = tracks;
+		for (auto session_index = size_t(0); session_index < disc.sessions.size(); session_index += 1) {
+			auto& session = disc.sessions.at(session_index);
+			auto size = std::min<size_t>(session.tracks.size(), tracks_left);
+			for (auto track_index = size; track_index < session.tracks.size(); track_index += 1) {
+				auto& track = session.tracks.at(track_index);
+				session.length_sectors -= track.length_sectors;
+				disc.length_sectors -= track.length_sectors;
+			}
+			session.tracks.resize(size);
+			tracks_left -= size;
+			if (size == 0) {
+				disc.sessions.resize(session_index);
+				break;
+			}
+		}
+		return disc;
 	}
 }
 }
