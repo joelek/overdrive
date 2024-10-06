@@ -4563,5 +4563,11 @@ namespace accuraterip {
 		}
 		return std::optional<si_t>();
 	}
+
+	auto DATABASE(
+	) -> const Database& {
+		static const auto database = Database();
+		return database;
+	}
 }
 }

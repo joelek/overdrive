@@ -24,5 +24,8 @@ namespace accuraterip {
 
 		std::map<std::string, si_t> read_offset_correction_values;
 	};
+
+	auto DATABASE(
+	) -> const Database&;
 }
 }
