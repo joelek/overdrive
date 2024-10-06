@@ -1,11 +1,11 @@
 #pragma once
 
 #include "cd.h"
-#include "type.h"
+#include "shared.h"
 
 namespace overdrive {
 namespace cdb {
-	using namespace type;
+	using namespace shared;
 
 	const auto READ_CD_LENGTH = size_t(cd::SECTOR_LENGTH + cd::SUBCHANNELS_LENGTH + cd::C2_LENGTH);
 	const auto LEAD_OUT_TRACK_NUMBER = size_t(0xAA);

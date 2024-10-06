@@ -6,7 +6,7 @@
 #include "../../lib/overdrive.h"
 
 using namespace overdrive;
-using namespace type;
+using namespace shared;
 
 namespace commands {
 	auto iso(

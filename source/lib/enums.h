@@ -3,11 +3,11 @@
 #include <string>
 #include "cdb.h"
 #include "drive.h"
-#include "type.h"
+#include "shared.h"
 
 namespace overdrive {
 namespace enums {
-	using namespace type;
+	using namespace shared;
 
 	auto SessionType(
 		cdb::SessionType value

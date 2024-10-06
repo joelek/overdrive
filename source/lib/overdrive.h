@@ -14,6 +14,6 @@
 #include "idiv.h"
 #include "iso9660.h"
 #include "sense.h"
+#include "shared.h"
 #include "string.h"
-#include "type.h"
 #include "wav.h"

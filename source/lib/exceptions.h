@@ -3,11 +3,11 @@
 #include <format>
 #include <stdexcept>
 #include <string>
-#include "type.h"
+#include "shared.h"
 
 namespace overdrive {
 namespace exceptions {
-	using namespace type;
+	using namespace shared;
 
 	template <typename A>
 	class DebugException: public A {

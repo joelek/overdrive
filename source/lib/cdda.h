@@ -1,11 +1,11 @@
 #pragma once
 
 #include "cd.h"
-#include "type.h"
+#include "shared.h"
 
 namespace overdrive {
 namespace cdda {
-	using namespace type;
+	using namespace shared;
 
 	const auto SECTOR_LENGTH = size_t(cd::SECTOR_LENGTH);
 	const auto STEREO_SAMPLE_LENGTH = size_t(4);

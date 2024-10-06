@@ -1,10 +1,10 @@
 #pragma once
 
-#include "type.h"
+#include "shared.h"
 
 namespace overdrive {
 namespace sense {
-	using namespace type;
+	using namespace shared;
 
 	#pragma pack(push, 1)
 

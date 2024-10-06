@@ -1,9 +1,9 @@
-#include "type.h"
+#include "shared.h"
 
 #include <format>
 
 namespace overdrive {
-namespace type {
+namespace shared {
 	auto create_hex_dump(
 		const byte_t* bytes,
 		size_t size

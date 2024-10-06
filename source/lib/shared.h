@@ -10,7 +10,7 @@
 #endif
 
 namespace overdrive {
-namespace type {
+namespace shared {
 	typedef int8_t si08_t;
 	typedef uint8_t ui08_t;
 	typedef int16_t si16_t;

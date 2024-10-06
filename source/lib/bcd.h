@@ -1,11 +1,11 @@
 #pragma once
 
 #include "cd.h"
-#include "type.h"
+#include "shared.h"
 
 namespace overdrive {
 namespace bcd {
-	using namespace type;
+	using namespace shared;
 
 	auto decode(
 		ui08_t byte

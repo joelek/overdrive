@@ -3,11 +3,11 @@
 #include <map>
 #include <optional>
 #include <string>
-#include "type.h"
+#include "shared.h"
 
 namespace overdrive {
 namespace accuraterip {
-	using namespace type;
+	using namespace shared;
 
 	class Database {
 		public:

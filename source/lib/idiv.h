@@ -1,10 +1,10 @@
 #pragma once
 
-#include "type.h"
+#include "shared.h"
 
 namespace overdrive {
 namespace idiv {
-	using namespace type;
+	using namespace shared;
 
 	auto ceil(
 		si_t num,

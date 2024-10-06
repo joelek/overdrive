@@ -37,8 +37,8 @@ SOURCES=(
 	"lib/idiv"
 	"lib/iso9660"
 	"lib/sense"
+	"lib/shared"
 	"lib/string"
-	"lib/type"
 	"lib/wav"
 	"lib/overdrive"
 )

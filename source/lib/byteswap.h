@@ -1,10 +1,10 @@
 #pragma once
 
-#include "type.h"
+#include "shared.h"
 
 namespace overdrive {
 namespace byteswap {
-	using namespace type;
+	using namespace shared;
 
 	auto byteswap16(
 		ui16_t value

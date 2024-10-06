@@ -2,11 +2,11 @@
 
 #include "cd.h"
 #include "cdrom.h"
-#include "type.h"
+#include "shared.h"
 
 namespace overdrive {
 namespace cdxa {
-	using namespace type;
+	using namespace shared;
 
 	const auto SECTOR_LENGTH = size_t(cd::SECTOR_LENGTH);
 	const auto SUBHEADER_LENGTH = size_t(4);

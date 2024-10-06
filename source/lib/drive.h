@@ -6,11 +6,11 @@
 #include <vector>
 #include "cd.h"
 #include "cdb.h"
-#include "type.h"
+#include "shared.h"
 
 namespace overdrive {
 namespace drive {
-	using namespace type;
+	using namespace shared;
 
 	#pragma pack(push, 1)
 

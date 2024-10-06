@@ -1,11 +1,11 @@
 #pragma once
 
 #include "cd.h"
-#include "type.h"
+#include "shared.h"
 
 namespace overdrive {
 namespace cdrom {
-	using namespace type;
+	using namespace shared;
 
 	const auto SECTOR_LENGTH = size_t(cd::SECTOR_LENGTH);
 	const auto SYNC_LENGTH = size_t(12);

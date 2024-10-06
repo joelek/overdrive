@@ -5,11 +5,11 @@
 #include <optional>
 #include <string>
 #include <vector>
-#include "type.h"
+#include "shared.h"
 
 namespace overdrive {
 namespace iso9660 {
-	using namespace type;
+	using namespace shared;
 
 	const auto PRIMARY_VOLUME_DESCRIPTOR_SECTOR = size_t(16);
 	const auto CURRENT_DIRECTORY_IDENTIFIER = std::string("\0", 1);

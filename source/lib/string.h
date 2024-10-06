@@ -3,11 +3,11 @@
 #include <regex>
 #include <string>
 #include <vector>
-#include "type.h"
+#include "shared.h"
 
 namespace overdrive {
 namespace string {
-	using namespace type;
+	using namespace shared;
 
 	auto match(
 		const std::string& string,

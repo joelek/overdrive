@@ -1,10 +1,10 @@
 #pragma once
 
-#include "type.h"
+#include "shared.h"
 
 namespace overdrive {
 namespace cd {
-	using namespace type;
+	using namespace shared;
 
 	const auto SECTOR_LENGTH = size_t(2352);
 	const auto MINUTES_PER_SECOND = size_t(60);

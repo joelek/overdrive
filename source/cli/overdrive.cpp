@@ -22,7 +22,7 @@
 #include "../lib/overdrive.h"
 
 using namespace overdrive;
-using namespace type;
+using namespace shared;
 
 #define APP_NAME "Overdrive"
 #define APP_VERSION "0.0.0"
