@@ -929,9 +929,9 @@ auto save(
 		cdb::validate_normal_toc(toc);
 		auto toc_ex = scsi_drive.read_full_toc();
 		auto subchannel_offset = scsi_drive.get_subchannels_data_offset();
-		fprintf(stderr, "Subchannel data offset is %llu\n", subchannel_offset);
+		fprintf(stderr, "Subchannel data offset is %llu\n", subchannel_offset.value());
 		auto c2_offset = scsi_drive.get_c2_data_offset();
-		fprintf(stderr, "C2 data offset is %llu\n", c2_offset);
+		fprintf(stderr, "C2 data offset is %llu\n", c2_offset.value());
 		{
 			auto error_recovery_mode_page = scsi_drive.read_error_recovery_mode_page();
 			error_recovery_mode_page.page.read_retry_count = max_read_retries;
@@ -1028,7 +1028,7 @@ auto save(
 					auto c2_errors = false;
 					for (auto sector_index = adjusted_first_sector; sector_index < adjusted_last_sector; sector_index += 1) {
 						try {
-							auto c2_data = (UCHAR*)&cd_sector + c2_offset;
+							auto c2_data = (UCHAR*)&cd_sector + c2_offset.value();
 							scsi_drive.read_sector(sector_index, &cd_sector.sector_data, &cd_sector.subchannels_data, &cd_sector.c2_data);
 							for (auto i = 0; i < (int)sizeof(cd_sector.c2_data); i++) {
 								if (c2_data[i] != 0) {
@@ -1102,7 +1102,7 @@ auto save(
 							throw EXIT_FAILURE;
 						}
 						if (subchannels) {
-							auto outcome2 = image_format->write_subchannel_data(current_track, (UCHAR*)&cd_sector + subchannel_offset);
+							auto outcome2 = image_format->write_subchannel_data(current_track, (UCHAR*)&cd_sector + subchannel_offset.value());
 							if (!outcome2) {
 								fprintf(stderr, "Error writing subchannel data %u to file!\n", sector_index);
 								throw EXIT_FAILURE;
@@ -1135,7 +1135,7 @@ auto save(
 							throw EXIT_FAILURE;
 						}
 						if (subchannels) {
-							auto outcome2 = image_format->write_subchannel_data(current_track, (UCHAR*)&cd_sector + subchannel_offset);
+							auto outcome2 = image_format->write_subchannel_data(current_track, (UCHAR*)&cd_sector + subchannel_offset.value());
 							if (!outcome2) {
 								fprintf(stderr, "Error writing subchannel data %u to file!\n", sector_index);
 								throw EXIT_FAILURE;

@@ -15,9 +15,9 @@ namespace overdrive {
 namespace drive {
 	Drive::Drive(
 		void* handle,
-		size_t sector_data_offset,
-		size_t subchannels_data_offset,
-		size_t c2_data_offset,
+		std::optional<size_t> sector_data_offset,
+		std::optional<size_t> subchannels_data_offset,
+		std::optional<size_t> c2_data_offset,
 		const std::function<void(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)>& ioctl
 	) {
 		this->handle = handle;
@@ -28,7 +28,7 @@ namespace drive {
 	}
 
 	auto Drive::detect_subchannel_timing_offset(
-	) -> si_t {
+	) const -> si_t {
 		auto data = cdb::ReadCDResponseDataA();
 		auto deltas = std::array<si_t, 10>();
 		auto deltas_index = size_t(0);
@@ -58,17 +58,17 @@ namespace drive {
 	}
 
 	auto Drive::get_sector_data_offset(
-	) const -> size_t {
+	) const -> std::optional<size_t> {
 		return this->sector_data_offset;
 	}
 
 	auto Drive::get_subchannels_data_offset(
-	) const -> size_t {
+	) const -> std::optional<size_t> {
 		return this->subchannels_data_offset;
 	}
 
 	auto Drive::get_c2_data_offset(
-	) const -> size_t {
+	) const -> std::optional<size_t> {
 		return this->c2_data_offset;
 	}
 
@@ -231,13 +231,13 @@ namespace drive {
 		auto buffer = std::array<byte_t, cdb::READ_CD_LENGTH>();
 		this->ioctl(handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(buffer.data()), sizeof(buffer), false);
 		if (sector_data != nullptr) {
-			std::memcpy(*sector_data, buffer.data() + this->sector_data_offset, sizeof(*sector_data));
+			std::memcpy(*sector_data, buffer.data() + this->sector_data_offset.value(), sizeof(*sector_data));
 		}
 		if (subchannels_data != nullptr) {
-			std::memcpy(*subchannels_data, buffer.data() + this->subchannels_data_offset, sizeof(*subchannels_data));
+			std::memcpy(*subchannels_data, buffer.data() + this->subchannels_data_offset.value(), sizeof(*subchannels_data));
 		}
 		if (c2_data != nullptr) {
-			std::memcpy(*c2_data, buffer.data() + this->c2_data_offset, sizeof(*c2_data));
+			std::memcpy(*c2_data, buffer.data() + this->c2_data_offset.value(), sizeof(*c2_data));
 		}
 	}
 
@@ -330,7 +330,7 @@ namespace drive {
 			drive.detect_subchannel_timing_offset();
 			return drive;
 		} catch (const exceptions::AutoDetectFailureException& e) {}
-		OVERDRIVE_THROW(exceptions::AutoDetectFailureException("drive parameters"));
+		return Drive(handle, std::optional<size_t>(0), std::optional<size_t>(), std::optional<size_t>(), ioctl);
 	}
 }
 }

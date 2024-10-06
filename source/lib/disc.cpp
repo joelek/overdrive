@@ -14,9 +14,9 @@ namespace disc {
 	) const -> void {
 		fprintf(stderr, "%s\n", std::format("Drive vendor: \"{}\"", string::trim(this->vendor)).c_str());
 		fprintf(stderr, "%s\n", std::format("Drive product: \"{}\"", string::trim(this->product)).c_str());
-		fprintf(stderr, "%s\n", std::format("Drive sector data offset: {}", this->sector_data_offset).c_str());
-		fprintf(stderr, "%s\n", std::format("Drive subchannels data offset: {}", this->subchannels_data_offset).c_str());
-		fprintf(stderr, "%s\n", std::format("Drive c2 data offset: {}", this->c2_data_offset).c_str());
+		fprintf(stderr, "%s\n", std::format("Drive sector data offset: {}", this->sector_data_offset ? std::format("{}", this->sector_data_offset.value()) : "unknown").c_str());
+		fprintf(stderr, "%s\n", std::format("Drive subchannels data offset: {}", this->subchannels_data_offset ? std::format("{}", this->subchannels_data_offset.value()) : "unknown").c_str());
+		fprintf(stderr, "%s\n", std::format("Drive c2 data offset: {}", this->c2_data_offset ? std::format("{}", this->c2_data_offset.value()) : "unknown").c_str());
 		fprintf(stderr, "%s\n", std::format("Drive buffer size [bytes]: {}", this->buffer_size).c_str());
 		fprintf(stderr, "%s\n", std::format("Drive supports accurate stream: {}", this->supports_accurate_stream).c_str());
 		fprintf(stderr, "%s\n", std::format("Drive supports c2 error reporting: {}", this->supports_c2_error_reporting).c_str());

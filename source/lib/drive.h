@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <optional>
 #include "cd.h"
 #include "cdb.h"
 #include "disc.h"
@@ -15,23 +16,23 @@ namespace drive {
 
 		Drive(
 			void* handle,
-			size_t sector_data_offset,
-			size_t subchannels_data_offset,
-			size_t c2_data_offset,
+			std::optional<size_t> sector_data_offset,
+			std::optional<size_t> subchannels_data_offset,
+			std::optional<size_t> c2_data_offset,
 			const std::function<void(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)>& ioctl
 		);
 
 		auto detect_subchannel_timing_offset(
-		) -> si_t;
+		) const -> si_t;
 
 		auto get_sector_data_offset(
-		) const -> size_t;
+		) const -> std::optional<size_t>;
 
 		auto get_subchannels_data_offset(
-		) const -> size_t;
+		) const -> std::optional<size_t>;
 
 		auto get_c2_data_offset(
-		) const -> size_t;
+		) const -> std::optional<size_t>;
 
 		auto determine_track_type(
 			const cdb::ReadTOCResponseFullTOC& toc,
@@ -82,9 +83,9 @@ namespace drive {
 		protected:
 
 		void* handle;
-		size_t sector_data_offset;
-		size_t subchannels_data_offset;
-		size_t c2_data_offset;
+		std::optional<size_t> sector_data_offset;
+		std::optional<size_t> subchannels_data_offset;
+		std::optional<size_t> c2_data_offset;
 		std::function<void(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)> ioctl;
 	};
 
