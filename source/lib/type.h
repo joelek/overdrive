@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 #ifdef DEBUG
 	#define OVERDRIVE_THROW(exception) throw exceptions::DebugException(__FILE__, __LINE__, exception)
@@ -34,5 +35,12 @@ namespace type {
 	template <typename A> using constant = A const;
 	template <unsigned B, typename A> using array = A[B];
 	template <typename A, typename... B> using function = A(B...);
+
+	auto create_hex_dump(
+		const byte_t* bytes,
+		size_t size
+	) -> std::string;
 }
 }
+
+#define OVERDRIVE_HEXDUMP(var) fprintf(stderr, "%s\n", overdrive::type::create_hex_dump(reinterpret_cast<const uint8_t*>(&var), sizeof(var)).c_str())

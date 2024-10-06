@@ -34,7 +34,6 @@ SOURCES=(
 	"lib/drive"
 	"lib/enums"
 	"lib/exceptions"
-	"lib/hex"
 	"lib/idiv"
 	"lib/iso9660"
 	"lib/sense"

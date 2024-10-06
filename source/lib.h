@@ -11,7 +11,6 @@
 #include "lib/drive.h"
 #include "lib/enums.h"
 #include "lib/exceptions.h"
-#include "lib/hex.h"
 #include "lib/idiv.h"
 #include "lib/iso9660.h"
 #include "lib/sense.h"
