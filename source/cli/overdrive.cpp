@@ -490,26 +490,26 @@ class MDSImageFormat: ImageFormat {
 
 	protected:
 
-	auto get_track_mode(drive::TrackType track_type) -> mds::TrackMode {
-		if (track_type == drive::TrackType::AUDIO_2_CHANNELS) {
+	auto get_track_mode(disc::TrackType track_type) -> mds::TrackMode {
+		if (track_type == disc::TrackType::AUDIO_2_CHANNELS) {
 			return mds::TrackMode::AUDIO;
 		}
-		if (track_type == drive::TrackType::AUDIO_4_CHANNELS) {
+		if (track_type == disc::TrackType::AUDIO_4_CHANNELS) {
 			return mds::TrackMode::AUDIO;
 		}
-		if (track_type == drive::TrackType::DATA_MODE0) {
+		if (track_type == disc::TrackType::DATA_MODE0) {
 			return mds::TrackMode::NONE;
 		}
-		if (track_type == drive::TrackType::DATA_MODE1) {
+		if (track_type == disc::TrackType::DATA_MODE1) {
 			return mds::TrackMode::MODE1;
 		}
-		if (track_type == drive::TrackType::DATA_MODE2) {
+		if (track_type == disc::TrackType::DATA_MODE2) {
 			return mds::TrackMode::MODE2;
 		}
-		if (track_type == drive::TrackType::DATA_MODE2_FORM1) {
+		if (track_type == disc::TrackType::DATA_MODE2_FORM1) {
 			return mds::TrackMode::MODE2_FORM1;
 		}
-		if (track_type == drive::TrackType::DATA_MODE2_FORM2) {
+		if (track_type == disc::TrackType::DATA_MODE2_FORM2) {
 			return mds::TrackMode::MODE2_FORM2;
 		}
 		throw EXIT_FAILURE;

@@ -31,6 +31,7 @@ SOURCES=(
 	"lib/cdda"
 	"lib/cdrom"
 	"lib/cdxa"
+	"lib/disc"
 	"lib/drive"
 	"lib/enums"
 	"lib/exceptions"

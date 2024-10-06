@@ -80,13 +80,13 @@ namespace drive {
 	auto Drive::determine_track_type(
 		const cdb::ReadTOCResponseFullTOC& toc,
 		ui_t track_index
-	) const -> TrackType {
+	) const -> disc::TrackType {
 		auto& track = toc.entries[track_index];
 		auto category = cd::get_track_category(track.control);
 		if (category == cd::TrackCategory::AUDIO_2_CHANNELS) {
-			return TrackType::AUDIO_2_CHANNELS;
+			return disc::TrackType::AUDIO_2_CHANNELS;
 		} else if (category == cd::TrackCategory::AUDIO_4_CHANNELS) {
-			return TrackType::AUDIO_4_CHANNELS;
+			return disc::TrackType::AUDIO_4_CHANNELS;
 		} else if (category == cd::TrackCategory::DATA) {
 			auto session_type = cdb::get_session_type(toc);
 			if (session_type == cdb::SessionType::CDDA_OR_CDROM) {
@@ -94,11 +94,11 @@ namespace drive {
 				this->read_sector(iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR, &data.sector_data, nullptr, nullptr);
 				auto& sector = *reinterpret_cast<cdrom::Sector*>(&data.sector_data);
 				if (sector.base.header.mode == 0) {
-					return TrackType::DATA_MODE0;
+					return disc::TrackType::DATA_MODE0;
 				} else if (sector.base.header.mode == 1) {
-					return TrackType::DATA_MODE1;
+					return disc::TrackType::DATA_MODE1;
 				} else if (sector.base.header.mode == 2) {
-					return TrackType::DATA_MODE2;
+					return disc::TrackType::DATA_MODE2;
 				} else {
 					OVERDRIVE_THROW(exceptions::InvalidValueException("sector mode", sector.base.header.mode, 0, 2));
 				}
@@ -110,9 +110,9 @@ namespace drive {
 				auto& sector = *reinterpret_cast<cdxa::Sector*>(&data.sector_data);
 				if (sector.base.header.mode == 2) {
 					if (sector.base.header_1.form_2 == 0) {
-						return TrackType::DATA_MODE2_FORM1;
+						return disc::TrackType::DATA_MODE2_FORM1;
 					} else {
-						return TrackType::DATA_MODE2_FORM2;
+						return disc::TrackType::DATA_MODE2_FORM2;
 					}
 				} else {
 					OVERDRIVE_THROW(exceptions::InvalidValueException("sector mode", sector.base.header.mode, 2, 2));
@@ -247,7 +247,7 @@ namespace drive {
 	}
 
 	auto Drive::read_drive_info(
-	) const -> DriveInfo {
+	) const -> disc::DriveInfo {
 		auto standard_inquiry = this->read_standard_inquiry();
 		auto vendor = std::string(standard_inquiry.vendor_identification, sizeof(standard_inquiry.vendor_identification));
 		auto product = std::string(standard_inquiry.product_identification, sizeof(standard_inquiry.product_identification));
@@ -273,8 +273,8 @@ namespace drive {
 	}
 
 	auto Drive::read_disc_info(
-	) const -> DiscInfo {
-		auto disc = DiscInfo();
+	) const -> disc::DiscInfo {
+		auto disc = disc::DiscInfo();
 		auto toc = this->read_full_toc();
 		auto toc_count = cdb::validate_full_toc(toc);
 		auto lead_out_first_sector_absolute = std::optional<size_t>();
@@ -290,7 +290,7 @@ namespace drive {
 			auto& session = disc.sessions.at(entry.session_number - 1);
 			session.number = entry.session_number;
 			session.type = cdb::get_session_type(toc);
-			auto track = TrackInfo();
+			auto track = disc::TrackInfo();
 			track.number = entry.point;
 			track.type = this->determine_track_type(toc, toc_index);
 			track.first_sector_absolute = cd::get_sector_from_address(entry.paddress);
@@ -298,12 +298,12 @@ namespace drive {
 			session.tracks.push_back(track);
 		}
 		// Sort in increasing order.
-		std::sort(disc.sessions.begin(), disc.sessions.end(), [](const SessionInfo& one, const SessionInfo& two) -> bool_t {
+		std::sort(disc.sessions.begin(), disc.sessions.end(), [](const disc::SessionInfo& one, const disc::SessionInfo& two) -> bool_t {
 			return one.number < two.number;
 		});
 		for (auto& session : disc.sessions) {
 			// Sort in increasing order.
-			std::sort(session.tracks.begin(), session.tracks.end(), [](const TrackInfo& one, const TrackInfo& two) -> bool_t {
+			std::sort(session.tracks.begin(), session.tracks.end(), [](const disc::TrackInfo& one, const disc::TrackInfo& two) -> bool_t {
 				return one.first_sector_absolute < two.first_sector_absolute;
 			});
 			for (auto track_index = size_t(0); track_index < session.tracks.size(); track_index += 1) {
@@ -336,78 +336,6 @@ namespace drive {
 			return drive;
 		} catch (const exceptions::AutoDetectFailureException& e) {}
 		OVERDRIVE_THROW(exceptions::AutoDetectFailureException("drive parameters"));
-	}
-
-	auto is_audio_track(
-		TrackType type
-	) -> bool_t {
-		if (type == TrackType::AUDIO_2_CHANNELS) {
-			return true;
-		}
-		if (type == TrackType::AUDIO_4_CHANNELS) {
-			return true;
-		}
-		if (type == TrackType::DATA_MODE0) {
-			return false;
-		}
-		if (type == TrackType::DATA_MODE1) {
-			return false;
-		}
-		if (type == TrackType::DATA_MODE2) {
-			return false;
-		}
-		if (type == TrackType::DATA_MODE2_FORM1) {
-			return false;
-		}
-		if (type == TrackType::DATA_MODE2_FORM2) {
-			return false;
-		}
-		OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
-	}
-
-	auto is_data_track(
-		TrackType type
-	) -> bool_t {
-		if (type == TrackType::AUDIO_2_CHANNELS) {
-			return false;
-		}
-		if (type == TrackType::AUDIO_4_CHANNELS) {
-			return false;
-		}
-		if (type == TrackType::DATA_MODE0) {
-			return true;
-		}
-		if (type == TrackType::DATA_MODE1) {
-			return true;
-		}
-		if (type == TrackType::DATA_MODE2) {
-			return true;
-		}
-		if (type == TrackType::DATA_MODE2_FORM1) {
-			return true;
-		}
-		if (type == TrackType::DATA_MODE2_FORM2) {
-			return true;
-		}
-		OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
-	}
-
-	auto get_user_data_length(
-		TrackType type
-	) -> size_t {
-		if (type == TrackType::DATA_MODE1) {
-			return cdrom::MODE1_DATA_LENGTH;
-		}
-		if (type == TrackType::DATA_MODE2) {
-			return cdrom::MODE2_DATA_LENGTH;
-		}
-		if (type == TrackType::DATA_MODE2_FORM1) {
-			return cdxa::MODE2_FORM1_DATA_LENGTH;
-		}
-		if (type == TrackType::DATA_MODE2_FORM2) {
-			return cdxa::MODE2_FORM2_DATA_LENGTH;
-		}
-		OVERDRIVE_THROW(exceptions::MissingValueException("user data length"));
 	}
 }
 }

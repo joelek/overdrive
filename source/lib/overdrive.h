@@ -8,6 +8,7 @@
 #include "cdda.h"
 #include "cdrom.h"
 #include "cdxa.h"
+#include "disc.h"
 #include "drive.h"
 #include "enums.h"
 #include "exceptions.h"

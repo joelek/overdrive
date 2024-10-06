@@ -2,7 +2,7 @@
 
 #include <string>
 #include "cdb.h"
-#include "drive.h"
+#include "disc.h"
 #include "shared.h"
 
 namespace overdrive {
@@ -14,7 +14,7 @@ namespace enums {
 	) -> const std::string&;
 
 	auto TrackType(
-		drive::TrackType value
+		disc::TrackType value
 	) -> const std::string&;
 }
 }
