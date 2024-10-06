@@ -244,6 +244,9 @@ namespace drive {
 	auto Drive::read_drive_info(
 	) const -> disc::DriveInfo {
 		auto standard_inquiry = this->read_standard_inquiry();
+		if (standard_inquiry.peripheral_device_type != cdb::StandardInquiryPeripheralDeviceType::CD_OR_DVD) {
+			throw exceptions::ExpectedOpticalDriveException();
+		}
 		auto vendor = std::string(standard_inquiry.vendor_identification, sizeof(standard_inquiry.vendor_identification));
 		auto product = std::string(standard_inquiry.product_identification, sizeof(standard_inquiry.product_identification));
 		auto sector_data_offset = this->sector_data_offset;

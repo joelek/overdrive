@@ -53,5 +53,7 @@ namespace exceptions {
 		size_t track_number
 	): OverdriveException(std::format("Expected track {} to contain audio!", track_number)) {}
 
+	ExpectedOpticalDriveException::ExpectedOpticalDriveException(
+	): OverdriveException(std::format("Expected an optical drive!")) {}
 }
 }

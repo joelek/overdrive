@@ -205,11 +205,17 @@ namespace cdb {
 
 	static_assert(sizeof(Inquiry6) == 6);
 
+	enum class StandardInquiryPeripheralDeviceType: ui08_t {
+		CD_OR_DVD = 0x05
+	};
+
+	static_assert(sizeof(StandardInquiryPeripheralDeviceType) == 1);
+
 	struct StandardInquiryResponse {
-		ui08_t peripheral_device_type: 5;
+		StandardInquiryPeripheralDeviceType peripheral_device_type: 5;
 		ui08_t peripheral_qualifier: 3;
 		ui08_t : 7;
-		ui08_t rmb: 1;
+		ui08_t removable_media: 1;
 		ui08_t version: 8;
 		ui08_t response_data_format: 4;
 		ui08_t hisup: 1;
