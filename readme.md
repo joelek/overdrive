@@ -12,10 +12,8 @@ Utility for interfacing with optical drives. Written for the Windows platform.
 * Add separate retry count for audio tracks.
 * Add ignore read error setting (data tracks only).
 * Prevent reading into end of data tracks when read offset correction is negative.
-* Add support for custom user data sizes in iso9660 module.
 * Make utility platform-independent.
 * Add debug logging.
-* Move hexdump to type unit.
 * Investigate using namespace with constants over enums.
 
 ## Read offset correction
