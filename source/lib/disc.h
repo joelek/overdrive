@@ -10,10 +10,6 @@ namespace overdrive {
 namespace disc {
 	using namespace shared;
 
-	#pragma pack(push, 1)
-
-	#pragma pack(pop)
-
 	enum class TrackType {
 		AUDIO_2_CHANNELS,
 		AUDIO_4_CHANNELS,

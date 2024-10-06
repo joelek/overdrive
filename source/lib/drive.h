@@ -10,10 +10,6 @@ namespace overdrive {
 namespace drive {
 	using namespace shared;
 
-	#pragma pack(push, 1)
-
-	#pragma pack(pop)
-
 	class Drive {
 		public:
 
