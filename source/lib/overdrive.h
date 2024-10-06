@@ -14,6 +14,7 @@
 #include "exceptions.h"
 #include "idiv.h"
 #include "iso9660.h"
+#include "scsi.h"
 #include "sense.h"
 #include "shared.h"
 #include "string.h"

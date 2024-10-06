@@ -10,6 +10,7 @@
 #include "cdxa.h"
 #include "exceptions.h"
 #include "iso9660.h"
+#include "scsi.h"
 
 namespace overdrive {
 namespace drive {
@@ -18,7 +19,7 @@ namespace drive {
 		std::optional<size_t> sector_data_offset,
 		std::optional<size_t> subchannels_data_offset,
 		std::optional<size_t> c2_data_offset,
-		const std::function<void(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)>& ioctl
+		const std::function<byte_t(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)>& ioctl
 	) {
 		this->handle = handle;
 		this->sector_data_offset = sector_data_offset;
@@ -212,6 +213,13 @@ namespace drive {
 		return data;
 	}
 
+	auto Drive::test_unit_ready(
+	) const -> bool_t {
+		auto cdb = cdb::TestUnitReady6();
+		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), nullptr, 0, false);
+		return status == byte_t(scsi::StatusCode::GOOD);
+	}
+
 	auto Drive::read_sector(
 		size_t sector_index,
 		pointer<array<cd::SECTOR_LENGTH, byte_t>> sector_data,
@@ -321,7 +329,7 @@ namespace drive {
 
 	auto create_drive(
 		void* handle,
-		const std::function<void(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)>& ioctl
+		const std::function<byte_t(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)>& ioctl
 	) -> Drive {
 		try {
 			auto drive = Drive(handle, offsetof(cdb::ReadCDResponseDataA, sector_data), offsetof(cdb::ReadCDResponseDataA, subchannels_data), offsetof(cdb::ReadCDResponseDataA, c2_data), ioctl);

@@ -59,7 +59,7 @@ auto pass_through_direct(
 	byte_t* data,
 	size_t data_size,
 	bool_t write_to_device
-) -> void {
+) -> byte_t {
 	auto sptd_sense = SPTDWithSenseBuffer();
 	sptd_sense.sptd.Length = sizeof(sptd_sense.sptd);
 	sptd_sense.sptd.CdbLength = cdb_size;
@@ -89,6 +89,7 @@ auto pass_through_direct(
 		auto& sense = *reinterpret_cast<sense::FixedFormat*>(sptd_sense.sense);
 		fprintf(stderr, "[WARNING] Sense info 0x%.1X 0x%.2X 0x%.2X!\n", (unsigned)sense.sense_key, sense.additional_sense_code, sense.additional_sense_code_qualifier);
 	}
+	return sptd_sense.sptd.ScsiStatus;
 }
 
 typedef struct {

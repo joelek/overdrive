@@ -31,6 +31,17 @@ namespace cdb {
 
 	static_assert(sizeof(ReadTOCFormat) == 1);
 
+	struct TestUnitReady6 {
+		ui08_t operation_code: 8 = 0x00;
+		ui08_t : 8;
+		ui08_t : 8;
+		ui08_t : 8;
+		ui08_t : 8;
+		ui08_t control: 8;
+	};
+
+	static_assert(sizeof(TestUnitReady6) == 6);
+
 	struct ReadTOC10 {
 		ui08_t operation_code = 0x43;
 		ui08_t : 1;

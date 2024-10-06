@@ -37,6 +37,7 @@ SOURCES=(
 	"lib/exceptions"
 	"lib/idiv"
 	"lib/iso9660"
+	"lib/scsi"
 	"lib/sense"
 	"lib/shared"
 	"lib/string"

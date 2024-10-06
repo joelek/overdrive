@@ -19,7 +19,7 @@ namespace drive {
 			std::optional<size_t> sector_data_offset,
 			std::optional<size_t> subchannels_data_offset,
 			std::optional<size_t> c2_data_offset,
-			const std::function<void(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)>& ioctl
+			const std::function<byte_t(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)>& ioctl
 		);
 
 		auto detect_subchannel_timing_offset(
@@ -67,6 +67,9 @@ namespace drive {
 		auto read_standard_inquiry(
 		) const -> cdb::StandardInquiryResponse;
 
+		auto test_unit_ready(
+		) const -> bool_t;
+
 		auto read_sector(
 			size_t sector_index,
 			pointer<array<cd::SECTOR_LENGTH, byte_t>> sector_data,
@@ -86,12 +89,12 @@ namespace drive {
 		std::optional<size_t> sector_data_offset;
 		std::optional<size_t> subchannels_data_offset;
 		std::optional<size_t> c2_data_offset;
-		std::function<void(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)> ioctl;
+		std::function<byte_t(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)> ioctl;
 	};
 
 	auto create_drive(
 		void* handle,
-		const std::function<void(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)>& ioctl
+		const std::function<byte_t(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)>& ioctl
 	) -> Drive;
 }
 }
