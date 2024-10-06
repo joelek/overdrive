@@ -1,8 +1,10 @@
 #include "iso.h"
 
+#include <filesystem>
 #include <format>
 #include <optional>
 #include <regex>
+#include <string>
 
 namespace commands {
 	class ISOOptions {
@@ -11,6 +13,7 @@ namespace commands {
 		std::string drive;
 		std::optional<si_t> read_offset_correction;
 		std::optional<ui_t> tracks;
+		std::string path;
 
 		protected:
 	};
@@ -22,6 +25,7 @@ namespace commands {
 			auto drive = std::optional<std::string>();
 			auto read_offset_correction = std::optional<si_t>();
 			auto tracks = std::optional<ui_t>();
+			auto path = std::string("image.iso");
 			for (auto argument_index = size_t(2); argument_index < arguments.size(); argument_index += 1) {
 				auto& argument = arguments[argument_index];
 				if (false) {
@@ -55,6 +59,16 @@ namespace commands {
 					} else {
 						OVERDRIVE_THROW(exceptions::BadArgumentException("tracks", format));
 					}
+				} else if (argument.find("--path=") == 0) {
+					auto value = argument.substr(sizeof("--path=") - 1);
+					auto format = std::string("^(.+)$");
+					auto matches = std::vector<std::string>();
+					if (false) {
+					} else if (string::match(value, matches, std::regex(format))) {
+						path = matches[1];
+					} else {
+						OVERDRIVE_THROW(exceptions::BadArgumentException("path", format));
+					}
 				} else {
 					OVERDRIVE_THROW(exceptions::UnknownArgumentException(argument));
 				}
@@ -65,7 +79,8 @@ namespace commands {
 			return {
 				drive.value(),
 				read_offset_correction,
-				tracks
+				tracks,
+				path
 			};
 		}
 
@@ -137,6 +152,8 @@ namespace commands {
 			internal::check_disc(disc_info);
 			auto read_offset_correction = options.read_offset_correction ? options.read_offset_correction.value() : drive_info.read_offset_correction ? drive_info.read_offset_correction.value() : 0;
 			fprintf(stderr, "%s\n", std::format("Using read offset correction [samples]: {}", read_offset_correction).c_str());
+			auto path = std::filesystem::weakly_canonical(std::filesystem::current_path() / options.path).string();
+			fprintf(stderr, "%s\n", std::format("Using path: \"{}\"", path).c_str());
 		} catch (const exceptions::ArgumentException& e) {
 			fprintf(stderr, "%s\n", "Arguments:");
 			throw;
