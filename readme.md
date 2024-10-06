@@ -15,7 +15,6 @@ Utility for interfacing with optical drives. Written for the Windows platform.
 * Make utility platform-independent.
 * Add debug logging.
 * Investigate using namespace with constants over enums.
-* Detect empty drive.
 * Move read offset correction argument from ISO command.
 
 ## Read offset correction
