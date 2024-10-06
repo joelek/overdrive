@@ -35,6 +35,16 @@ namespace commands {
 					} else {
 						OVERDRIVE_THROW(exceptions::BadArgumentException("drive", format));
 					}
+				} else if (argument.find("--read-offset-correction=") == 0) {
+					auto value = argument.substr(sizeof("--read-offset-correction=") - 1);
+					auto format = std::string("^([+-]?(?:[0-9]|[1-9][0-9]+))$");
+					auto matches = std::vector<std::string>();
+					if (false) {
+					} else if (string::match(value, matches, std::regex(format))) {
+						read_offset_correction = std::atoi(matches[1].c_str());
+					} else {
+						OVERDRIVE_THROW(exceptions::BadArgumentException("read-offset-correction", format));
+					}
 				} else if (argument.find("--tracks=") == 0) {
 					auto value = argument.substr(sizeof("--tracks=") - 1);
 					auto format = std::string("^([1-9]|[1-9][0-9])$");
@@ -125,6 +135,8 @@ namespace commands {
 				disc_info = disc::truncate_disc(disc_info, options.tracks.value());
 			}
 			internal::check_disc(disc_info);
+			auto read_offset_correction = options.read_offset_correction ? options.read_offset_correction.value() : drive_info.read_offset_correction ? drive_info.read_offset_correction.value() : 0;
+			fprintf(stderr, "%s\n", std::format("Using read offset correction [samples]: {}", read_offset_correction).c_str());
 		} catch (const exceptions::ArgumentException& e) {
 			fprintf(stderr, "%s\n", "Arguments:");
 			throw;
