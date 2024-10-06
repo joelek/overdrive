@@ -10,6 +10,7 @@ namespace commands {
 
 		std::string drive;
 		std::optional<si_t> read_offset_correction;
+		std::optional<ui_t> tracks;
 
 		protected:
 	};
@@ -20,6 +21,7 @@ namespace commands {
 		) -> ISOOptions {
 			auto drive = std::optional<std::string>();
 			auto read_offset_correction = std::optional<si_t>();
+			auto tracks = std::optional<ui_t>();
 			for (auto argument_index = size_t(2); argument_index < arguments.size(); argument_index += 1) {
 				auto& argument = arguments[argument_index];
 				if (false) {
@@ -33,6 +35,16 @@ namespace commands {
 					} else {
 						OVERDRIVE_THROW(exceptions::BadArgumentException("drive", format));
 					}
+				} else if (argument.find("--tracks=") == 0) {
+					auto value = argument.substr(sizeof("--tracks=") - 1);
+					auto format = std::string("^([1-9]|[1-9][0-9])$");
+					auto matches = std::vector<std::string>();
+					if (false) {
+					} else if (string::match(value, matches, std::regex(format))) {
+						tracks = std::atoi(matches[1].c_str());
+					} else {
+						OVERDRIVE_THROW(exceptions::BadArgumentException("tracks", format));
+					}
 				} else {
 					OVERDRIVE_THROW(exceptions::UnknownArgumentException(argument));
 				}
@@ -42,7 +54,8 @@ namespace commands {
 			}
 			return {
 				drive.value(),
-				read_offset_correction
+				read_offset_correction,
+				tracks
 			};
 		}
 
@@ -107,6 +120,9 @@ namespace commands {
 					fprintf(stderr, "%s\n", std::format("\t\tTrack first sector (absolute): {}", track.first_sector_absolute).c_str());
 					fprintf(stderr, "%s\n", std::format("\t\tTrack length [sectors]: {}", track.length_sectors).c_str());
 				}
+			}
+			if (options.tracks) {
+				disc_info = disc::truncate_disc(disc_info, options.tracks.value());
 			}
 			internal::check_disc(disc_info);
 		} catch (const exceptions::ArgumentException& e) {
