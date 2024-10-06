@@ -1187,9 +1187,8 @@ auto main(
 		fprintf(stderr, "%s\n", "Program completed successfully.");
 		return EXIT_SUCCESS;
 	} catch (const std::exception& e) {
-		fprintf(stderr, "%s\n", "");
 		fprintf(stderr, "%s\n", e.what());
-	}
+	} catch (...) {}
 	fprintf(stderr, "%s\n", "Program did not complete successfully!");
 	return EXIT_FAILURE;
 
