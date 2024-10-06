@@ -55,5 +55,8 @@ namespace exceptions {
 
 	ExpectedOpticalDriveException::ExpectedOpticalDriveException(
 	): OverdriveException(std::format("Expected an optical drive!")) {}
+
+	ExpectedOpticalDiscException::ExpectedOpticalDiscException(
+	): OverdriveException(std::format("Expected an optical disc!")) {}
 }
 }

@@ -280,6 +280,9 @@ namespace drive {
 
 	auto Drive::read_disc_info(
 	) const -> disc::DiscInfo {
+		if (!this->test_unit_ready()) {
+			throw exceptions::ExpectedOpticalDiscException();
+		}
 		auto disc = disc::DiscInfo();
 		auto toc = this->read_full_toc();
 		auto toc_count = cdb::validate_full_toc(toc);

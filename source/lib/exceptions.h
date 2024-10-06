@@ -159,5 +159,14 @@ namespace exceptions {
 
 		protected:
 	};
+
+	class ExpectedOpticalDiscException: public OverdriveException {
+		public:
+
+		ExpectedOpticalDiscException(
+		);
+
+		protected:
+	};
 }
 }
