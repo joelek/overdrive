@@ -326,12 +326,12 @@ namespace drive {
 		const std::function<void(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)>& ioctl
 	) -> Drive {
 		try {
-			auto drive = Drive(handle, 0, offsetof(cdb::ReadCDResponseDataA, subchannels_data), offsetof(cdb::ReadCDResponseDataA, c2_data), ioctl);
+			auto drive = Drive(handle, offsetof(cdb::ReadCDResponseDataA, sector_data), offsetof(cdb::ReadCDResponseDataA, subchannels_data), offsetof(cdb::ReadCDResponseDataA, c2_data), ioctl);
 			drive.detect_subchannel_timing_offset();
 			return drive;
 		} catch (const exceptions::AutoDetectFailureException& e) {}
 		try {
-			auto drive = Drive(handle, 0, offsetof(cdb::ReadCDResponseDataB, subchannels_data), offsetof(cdb::ReadCDResponseDataB, c2_data), ioctl);
+			auto drive = Drive(handle, offsetof(cdb::ReadCDResponseDataB, sector_data), offsetof(cdb::ReadCDResponseDataB, subchannels_data), offsetof(cdb::ReadCDResponseDataB, c2_data), ioctl);
 			drive.detect_subchannel_timing_offset();
 			return drive;
 		} catch (const exceptions::AutoDetectFailureException& e) {}
