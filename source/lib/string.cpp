@@ -2,6 +2,21 @@
 
 namespace overdrive {
 namespace string {
+	auto join(
+		const std::vector<std::string>& parts,
+		const std::string& glue
+	) -> std::string {
+		auto string = std::string();
+		for (auto part_index = size_t(0); part_index < parts.size(); part_index += 1) {
+			auto& part = parts.at(part_index);
+			if (part_index > 0) {
+				string += glue;
+			}
+			string += part;
+		}
+		return string;
+	}
+
 	auto match(
 		const std::string& string,
 		std::vector<std::string>& matches,

@@ -9,6 +9,11 @@ namespace overdrive {
 namespace string {
 	using namespace shared;
 
+	auto join(
+		const std::vector<std::string>& parts,
+		const std::string& glue = ""
+	) -> std::string;
+
 	auto match(
 		const std::string& string,
 		std::vector<std::string>& matches,
