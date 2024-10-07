@@ -97,6 +97,24 @@ namespace disc {
 		OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
 	}
 
+	auto get_user_data_offset(
+		TrackType type
+	) -> size_t {
+		if (type == TrackType::DATA_MODE1) {
+			return offsetof(cdrom::Mode1Sector, user_data);
+		}
+		if (type == TrackType::DATA_MODE2) {
+			return offsetof(cdrom::Mode2Sector, user_data);
+		}
+		if (type == TrackType::DATA_MODE2_FORM1) {
+			return offsetof(cdxa::Mode2Form1Sector, user_data);
+		}
+		if (type == TrackType::DATA_MODE2_FORM2) {
+			return offsetof(cdxa::Mode2Form2Sector, user_data);
+		}
+		OVERDRIVE_THROW(exceptions::MissingValueException("user data offset"));
+	}
+
 	auto get_user_data_length(
 		TrackType type
 	) -> size_t {

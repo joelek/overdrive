@@ -81,6 +81,10 @@ namespace disc {
 		TrackType type
 	) -> bool_t;
 
+	auto get_user_data_offset(
+		TrackType type
+	) -> size_t;
+
 	auto get_user_data_length(
 		TrackType type
 	) -> size_t;
