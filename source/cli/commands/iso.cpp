@@ -108,6 +108,19 @@ namespace commands {
 				}
 			}
 		}
+
+		auto copy_data_track(
+			const drive::Drive& drive,
+			const disc::TrackInfo& track_info
+		) -> void {
+			auto sector = cdb::ReadCDResponseDataA();
+			auto user_data_offset = disc::get_user_data_offset(track_info.type);
+			auto fs = iso9660::FileSystem([&](size_t sector_index, void* user_data) -> void {
+				drive.read_sector(sector_index, &sector.sector_data, nullptr, nullptr);
+				std::memcpy(user_data, sector.sector_data + user_data_offset, iso9660::USER_DATA_SIZE);
+			});
+			// TODO: Loop through sectors and write to file.
+		}
 	}
 
 	auto iso(
@@ -130,6 +143,17 @@ namespace commands {
 			fprintf(stderr, "%s\n", std::format("Using read offset correction [samples]: {}", read_offset_correction).c_str());
 			auto path = std::filesystem::weakly_canonical(std::filesystem::current_path() / options.path).string();
 			fprintf(stderr, "%s\n", std::format("Using path: \"{}\"", path).c_str());
+			// TODO: Split path into directory, filename and extensions and set default.
+			// TODO: Open file.
+			for (auto session_index = size_t(0); session_index < disc_info.sessions.size(); session_index += 1) {
+				auto& session = disc_info.sessions.at(session_index);
+				for (auto track_index = size_t(0); track_index < session.tracks.size(); track_index += 1) {
+					auto& track = session.tracks.at(track_index);
+					if (disc::is_data_track(track.type)) {
+						internal::copy_data_track(drive, track);
+					}
+				}
+			}
 		} catch (const exceptions::ArgumentException& e) {
 			fprintf(stderr, "%s\n", "Arguments:");
 			throw;
