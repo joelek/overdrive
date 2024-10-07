@@ -13,14 +13,14 @@ namespace iso9660 {
 			const std::function<void(size_t sector, void* user_data)>& read_user_data,
 			const FileSystemEntry& fse
 		) -> std::vector<byte_t> {
-			auto user_data = std::array<byte_t, 2048>();
-			auto length_sectors = idiv::ceil(fse.length_bytes, 2048);
+			auto user_data = std::array<byte_t, USER_DATA_SIZE>();
+			auto length_sectors = idiv::ceil(fse.length_bytes, USER_DATA_SIZE);
 			auto buffer = std::vector<byte_t>(fse.length_bytes);
 			auto buffer_offset = buffer.data();
 			auto buffer_length = fse.length_bytes;
 			for (auto sector_index = fse.first_sector; sector_index < fse.first_sector + length_sectors; sector_index += 1) {
 				read_user_data(sector_index, user_data.data());
-				auto chunk_length = std::min<size_t>(buffer_length, 2048);
+				auto chunk_length = std::min<size_t>(buffer_length, USER_DATA_SIZE);
 				std::memcpy(buffer_offset, user_data.data(), chunk_length);
 				buffer_offset += chunk_length;
 				buffer_length -= chunk_length;
@@ -58,7 +58,7 @@ namespace iso9660 {
 					}
 				} else {
 					auto bytes_parsed = fse.length_bytes - buffer_length;
-					auto next_sector = idiv::ceil(bytes_parsed, 2048) * 2048;
+					auto next_sector = idiv::ceil(bytes_parsed, USER_DATA_SIZE) * USER_DATA_SIZE;
 					auto skip_bytes = next_sector - bytes_parsed;
 					record_length = skip_bytes;
 				}
@@ -99,7 +99,7 @@ namespace iso9660 {
 		) -> std::optional<FileSystemEntry> {
 			if (lower_index_inclusive + 1 == upper_index_exclusive) {
 				auto& fse = entries.at(lower_index_inclusive);
-				auto length_sectors = idiv::ceil(fse.length_bytes, 2048);
+				auto length_sectors = idiv::ceil(fse.length_bytes, USER_DATA_SIZE);
 				if (sector >= fse.first_sector && sector < fse.first_sector + length_sectors) {
 					return fse;
 				}
@@ -119,7 +119,7 @@ namespace iso9660 {
 	FileSystem::FileSystem(
 		const std::function<void(size_t sector, void* user_data)>& read_user_data
 	) {
-		auto user_data = std::array<byte_t, 2048>();
+		auto user_data = std::array<byte_t, USER_DATA_SIZE>();
 		read_user_data(PRIMARY_VOLUME_DESCRIPTOR_SECTOR, user_data.data());
 		auto& pvd = *reinterpret_cast<PrimaryVolumeDescriptor*>(user_data.data());
 		auto& deh = pvd.root_directory_entry.header;

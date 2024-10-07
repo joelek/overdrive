@@ -99,8 +99,8 @@ namespace commands {
 					auto& track = session.tracks.at(track_index);
 					if (disc::is_data_track(track.type)) {
 						auto user_data_size = disc::get_user_data_length(track.type);
-						if (user_data_size != 2048) {
-							OVERDRIVE_THROW(exceptions::InvalidValueException("user data size", user_data_size, 2048, 2048));
+						if (user_data_size != iso9660::USER_DATA_SIZE) {
+							OVERDRIVE_THROW(exceptions::InvalidValueException("user data size", user_data_size, iso9660::USER_DATA_SIZE, iso9660::USER_DATA_SIZE));
 						}
 					} else {
 						OVERDRIVE_THROW(exceptions::ExpectedDataTrackException(track.number));

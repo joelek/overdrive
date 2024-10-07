@@ -14,6 +14,7 @@ namespace iso9660 {
 	const auto PRIMARY_VOLUME_DESCRIPTOR_SECTOR = size_t(16);
 	const auto CURRENT_DIRECTORY_IDENTIFIER = std::string("\0", 1);
 	const auto PARENT_DIRECTORY_IDENTIFIER = std::string("\1", 1);
+	const auto USER_DATA_SIZE = size_t(2048);
 
 	#pragma pack(push, 1)
 
