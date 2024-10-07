@@ -38,6 +38,7 @@ namespace disc {
 				fprintf(stderr, "%s\n", std::format("\t\tTrack number: {}", track.number).c_str());
 				fprintf(stderr, "%s\n", std::format("\t\tTrack type: {}", enums::TrackType(track.type)).c_str());
 				fprintf(stderr, "%s\n", std::format("\t\tTrack first sector (absolute): {}", track.first_sector_absolute).c_str());
+				fprintf(stderr, "%s\n", std::format("\t\tTrack last sector (absolute): {}", track.last_sector_absolute).c_str());
 				fprintf(stderr, "%s\n", std::format("\t\tTrack length [sectors]: {}", track.length_sectors).c_str());
 			}
 		}
