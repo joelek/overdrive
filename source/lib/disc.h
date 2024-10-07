@@ -45,6 +45,7 @@ namespace disc {
 		size_t number;
 		TrackType type;
 		size_t first_sector_absolute;
+		size_t last_sector_absolute;
 		size_t length_sectors;
 
 		protected:

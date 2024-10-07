@@ -323,6 +323,7 @@ namespace drive {
 				} else {
 					track.length_sectors = lead_out_first_sector_absolute.value() - track.first_sector_absolute;
 				}
+				track.last_sector_absolute = track.first_sector_absolute + track.length_sectors;
 				session.length_sectors += track.length_sectors;
 			}
 			disc.length_sectors += session.length_sectors;
