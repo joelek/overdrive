@@ -1179,7 +1179,10 @@ auto main(
 		} else if (command == "cue") {
 			commands::cue(arguments);
 		} else if (command == "iso") {
-			commands::iso(arguments, get_handle, pass_through_direct);
+			commands::iso(arguments, {
+				get_handle,
+				pass_through_direct
+			});
 		} else if (command == "mds") {
 			commands::mds(arguments);
 		} else {

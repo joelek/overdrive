@@ -112,13 +112,12 @@ namespace commands {
 
 	auto iso(
 		const std::vector<std::string>& arguments,
-		const std::function<void*(const std::string& drive)>& get_handle,
-		const std::function<byte_t(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)>& ioctl
+		const Detail& detail
 	) -> void {
 		try {
 			auto options = internal::parse_options(arguments);
-			auto handle = get_handle(options.drive);
-			auto drive = drive::create_drive(handle, ioctl);
+			auto handle = detail.get_handle(options.drive);
+			auto drive = drive::create_drive(handle, detail.ioctl);
 			auto drive_info = drive.read_drive_info();
 			drive_info.print();
 			auto disc_info = drive.read_disc_info();
