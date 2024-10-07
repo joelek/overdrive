@@ -174,5 +174,26 @@ namespace iso9660 {
 	) const -> const FileSystemEntry& {
 		return this->root;
 	}
+
+	auto FileSystem::get_path(
+		size_t sector
+	) const -> std::optional<std::vector<std::string>> {
+		auto entry = this->get_entry(sector);
+		if (entry) {
+			auto paths = std::vector<std::string>();
+			auto& entries = this->get_hierarchy(entry.value());
+			for (auto& entry : entries) {
+				if (entry.identifier == CURRENT_DIRECTORY_IDENTIFIER) {
+					continue;
+				}
+				if (entry.identifier == PARENT_DIRECTORY_IDENTIFIER) {
+					continue;
+				}
+				paths.push_back(entry.identifier);
+			}
+			return paths;
+		}
+		return std::optional<std::vector<std::string>>();
+	}
 }
 }

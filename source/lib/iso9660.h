@@ -180,6 +180,10 @@ namespace iso9660 {
 		auto get_root(
 		) const -> const FileSystemEntry&;
 
+		auto get_path(
+			size_t sector
+		) const -> std::optional<std::vector<std::string>>;
+
 		protected:
 
 		FileSystemEntry root;
