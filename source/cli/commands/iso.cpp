@@ -124,14 +124,14 @@ namespace commands {
 			fprintf(stderr, "%s\n", std::format("Extracting {} sectors from {} to {}", track_info.length_sectors, track_info.first_sector_absolute, track_info.last_sector_absolute - 1).c_str());
 			for (auto sector_index = track_info.first_sector_absolute; sector_index < track_info.last_sector_absolute; sector_index += 1) {
 				try {
-					drive.read_sector(sector_index, &sector.sector_data, nullptr, nullptr);
+					drive.read_sector(sector_index, &sector.sector_data, &sector.subchannels_data, &sector.c2_data);
 					// TODO: Write and check for error.
 				} catch (...) {
 					// bad_sector_numbers.push_back(sector_index);
 					fprintf(stderr, "%s\n", std::format("Error reading sector {}!", sector_index).c_str());
 					auto path = fs.get_path(sector_index);
 					if (path) {
-						fprintf(stderr, "%s\n", std::format("Sector belongs to \"{}\"\n", string::join(path.value(), "/")).c_str());
+						fprintf(stderr, "%s\n", std::format("Sector belongs to \"{}\"", string::join(path.value(), "/")).c_str());
 					}
 					// TODO: Write and check for error.
 				}
@@ -161,6 +161,9 @@ namespace commands {
 			fprintf(stderr, "%s\n", std::format("Using path: \"{}\"", path).c_str());
 			// TODO: Split path into directory, filename and extensions and set default.
 			// TODO: Open file.
+			auto error_recovery_mode_page = drive.read_error_recovery_mode_page();
+			error_recovery_mode_page.page.read_retry_count = 8;
+			drive.write_error_recovery_mode_page(error_recovery_mode_page);
 			for (auto session_index = size_t(0); session_index < disc_info.sessions.size(); session_index += 1) {
 				auto& session = disc_info.sessions.at(session_index);
 				for (auto track_index = size_t(0); track_index < session.tracks.size(); track_index += 1) {
