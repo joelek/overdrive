@@ -1,5 +1,6 @@
 #include "iso.h"
 
+#include <cstring>
 #include <filesystem>
 #include <format>
 #include <optional>
@@ -114,12 +115,27 @@ namespace commands {
 			const disc::TrackInfo& track_info
 		) -> void {
 			auto sector = cdb::ReadCDResponseDataA();
+			auto empty_sector = cdb::ReadCDResponseDataA();
 			auto user_data_offset = disc::get_user_data_offset(track_info.type);
 			auto fs = iso9660::FileSystem([&](size_t sector_index, void* user_data) -> void {
 				drive.read_sector(sector_index, &sector.sector_data, nullptr, nullptr);
 				std::memcpy(user_data, sector.sector_data + user_data_offset, iso9660::USER_DATA_SIZE);
 			});
-			// TODO: Loop through sectors and write to file.
+			fprintf(stderr, "%s\n", std::format("Extracting {} sectors from {} to {}", track_info.length_sectors, track_info.first_sector_absolute, track_info.last_sector_absolute - 1).c_str());
+			for (auto sector_index = track_info.first_sector_absolute; sector_index < track_info.last_sector_absolute; sector_index += 1) {
+				try {
+					drive.read_sector(sector_index, &sector.sector_data, nullptr, nullptr);
+					// TODO: Write and check for error.
+				} catch (...) {
+					// bad_sector_numbers.push_back(sector_index);
+					fprintf(stderr, "%s\n", std::format("Error reading sector {}!", sector_index).c_str());
+					auto path = fs.get_path(sector_index);
+					if (path) {
+						fprintf(stderr, "%s\n", std::format("Sector belongs to \"{}\"\n", string::join(path.value(), "/")).c_str());
+					}
+					// TODO: Write and check for error.
+				}
+			}
 		}
 	}
 
