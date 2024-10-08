@@ -4,6 +4,7 @@
 #include <cstring>
 #include <filesystem>
 #include <format>
+#include <map>
 #include <optional>
 #include <regex>
 #include <string>
@@ -187,6 +188,40 @@ namespace commands {
 				}
 			}
 			return bad_sector_indices;
+		}
+
+		auto get_bad_sector_indices_per_path(
+			const drive::Drive& drive,
+			const disc::TrackInfo& track_info,
+			const std::vector<size_t>& bad_sector_indices
+		) -> std::optional<std::map<std::string, std::vector<size_t>>> {
+			try {
+				auto sector = ExtractedSector();
+				auto user_data_offset = disc::get_user_data_offset(track_info.type);
+				auto user_data_length = disc::get_user_data_length(track_info.type);
+				if (user_data_length == iso9660::USER_DATA_SIZE) {
+					auto fs = iso9660::FileSystem([&](size_t sector_index, void* user_data) -> void {
+						drive.read_sector(sector_index, &sector.sector_data, nullptr, nullptr);
+						std::memcpy(user_data, sector.sector_data + user_data_offset, iso9660::USER_DATA_SIZE);
+					});
+					auto bad_sector_indices_per_path = std::map<std::string, std::vector<size_t>>();
+					for (auto bad_sector_index : bad_sector_indices) {
+						auto optional_path = fs.get_path(bad_sector_index);
+						if (optional_path) {
+							auto path = std::string("/") + string::join(optional_path.value(), "/");
+							auto bad_sector_indices = bad_sector_indices_per_path[path];
+							bad_sector_indices.push_back(bad_sector_index);
+						} else {
+							auto bad_sector_indices = bad_sector_indices_per_path[""];
+							bad_sector_indices.push_back(bad_sector_index);
+						}
+					}
+					return bad_sector_indices_per_path;
+				}
+			} catch (const exceptions::SCSIException& e) {
+				fprintf(stderr, "%s\n", std::format("Error reading ISO 9660 file system!").c_str());
+			}
+			return std::optional<std::map<std::string, std::vector<size_t>>>();
 		}
 
 		auto copy_data_track(
