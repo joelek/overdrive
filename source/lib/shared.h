@@ -43,4 +43,4 @@ namespace shared {
 }
 }
 
-#define OVERDRIVE_HEXDUMP(var) fprintf(stderr, "%s\n", overdrive::type::create_hex_dump(reinterpret_cast<const uint8_t*>(&var), sizeof(var)).c_str())
+#define OVERDRIVE_HEXDUMP(var) fprintf(stderr, "%s\n", overdrive::shared::create_hex_dump(reinterpret_cast<const uint8_t*>(&var), sizeof(var)).c_str())
