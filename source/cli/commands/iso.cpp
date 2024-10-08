@@ -224,7 +224,7 @@ namespace commands {
 			return std::optional<std::map<std::string, std::vector<size_t>>>();
 		}
 
-		auto copy_data_track(
+		auto copy_track(
 			const drive::Drive& drive,
 			const disc::TrackInfo& track_info
 		) -> void {
@@ -307,9 +307,7 @@ namespace commands {
 				auto& session = disc_info.sessions.at(session_index);
 				for (auto track_index = size_t(0); track_index < session.tracks.size(); track_index += 1) {
 					auto& track = session.tracks.at(track_index);
-					if (disc::is_data_track(track.type)) {
-						internal::copy_data_track(drive, track);
-					}
+					internal::copy_track(drive, track);
 				}
 			}
 		} catch (const exceptions::ArgumentException& e) {
