@@ -152,21 +152,25 @@ namespace commands {
 		auto get_number_of_identical_copies(
 			std::vector<std::vector<ExtractedSector>>& extracted_sectors_vector
 		) -> size_t {
-			auto counters = std::vector<size_t>();
-			for (auto index = size_t(0); index < extracted_sectors_vector.size(); index += 1) {
-				auto& extracted_sectors = extracted_sectors_vector.at(index);
-				// Sort in decreasing order.
-				std::sort(extracted_sectors.begin(), extracted_sectors.end(), [](const ExtractedSector& one, const ExtractedSector& two) -> bool_t {
-					return two.counter < one.counter;
-				});
-				auto& extracted_sector = extracted_sectors.at(0);
-				counters.resize(std::max(extracted_sector.counter, counters.size()));
-				counters.at(extracted_sector.counter - 1) += 1;
+			auto counters = std::vector<size_t>(1);
+			for (auto sector_index = size_t(0); sector_index < extracted_sectors_vector.size(); sector_index += 1) {
+				auto& extracted_sectors = extracted_sectors_vector.at(sector_index);
+				if (extracted_sectors.size() > 0) {
+					// Sort in decreasing order.
+					std::sort(extracted_sectors.begin(), extracted_sectors.end(), [](const ExtractedSector& one, const ExtractedSector& two) -> bool_t {
+						return two.counter < one.counter;
+					});
+					auto& extracted_sector = extracted_sectors.at(0);
+					counters.resize(std::max(extracted_sector.counter + 1, counters.size()));
+					counters.at(extracted_sector.counter) += 1;
+				} else {
+					counters.at(0) += 1;
+				}
 			}
 			for (auto counter_index = size_t(0); counter_index < counters.size(); counter_index += 1) {
-				auto& counter = counters.at(counter_index);
-				if (counter == extracted_sectors_vector.size()) {
-					return counter_index + 1;
+				auto counter = counters.at(counter_index);
+				if (counter != 0) {
+					return counter_index;
 				}
 			}
 			return 0;
