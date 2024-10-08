@@ -176,6 +176,19 @@ namespace commands {
 			return 0;
 		}
 
+		auto get_bad_sector_indices(
+			const std::vector<std::vector<ExtractedSector>>& extracted_sectors_vector
+		) -> std::vector<size_t> {
+			auto bad_sector_indices = std::vector<size_t>();
+			for (auto sector_index = size_t(0); sector_index < extracted_sectors_vector.size(); sector_index += 1) {
+				auto& extracted_sectors = extracted_sectors_vector.at(sector_index);
+				if (extracted_sectors.size() == 0) {
+					bad_sector_indices.push_back(sector_index);
+				}
+			}
+			return bad_sector_indices;
+		}
+
 		auto copy_data_track(
 			const drive::Drive& drive,
 			const disc::TrackInfo& track_info
