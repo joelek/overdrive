@@ -168,5 +168,13 @@ namespace exceptions {
 
 		protected:
 	};
+
+	class SCSIException: public OverdriveException {
+		public:
+
+		SCSIException();
+
+		protected:
+	};
 }
 }

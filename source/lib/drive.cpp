@@ -127,7 +127,10 @@ namespace drive {
 		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
 		cdb.format = cdb::ReadTOCFormat::NORMAL_TOC;
 		cdb.time = 1;
-		this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+			OVERDRIVE_THROW(exceptions::SCSIException());
+		}
 		return data;
 	}
 
@@ -138,7 +141,10 @@ namespace drive {
 		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
 		cdb.format = cdb::ReadTOCFormat::SESSION_INFO;
 		cdb.time = 1;
-		this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+			OVERDRIVE_THROW(exceptions::SCSIException());
+		}
 		return data;
 	}
 
@@ -149,7 +155,10 @@ namespace drive {
 		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
 		cdb.format = cdb::ReadTOCFormat::FULL_TOC;
 		cdb.time = 1;
-		this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+			OVERDRIVE_THROW(exceptions::SCSIException());
+		}
 		return data;
 	}
 
@@ -160,7 +169,10 @@ namespace drive {
 		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
 		cdb.format = cdb::ReadTOCFormat::PMA;
 		cdb.time = 1;
-		this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+			OVERDRIVE_THROW(exceptions::SCSIException());
+		}
 		return data;
 	}
 
@@ -171,7 +183,10 @@ namespace drive {
 		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
 		cdb.format = cdb::ReadTOCFormat::ATIP;
 		cdb.time = 1;
-		this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+			OVERDRIVE_THROW(exceptions::SCSIException());
+		}
 		return data;
 	}
 
@@ -181,7 +196,10 @@ namespace drive {
 		auto data = cdb::ModeSenseReadWriteErrorRecoveryModePageResponse();
 		cdb.page_code = cdb::SensePage::ReadWriteErrorRecoveryModePage;
 		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
-		this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+			OVERDRIVE_THROW(exceptions::SCSIException());
+		}
 		return data;
 	}
 
@@ -191,7 +209,10 @@ namespace drive {
 		auto cdb = cdb::ModeSelect10();
 		cdb.page_format = 1;
 		cdb.parameter_list_length_be = byteswap::byteswap16(sizeof(data));
-		this->ioctl(handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), true);
+		auto status = this->ioctl(handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), true);
+		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+			OVERDRIVE_THROW(exceptions::SCSIException());
+		}
 	}
 
 	auto Drive::read_capabilites_and_mechanical_status_page(
@@ -200,7 +221,10 @@ namespace drive {
 		auto data = cdb::ModeSenseCapabilitiesAndMechanicalStatusPageResponse();
 		cdb.page_code = cdb::SensePage::CapabilitiesAndMechanicalStatusPage;
 		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
-		this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+			OVERDRIVE_THROW(exceptions::SCSIException());
+		}
 		return data;
 	}
 
@@ -209,7 +233,10 @@ namespace drive {
 		auto cdb = cdb::Inquiry6();
 		auto data = cdb::StandardInquiryResponse();
 		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
-		this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+			OVERDRIVE_THROW(exceptions::SCSIException());
+		}
 		return data;
 	}
 
@@ -237,7 +264,10 @@ namespace drive {
 		cdb.sync = 1;
 		cdb.subchannel_selection_bits = cdb::ReadCD12SubchanelBits::RAW;
 		auto buffer = std::array<byte_t, cdb::READ_CD_LENGTH>();
-		this->ioctl(handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(buffer.data()), sizeof(buffer), false);
+		auto status = this->ioctl(handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(buffer.data()), sizeof(buffer), false);
+		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+			OVERDRIVE_THROW(exceptions::SCSIException());
+		}
 		if (sector_data != nullptr) {
 			std::memcpy(*sector_data, buffer.data() + this->sector_data_offset.value(), sizeof(*sector_data));
 		}

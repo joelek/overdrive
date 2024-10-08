@@ -58,5 +58,8 @@ namespace exceptions {
 
 	ExpectedOpticalDiscException::ExpectedOpticalDiscException(
 	): OverdriveException(std::format("Expected an optical disc!")) {}
+
+	SCSIException::SCSIException(
+	): OverdriveException(std::format("Expected SCSI operation to run successfully!")) {}
 }
 }
