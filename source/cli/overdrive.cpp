@@ -84,11 +84,11 @@ auto pass_through_direct(
 	WINAPI_CHECK_STATUS();
 	if (!outcome) {
 		throw EXIT_FAILURE;
-	}
+	}/*
 	if (sptd_sense.sense[0] == (byte_t)sense::ResponseCodes::FIXED_CURRENT) {
 		auto& sense = *reinterpret_cast<sense::FixedFormat*>(sptd_sense.sense);
 		fprintf(stderr, "[WARNING] Sense info 0x%.1X 0x%.2X 0x%.2X!\n", (unsigned)sense.sense_key, sense.additional_sense_code, sense.additional_sense_code_qualifier);
-	}
+	} */
 	return sptd_sense.sptd.ScsiStatus;
 }
 
