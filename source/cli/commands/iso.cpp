@@ -1,5 +1,6 @@
 #include "iso.h"
 
+#include <algorithm>
 #include <cstring>
 #include <filesystem>
 #include <format>
@@ -15,6 +16,35 @@ namespace commands {
 		std::optional<si_t> read_offset_correction;
 		std::optional<ui_t> tracks;
 		std::string path;
+
+		protected:
+	};
+
+	class ExtractedSector {
+		public:
+
+		byte_t sector_data[cd::SECTOR_LENGTH];
+		byte_t subchannels_data[cd::SUBCHANNELS_LENGTH];
+		byte_t c2_data[cd::C2_LENGTH];
+		size_t counter;
+
+		auto has_identical_sector_data(
+			const ExtractedSector& that
+		) -> bool_t {
+			return std::memcmp(this->sector_data, that.sector_data, sizeof(sector_data)) == 0;
+		}
+
+		auto has_identical_subchannels_data(
+			const ExtractedSector& that
+		) -> bool_t {
+			return std::memcmp(this->subchannels_data, that.subchannels_data, sizeof(subchannels_data)) == 0;
+		}
+
+		auto has_identical_c2_data(
+			const ExtractedSector& that
+		) -> bool_t {
+			return std::memcmp(this->c2_data, that.c2_data, sizeof(c2_data)) == 0;
+		}
 
 		protected:
 	};
@@ -110,32 +140,110 @@ namespace commands {
 			}
 		}
 
+		auto set_read_retry_count(
+			const drive::Drive& drive,
+			size_t max_retry_count
+		) -> void {
+			auto error_recovery_mode_page = drive.read_error_recovery_mode_page();
+			error_recovery_mode_page.page.read_retry_count = max_retry_count;
+			drive.write_error_recovery_mode_page(error_recovery_mode_page);
+		}
+
+		auto get_number_of_identical_copies(
+			std::vector<std::vector<ExtractedSector>>& extracted_sectors_vector
+		) -> size_t {
+			auto counters = std::vector<size_t>();
+			for (auto index = size_t(0); index < extracted_sectors_vector.size(); index += 1) {
+				auto& extracted_sectors = extracted_sectors_vector.at(index);
+				// Sort in decreasing order.
+				std::sort(extracted_sectors.begin(), extracted_sectors.end(), [](const ExtractedSector& one, const ExtractedSector& two) -> bool_t {
+					return two.counter < one.counter;
+				});
+				auto& extracted_sector = extracted_sectors.at(0);
+				counters.resize(std::max(extracted_sector.counter, counters.size()));
+				counters.at(extracted_sector.counter - 1) += 1;
+			}
+			for (auto counter_index = size_t(0); counter_index < counters.size(); counter_index += 1) {
+				auto& counter = counters.at(counter_index);
+				if (counter == extracted_sectors_vector.size()) {
+					return counter_index + 1;
+				}
+			}
+			return 0;
+		}
+
 		auto copy_data_track(
 			const drive::Drive& drive,
 			const disc::TrackInfo& track_info
 		) -> void {
-			auto sector = cdb::ReadCDResponseDataA();
-			auto empty_sector = cdb::ReadCDResponseDataA();
+			auto max_retry_count = size_t(8);
+			auto max_pass_count = size_t(2);
+			auto max_identical_copies = size_t(1);
+			auto read_offset_correction_bytes = si_t(0);
+			fprintf(stderr, "%s\n", std::format("Extracting track number {} containing {} sectors from {} (inclusive) to {} (exlusive)", track_info.number, track_info.length_sectors, track_info.first_sector_absolute, track_info.last_sector_absolute).c_str());
+			set_read_retry_count(drive, max_retry_count);
+			auto start_offset_bytes = si_t(track_info.first_sector_absolute * cd::SECTOR_LENGTH) + read_offset_correction_bytes;
+			auto end_offset_bytes = si_t(track_info.last_sector_absolute * cd::SECTOR_LENGTH) + read_offset_correction_bytes;
+			auto adjusted_first_sector = idiv::floor(start_offset_bytes, cd::SECTOR_LENGTH);
+			auto adjusted_last_sector = idiv::ceil(end_offset_bytes, cd::SECTOR_LENGTH);
+			auto adjusted_length_sectors = adjusted_last_sector - adjusted_first_sector;
+			auto extracted_sectors_vector = std::vector<std::vector<ExtractedSector>>(adjusted_length_sectors);
+			for (auto pass_index = size_t(0); pass_index < max_pass_count; pass_index += 1) {
+				fprintf(stderr, "%s\n", std::format("Running pass {}", pass_index).c_str());
+				for (auto sector_index = adjusted_first_sector; sector_index < adjusted_last_sector; sector_index += 1) {
+					try {
+						auto sector = ExtractedSector();
+						drive.read_sector(sector_index - 150, &sector.sector_data, &sector.subchannels_data, &sector.c2_data);
+						auto& extracted_sectors = extracted_sectors_vector.at(sector_index - adjusted_first_sector);
+						auto found = false;
+						for (auto& extracted_sector : extracted_sectors) {
+							if (extracted_sector.has_identical_sector_data(sector)) {
+								found = true;
+								extracted_sector.counter += 1;
+								break;
+							}
+						}
+						if (!found) {
+							sector.counter = 1;
+							extracted_sectors.push_back(std::move(sector));
+						}
+					} catch (const exceptions::SCSIException& e) {
+						fprintf(stderr, "%s\n", std::format("Error reading sector {}!", sector_index).c_str());
+					}
+				}
+				auto number_of_identical_copies = get_number_of_identical_copies(extracted_sectors_vector);
+				if (number_of_identical_copies >= max_identical_copies) {
+					fprintf(stderr, "%s\n", std::format("Got {} identical copies", number_of_identical_copies).c_str());
+					break;
+				}
+			}
+
+
+
+
+
+/*
+
+			auto track_data_start_offset = read_offset_correction_bytes - ((adjusted_first_sector - track_info.first_sector_absolute) * cd::SECTOR_LENGTH);
+			fprintf(stderr, "%s\n", std::format("The first {} bytes will be discarded", track_data_start_offset).c_str());
+
+
+ */
+
+/*
+
 			auto user_data_offset = disc::get_user_data_offset(track_info.type);
+			auto bad_sector_indices = std::vector<size_t>();
 			auto fs = iso9660::FileSystem([&](size_t sector_index, void* user_data) -> void {
 				drive.read_sector(sector_index, &sector.sector_data, nullptr, nullptr);
 				std::memcpy(user_data, sector.sector_data + user_data_offset, iso9660::USER_DATA_SIZE);
-			});
-			fprintf(stderr, "%s\n", std::format("Extracting {} sectors from {} to {}", track_info.length_sectors, track_info.first_sector_absolute, track_info.last_sector_absolute - 1).c_str());
-			for (auto sector_index = track_info.first_sector_absolute; sector_index < track_info.last_sector_absolute; sector_index += 1) {
-				try {
-					drive.read_sector(sector_index, &sector.sector_data, &sector.subchannels_data, &sector.c2_data);
-					// TODO: Write and check for error.
-				} catch (...) {
-					// bad_sector_numbers.push_back(sector_index);
-					fprintf(stderr, "%s\n", std::format("Error reading sector {}!", sector_index).c_str());
-					auto path = fs.get_path(sector_index);
+			}); */
+/* 					auto path = fs.get_path(sector_index);
 					if (path) {
 						fprintf(stderr, "%s\n", std::format("Sector belongs to \"{}\"", string::join(path.value(), "/")).c_str());
-					}
-					// TODO: Write and check for error.
-				}
-			}
+					} */
+
+
 		}
 	}
 
@@ -161,9 +269,6 @@ namespace commands {
 			fprintf(stderr, "%s\n", std::format("Using path: \"{}\"", path).c_str());
 			// TODO: Split path into directory, filename and extensions and set default.
 			// TODO: Open file.
-			auto error_recovery_mode_page = drive.read_error_recovery_mode_page();
-			error_recovery_mode_page.page.read_retry_count = 8;
-			drive.write_error_recovery_mode_page(error_recovery_mode_page);
 			for (auto session_index = size_t(0); session_index < disc_info.sessions.size(); session_index += 1) {
 				auto& session = disc_info.sessions.at(session_index);
 				for (auto track_index = size_t(0); track_index < session.tracks.size(); track_index += 1) {
