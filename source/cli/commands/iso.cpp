@@ -7,6 +7,7 @@
 #include <map>
 #include <optional>
 #include <regex>
+#include <set>
 #include <string>
 
 namespace commands {
@@ -15,7 +16,7 @@ namespace commands {
 
 		std::string drive;
 		std::optional<si_t> read_offset_correction;
-		std::optional<ui_t> tracks;
+		std::optional<std::set<size_t>> track_numbers;
 		std::string path;
 
 		protected:
@@ -56,7 +57,7 @@ namespace commands {
 		) -> ISOOptions {
 			auto drive = std::optional<std::string>();
 			auto read_offset_correction = std::optional<si_t>();
-			auto tracks = std::optional<ui_t>();
+			auto track_numbers = std::optional<std::set<size_t>>();
 			auto path = std::string("image.iso");
 			for (auto argument_index = size_t(2); argument_index < arguments.size(); argument_index += 1) {
 				auto& argument = arguments[argument_index];
@@ -81,15 +82,18 @@ namespace commands {
 					} else {
 						OVERDRIVE_THROW(exceptions::BadArgumentException("read-offset-correction", format));
 					}
-				} else if (argument.find("--tracks=") == 0) {
-					auto value = argument.substr(sizeof("--tracks=") - 1);
-					auto format = std::string("^([1-9]|[1-9][0-9])$");
+				} else if (argument.find("--track-numbers=") == 0) {
+					auto value = argument.substr(sizeof("--track-numbers=") - 1);
+					auto format = std::string("^([1-9]|[1-9][0-9])(?:[,]([1-9]|[1-9][0-9]))*$");
 					auto matches = std::vector<std::string>();
 					if (false) {
 					} else if (string::match(value, matches, std::regex(format))) {
-						tracks = std::atoi(matches[0].c_str());
+						track_numbers = std::set<size_t>();
+						for (auto& match : matches) {
+							track_numbers->insert(std::atoi(match.c_str()));
+						}
 					} else {
-						OVERDRIVE_THROW(exceptions::BadArgumentException("tracks", format));
+						OVERDRIVE_THROW(exceptions::BadArgumentException("track-numbers", format));
 					}
 				} else if (argument.find("--path=") == 0) {
 					auto value = argument.substr(sizeof("--path=") - 1);
@@ -111,24 +115,22 @@ namespace commands {
 			return {
 				drive.value(),
 				read_offset_correction,
-				tracks,
+				track_numbers,
 				path
 			};
 		}
 
 		auto check_disc(
-			const disc::DiscInfo& disc_info
+			const disc::DiscInfo& disc_info,
+			const std::optional<std::set<size_t>>& track_numbers
 		) -> void {
-			if (disc_info.sessions.size() != 1) {
-				OVERDRIVE_THROW(exceptions::InvalidValueException("sessions", disc_info.sessions.size(), 1, 1));
-			}
 			for (auto session_index = size_t(0); session_index < disc_info.sessions.size(); session_index += 1) {
 				auto& session = disc_info.sessions.at(session_index);
-				if (session.tracks.size() != 1) {
-					OVERDRIVE_THROW(exceptions::InvalidValueException("tracks", session.tracks.size(), 1, 1));
-				}
 				for (auto track_index = size_t(0); track_index < session.tracks.size(); track_index += 1) {
 					auto& track = session.tracks.at(track_index);
+					if (track_numbers && !track_numbers->contains(track.number)) {
+						continue;
+					}
 					if (disc::is_data_track(track.type)) {
 						auto user_data_size = disc::get_user_data_length(track.type);
 						if (user_data_size != iso9660::USER_DATA_SIZE) {
@@ -137,8 +139,10 @@ namespace commands {
 					} else {
 						OVERDRIVE_THROW(exceptions::ExpectedDataTrackException(track.number));
 					}
+					return;
 				}
 			}
+			OVERDRIVE_THROW(exceptions::MissingValueException("data track"));
 		}
 
 		auto set_read_retry_count(
@@ -292,17 +296,14 @@ namespace commands {
 			auto drive_info = drive.read_drive_info();
 			drive_info.print();
 			auto disc_info = drive.read_disc_info();
-			if (options.tracks) {
-				disc_info = disc::truncate_disc(disc_info, options.tracks.value());
-			}
 			disc_info.print();
-			internal::check_disc(disc_info);
 			auto read_offset_correction = options.read_offset_correction ? options.read_offset_correction.value() : drive_info.read_offset_correction ? drive_info.read_offset_correction.value() : 0;
 			fprintf(stderr, "%s\n", std::format("Using read offset correction [samples]: {}", read_offset_correction).c_str());
 			auto path = std::filesystem::weakly_canonical(std::filesystem::current_path() / options.path).string();
 			fprintf(stderr, "%s\n", std::format("Using path: \"{}\"", path).c_str());
 			// TODO: Split path into directory, filename and extensions and set default.
 			// TODO: Open file.
+			internal::check_disc(disc_info, options.track_numbers);
 			for (auto session_index = size_t(0); session_index < disc_info.sessions.size(); session_index += 1) {
 				auto& session = disc_info.sessions.at(session_index);
 				for (auto track_index = size_t(0); track_index < session.tracks.size(); track_index += 1) {
