@@ -6,16 +6,12 @@ Utility for interfacing with optical drives. Written for the Windows platform.
 
 * Investigate possibility of disabling read cache.
 	Can be done by issuing normal READ SCSI command.
-* Decide on strategy for storing unreadable sectors.
 * Implement C2-based refinement.
-* Handle read errors during audio track extraction.
-* Add separate retry count for audio tracks.
-* Add ignore read error setting (data tracks only).
-* Prevent reading into end of data tracks when read offset correction is negative.
+* Prevent read offset correction from reading into data tracks.
 * Make utility platform-independent.
 * Add debug logging.
-* Investigate using namespace with constants over enums.
-* Move read offset correction argument from ISO command.
+* Organize main code into subcommands.
+* Add support for injecting files into ISO9660 file systems.
 
 ## Read offset correction
 
