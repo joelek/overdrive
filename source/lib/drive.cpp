@@ -269,12 +269,21 @@ namespace drive {
 			OVERDRIVE_THROW(exceptions::SCSIException());
 		}
 		if (sector_data != nullptr) {
+			if (!this->sector_data_offset) {
+				OVERDRIVE_THROW(exceptions::MissingValueException("sector data offset"));
+			}
 			std::memcpy(*sector_data, buffer.data() + this->sector_data_offset.value(), sizeof(*sector_data));
 		}
 		if (subchannels_data != nullptr) {
+			if (!this->subchannels_data_offset) {
+				OVERDRIVE_THROW(exceptions::MissingValueException("subchannels data offset"));
+			}
 			std::memcpy(*subchannels_data, buffer.data() + this->subchannels_data_offset.value(), sizeof(*subchannels_data));
 		}
 		if (c2_data != nullptr) {
+			if (!this->c2_data_offset) {
+				OVERDRIVE_THROW(exceptions::MissingValueException("c2 data offset"));
+			}
 			std::memcpy(*c2_data, buffer.data() + this->c2_data_offset.value(), sizeof(*c2_data));
 		}
 	}
