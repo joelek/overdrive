@@ -197,7 +197,7 @@ namespace commands {
 		auto copy_track(
 			const drive::Drive& drive,
 			const disc::TrackInfo& track_info
-		) -> void {
+		) -> std::vector<std::vector<ExtractedSector>> {
 			auto max_retry_count = size_t(8);
 			auto max_pass_count = size_t(1);
 			auto acceptable_copy_count = size_t(1);
@@ -239,15 +239,7 @@ namespace commands {
 					break;
 				}
 			}
-			auto bad_sector_indices = get_bad_sector_indices(extracted_sectors_vector);
-			if (disc::is_data_track(track_info.type)) {
-				auto bad_sector_indices_per_path = get_bad_sector_indices_per_path(drive, track_info, bad_sector_indices);
-				if (bad_sector_indices_per_path) {
-					for (auto entry : bad_sector_indices_per_path.value()) {
-						fprintf(stderr, "%s\n", std::format("Path \"{}\" has bad sectors!", entry.first).c_str());
-					}
-				}
-			}
+			return extracted_sectors_vector;
 		}
 	}
 
@@ -280,7 +272,16 @@ namespace commands {
 					if (user_data_size != iso9660::USER_DATA_SIZE) {
 						OVERDRIVE_THROW(exceptions::InvalidValueException("user data size", user_data_size, iso9660::USER_DATA_SIZE, iso9660::USER_DATA_SIZE));
 					}
-					internal::copy_track(drive, track);
+					auto extracted_sectors_vector = internal::copy_track(drive, track);
+					auto bad_sector_indices = internal::get_bad_sector_indices(extracted_sectors_vector);
+					auto bad_sector_indices_per_path = internal::get_bad_sector_indices_per_path(drive, track, bad_sector_indices);
+					if (bad_sector_indices_per_path) {
+						for (auto entry : bad_sector_indices_per_path.value()) {
+							fprintf(stderr, "%s\n", std::format("File at path \"{}\" contains {} bad sectors!", entry.first, entry.second.size()).c_str());
+						}
+					} else {
+						fprintf(stderr, "%s\n", std::format("Track {} contains {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
+					}
 				} else {
 					OVERDRIVE_THROW(exceptions::ExpectedDataTrackException(track.number));
 				}
