@@ -25,7 +25,7 @@ namespace string {
 		matches.clear();
 		auto smatch = std::smatch();
 		if (std::regex_search(string, smatch, regex)) {
-			for (auto match_index = size_t(0); match_index < smatch.size(); match_index += 1) {
+			for (auto match_index = size_t(1); match_index < smatch.size(); match_index += 1) {
 				matches.push_back(smatch[match_index]);
 			}
 			return true;

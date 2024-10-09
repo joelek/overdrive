@@ -67,7 +67,7 @@ namespace commands {
 					auto matches = std::vector<std::string>();
 					if (false) {
 					} else if (string::match(value, matches, std::regex(format))) {
-						drive = matches[1];
+						drive = matches[0];
 					} else {
 						OVERDRIVE_THROW(exceptions::BadArgumentException("drive", format));
 					}
@@ -77,7 +77,7 @@ namespace commands {
 					auto matches = std::vector<std::string>();
 					if (false) {
 					} else if (string::match(value, matches, std::regex(format))) {
-						read_offset_correction = std::atoi(matches[1].c_str());
+						read_offset_correction = std::atoi(matches[0].c_str());
 					} else {
 						OVERDRIVE_THROW(exceptions::BadArgumentException("read-offset-correction", format));
 					}
@@ -87,7 +87,7 @@ namespace commands {
 					auto matches = std::vector<std::string>();
 					if (false) {
 					} else if (string::match(value, matches, std::regex(format))) {
-						tracks = std::atoi(matches[1].c_str());
+						tracks = std::atoi(matches[0].c_str());
 					} else {
 						OVERDRIVE_THROW(exceptions::BadArgumentException("tracks", format));
 					}
@@ -97,7 +97,7 @@ namespace commands {
 					auto matches = std::vector<std::string>();
 					if (false) {
 					} else if (string::match(value, matches, std::regex(format))) {
-						path = matches[1];
+						path = matches[0];
 					} else {
 						OVERDRIVE_THROW(exceptions::BadArgumentException("path", format));
 					}
