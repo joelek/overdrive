@@ -233,7 +233,7 @@ namespace commands {
 			const disc::TrackInfo& track_info
 		) -> void {
 			auto max_retry_count = size_t(8);
-			auto max_pass_count = size_t(2);
+			auto max_pass_count = size_t(1);
 			auto acceptable_copy_count = size_t(1);
 			auto read_offset_correction_bytes = si_t(0);
 			fprintf(stderr, "%s\n", std::format("Extracting track number {} containing {} sectors from {} to {}", track_info.number, track_info.length_sectors, track_info.first_sector_relative, track_info.last_sector_relative).c_str());
@@ -303,12 +303,20 @@ namespace commands {
 			fprintf(stderr, "%s\n", std::format("Using path: \"{}\"", path).c_str());
 			// TODO: Split path into directory, filename and extensions and set default.
 			// TODO: Open file.
-			internal::check_disc(disc_info, options.track_numbers);
-			for (auto session_index = size_t(0); session_index < disc_info.sessions.size(); session_index += 1) {
-				auto& session = disc_info.sessions.at(session_index);
-				for (auto track_index = size_t(0); track_index < session.tracks.size(); track_index += 1) {
-					auto& track = session.tracks.at(track_index);
+			auto disc_tracks = disc::get_disc_tracks(disc_info, options.track_numbers);
+			if (disc_tracks.size() == 0) {
+				throw exceptions::MissingValueException("disc tracks");
+			}
+			for (auto track_index = size_t(0); track_index < disc_tracks.size(); track_index += 1) {
+				auto& track = disc_tracks.at(track_index);
+				if (disc::is_data_track(track.type)) {
+					auto user_data_size = disc::get_user_data_length(track.type);
+					if (user_data_size != iso9660::USER_DATA_SIZE) {
+						OVERDRIVE_THROW(exceptions::InvalidValueException("user data size", user_data_size, iso9660::USER_DATA_SIZE, iso9660::USER_DATA_SIZE));
+					}
 					internal::copy_track(drive, track);
+				} else {
+					OVERDRIVE_THROW(exceptions::ExpectedDataTrackException(track.number));
 				}
 			}
 		} catch (const exceptions::ArgumentException& e) {
