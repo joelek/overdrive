@@ -120,31 +120,6 @@ namespace commands {
 			};
 		}
 
-		auto check_disc(
-			const disc::DiscInfo& disc_info,
-			const std::optional<std::set<size_t>>& track_numbers
-		) -> void {
-			for (auto session_index = size_t(0); session_index < disc_info.sessions.size(); session_index += 1) {
-				auto& session = disc_info.sessions.at(session_index);
-				for (auto track_index = size_t(0); track_index < session.tracks.size(); track_index += 1) {
-					auto& track = session.tracks.at(track_index);
-					if (track_numbers && !track_numbers->contains(track.number)) {
-						continue;
-					}
-					if (disc::is_data_track(track.type)) {
-						auto user_data_size = disc::get_user_data_length(track.type);
-						if (user_data_size != iso9660::USER_DATA_SIZE) {
-							OVERDRIVE_THROW(exceptions::InvalidValueException("user data size", user_data_size, iso9660::USER_DATA_SIZE, iso9660::USER_DATA_SIZE));
-						}
-					} else {
-						OVERDRIVE_THROW(exceptions::ExpectedDataTrackException(track.number));
-					}
-					return;
-				}
-			}
-			OVERDRIVE_THROW(exceptions::MissingValueException("data track"));
-		}
-
 		auto get_number_of_identical_copies(
 			std::vector<std::vector<ExtractedSector>>& extracted_sectors_vector
 		) -> size_t {
