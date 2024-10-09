@@ -158,5 +158,23 @@ namespace disc {
 		}
 		return disc;
 	}
+
+	auto get_disc_tracks(
+		const DiscInfo& disc_info,
+		const std::optional<std::set<size_t>>& track_numbers
+	) -> std::vector<TrackInfo> {
+		auto tracks = std::vector<TrackInfo>();
+		for (auto session_index = size_t(0); session_index < disc_info.sessions.size(); session_index += 1) {
+			auto& session = disc_info.sessions.at(session_index);
+			for (auto track_index = size_t(0); track_index < session.tracks.size(); track_index += 1) {
+				auto& track = session.tracks.at(track_index);
+				if (track_numbers && !track_numbers->contains(track.number)) {
+					continue;
+				}
+				tracks.push_back(track);
+			}
+		}
+		return tracks;
+	}
 }
 }

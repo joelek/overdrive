@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <set>
 #include <string>
 #include <vector>
 #include "cdb.h"
@@ -96,5 +97,10 @@ namespace disc {
 		DiscInfo disc,
 		size_t tracks
 	) -> DiscInfo;
+
+	auto get_disc_tracks(
+		const DiscInfo& disc_info,
+		const std::optional<std::set<size_t>>& track_numbers
+	) -> std::vector<TrackInfo>;
 }
 }
