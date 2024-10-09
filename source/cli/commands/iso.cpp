@@ -18,6 +18,12 @@ namespace commands {
 		std::optional<si_t> read_offset_correction;
 		std::optional<std::set<size_t>> track_numbers;
 		std::optional<std::string> path;
+		std::optional<size_t> data_max_pass_count;
+		std::optional<size_t> data_max_retry_count;
+		std::optional<size_t> data_min_identical_copy_count;
+		std::optional<size_t> audio_max_pass_count;
+		std::optional<size_t> audio_max_retry_count;
+		std::optional<size_t> audio_min_identical_copy_count;
 
 		protected:
 	};
@@ -59,6 +65,12 @@ namespace commands {
 			auto read_offset_correction = std::optional<si_t>();
 			auto track_numbers = std::optional<std::set<size_t>>();
 			auto path = std::optional<std::string>();
+			auto data_max_pass_count = std::optional<si_t>();
+			auto data_max_retry_count = std::optional<si_t>();
+			auto data_min_identical_copy_count = std::optional<si_t>();
+			auto audio_max_pass_count = std::optional<si_t>();
+			auto audio_max_retry_count = std::optional<si_t>();
+			auto audio_min_identical_copy_count = std::optional<si_t>();
 			for (auto argument_index = size_t(2); argument_index < arguments.size(); argument_index += 1) {
 				auto& argument = arguments[argument_index];
 				if (false) {
@@ -105,6 +117,66 @@ namespace commands {
 					} else {
 						OVERDRIVE_THROW(exceptions::BadArgumentException("path", format));
 					}
+				} else if (argument.find("--data-max-pass-count=") == 0) {
+					auto value = argument.substr(sizeof("--data-max-pass-count=") - 1);
+					auto format = std::string("^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$");
+					auto matches = std::vector<std::string>();
+					if (false) {
+					} else if (string::match(value, matches, std::regex(format))) {
+						data_max_pass_count = std::atoi(matches[0].c_str());
+					} else {
+						OVERDRIVE_THROW(exceptions::BadArgumentException("data-max-pass-count", format));
+					}
+				} else if (argument.find("--data-max-retry-count=") == 0) {
+					auto value = argument.substr(sizeof("--data-max-retry-count=") - 1);
+					auto format = std::string("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$");
+					auto matches = std::vector<std::string>();
+					if (false) {
+					} else if (string::match(value, matches, std::regex(format))) {
+						data_max_retry_count = std::atoi(matches[0].c_str());
+					} else {
+						OVERDRIVE_THROW(exceptions::BadArgumentException("data-max-retry-count", format));
+					}
+				} else if (argument.find("--data-min-identical-copy-count=") == 0) {
+					auto value = argument.substr(sizeof("--data-min-identical-copy-count=") - 1);
+					auto format = std::string("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$");
+					auto matches = std::vector<std::string>();
+					if (false) {
+					} else if (string::match(value, matches, std::regex(format))) {
+						data_min_identical_copy_count = std::atoi(matches[0].c_str());
+					} else {
+						OVERDRIVE_THROW(exceptions::BadArgumentException("data-min-identical-copy-count", format));
+					}
+				} else if (argument.find("--audio-max-pass-count=") == 0) {
+					auto value = argument.substr(sizeof("--audio-max-pass-count=") - 1);
+					auto format = std::string("^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$");
+					auto matches = std::vector<std::string>();
+					if (false) {
+					} else if (string::match(value, matches, std::regex(format))) {
+						audio_max_pass_count = std::atoi(matches[0].c_str());
+					} else {
+						OVERDRIVE_THROW(exceptions::BadArgumentException("audio-max-pass-count", format));
+					}
+				} else if (argument.find("--audio-max-retry-count=") == 0) {
+					auto value = argument.substr(sizeof("--audio-max-retry-count=") - 1);
+					auto format = std::string("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$");
+					auto matches = std::vector<std::string>();
+					if (false) {
+					} else if (string::match(value, matches, std::regex(format))) {
+						audio_max_retry_count = std::atoi(matches[0].c_str());
+					} else {
+						OVERDRIVE_THROW(exceptions::BadArgumentException("audio-max-retry-count", format));
+					}
+				} else if (argument.find("--audio-min-identical-copy-count=") == 0) {
+					auto value = argument.substr(sizeof("--audio-min-identical-copy-count=") - 1);
+					auto format = std::string("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$");
+					auto matches = std::vector<std::string>();
+					if (false) {
+					} else if (string::match(value, matches, std::regex(format))) {
+						audio_min_identical_copy_count = std::atoi(matches[0].c_str());
+					} else {
+						OVERDRIVE_THROW(exceptions::BadArgumentException("audio-min-identical-copy-count", format));
+					}
 				} else {
 					OVERDRIVE_THROW(exceptions::UnknownArgumentException(argument));
 				}
@@ -116,7 +188,13 @@ namespace commands {
 				drive.value(),
 				read_offset_correction,
 				track_numbers,
-				path
+				path,
+				data_max_pass_count,
+				data_max_retry_count,
+				data_min_identical_copy_count,
+				audio_max_pass_count,
+				audio_max_retry_count,
+				audio_min_identical_copy_count
 			};
 		}
 
@@ -255,12 +333,6 @@ namespace commands {
 		const Detail& detail
 	) -> void {
 		try {
-			auto max_retry_count_data = size_t(16);
-			auto max_pass_count_data = size_t(1);
-			auto min_identical_copy_count_data = size_t(1);
-			auto max_retry_count_audio = size_t(255);
-			auto max_pass_count_audio = size_t(8);
-			auto min_identical_copy_count_audio = size_t(2);
 			auto options = internal::parse_options(arguments);
 			auto handle = detail.get_handle(options.drive);
 			auto drive = drive::create_drive(handle, detail.ioctl);
@@ -284,7 +356,14 @@ namespace commands {
 					if (user_data_size != iso9660::USER_DATA_SIZE) {
 						OVERDRIVE_THROW(exceptions::InvalidValueException("user data size", user_data_size, iso9660::USER_DATA_SIZE, iso9660::USER_DATA_SIZE));
 					}
-					auto extracted_sectors_vector = internal::copy_track(drive, track.first_sector_relative, track.last_sector_relative, max_pass_count_data, max_retry_count_data, min_identical_copy_count_data);
+					auto extracted_sectors_vector = internal::copy_track(
+						drive,
+						track.first_sector_relative,
+						track.last_sector_relative,
+						options.data_max_pass_count.value_or(4),
+						options.data_max_retry_count.value_or(16),
+						options.data_min_identical_copy_count.value_or(1)
+					);
 					auto bad_sector_indices = internal::get_bad_sector_indices(extracted_sectors_vector);
 					auto bad_sector_indices_per_path = internal::get_bad_sector_indices_per_path(drive, track, bad_sector_indices);
 					if (bad_sector_indices_per_path) {
@@ -301,7 +380,14 @@ namespace commands {
 					auto first_sector = idiv::floor(start_offset_bytes, cd::SECTOR_LENGTH);
 					auto last_sector = idiv::ceil(end_offset_bytes, cd::SECTOR_LENGTH);
 					// TODO: Adjust first_sector and last_sector so that they never overlap with data tracks.
-					auto extracted_sectors_vector = internal::copy_track(drive, first_sector, last_sector, max_pass_count_audio, max_retry_count_audio, min_identical_copy_count_audio);
+					auto extracted_sectors_vector = internal::copy_track(
+						drive,
+						first_sector,
+						last_sector,
+						options.audio_max_pass_count.value_or(8),
+						options.audio_max_retry_count.value_or(255),
+						options.audio_min_identical_copy_count.value_or(2)
+					);
 					auto bad_sector_indices = internal::get_bad_sector_indices(extracted_sectors_vector);
 					fprintf(stderr, "%s\n", std::format("Track {} contains {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
 					if (read_offset_correction_bytes != 0) {
