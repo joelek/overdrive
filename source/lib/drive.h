@@ -83,6 +83,10 @@ namespace drive {
 		auto read_disc_info(
 		) const -> disc::DiscInfo;
 
+		auto set_read_retry_count(
+			size_t max_retry_count
+		) const -> void;
+
 		protected:
 
 		void* handle;

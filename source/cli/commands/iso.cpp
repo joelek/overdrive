@@ -145,15 +145,6 @@ namespace commands {
 			OVERDRIVE_THROW(exceptions::MissingValueException("data track"));
 		}
 
-		auto set_read_retry_count(
-			const drive::Drive& drive,
-			size_t max_retry_count
-		) -> void {
-			auto error_recovery_mode_page = drive.read_error_recovery_mode_page();
-			error_recovery_mode_page.page.read_retry_count = max_retry_count;
-			drive.write_error_recovery_mode_page(error_recovery_mode_page);
-		}
-
 		auto get_number_of_identical_copies(
 			std::vector<std::vector<ExtractedSector>>& extracted_sectors_vector
 		) -> size_t {
@@ -237,7 +228,7 @@ namespace commands {
 			auto acceptable_copy_count = size_t(1);
 			auto read_offset_correction_bytes = si_t(0);
 			fprintf(stderr, "%s\n", std::format("Extracting track number {} containing {} sectors from {} to {}", track_info.number, track_info.length_sectors, track_info.first_sector_relative, track_info.last_sector_relative).c_str());
-			set_read_retry_count(drive, max_retry_count);
+			drive.set_read_retry_count(max_retry_count);
 			auto start_offset_bytes = si_t(track_info.first_sector_relative * cd::SECTOR_LENGTH) + read_offset_correction_bytes;
 			auto end_offset_bytes = si_t(track_info.last_sector_relative * cd::SECTOR_LENGTH) + read_offset_correction_bytes;
 			auto adjusted_first_sector = idiv::floor(start_offset_bytes, cd::SECTOR_LENGTH);

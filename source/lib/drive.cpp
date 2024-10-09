@@ -363,6 +363,14 @@ namespace drive {
 		return disc;
 	}
 
+	auto Drive::set_read_retry_count(
+		size_t max_retry_count
+	) const -> void {
+		auto error_recovery_mode_page = this->read_error_recovery_mode_page();
+		error_recovery_mode_page.page.read_retry_count = max_retry_count;
+		this->write_error_recovery_mode_page(error_recovery_mode_page);
+	}
+
 	auto create_drive(
 		void* handle,
 		const std::function<byte_t(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)>& ioctl
