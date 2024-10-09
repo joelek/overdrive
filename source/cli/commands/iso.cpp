@@ -179,10 +179,10 @@ namespace commands {
 						auto optional_path = fs.get_path(bad_sector_index);
 						if (optional_path) {
 							auto path = std::string("/") + string::join(optional_path.value(), "/");
-							auto bad_sector_indices = bad_sector_indices_per_path[path];
+							auto& bad_sector_indices = bad_sector_indices_per_path[path];
 							bad_sector_indices.push_back(bad_sector_index);
 						} else {
-							auto bad_sector_indices = bad_sector_indices_per_path[""];
+							auto& bad_sector_indices = bad_sector_indices_per_path[""];
 							bad_sector_indices.push_back(bad_sector_index);
 						}
 					}
