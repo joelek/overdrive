@@ -19,4 +19,5 @@
 #include "sense.h"
 #include "shared.h"
 #include "string.h"
+#include "vector.h"
 #include "wav.h"
