@@ -270,8 +270,8 @@ namespace commands {
 			// TODO: Split path into directory, filename and extensions and set default.
 			// TODO: Open file.
 			auto disc_tracks = disc::get_disc_tracks(disc_info, options.track_numbers);
-			if (disc_tracks.size() == 0) {
-				throw exceptions::MissingValueException("disc tracks");
+			if (disc_tracks.size() != 1) {
+				OVERDRIVE_THROW(exceptions::InvalidValueException("track count", disc_tracks.size(), 1, 1));
 			}
 			for (auto track_index = size_t(0); track_index < disc_tracks.size(); track_index += 1) {
 				auto& track = disc_tracks.at(track_index);
