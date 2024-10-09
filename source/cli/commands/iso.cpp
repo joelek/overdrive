@@ -17,7 +17,7 @@ namespace commands {
 		std::string drive;
 		std::optional<si_t> read_offset_correction;
 		std::optional<std::set<size_t>> track_numbers;
-		std::string path;
+		std::optional<std::string> path;
 
 		protected:
 	};
@@ -58,7 +58,7 @@ namespace commands {
 			auto drive = std::optional<std::string>();
 			auto read_offset_correction = std::optional<si_t>();
 			auto track_numbers = std::optional<std::set<size_t>>();
-			auto path = std::string("image.iso");
+			auto path = std::optional<std::string>();
 			for (auto argument_index = size_t(2); argument_index < arguments.size(); argument_index += 1) {
 				auto& argument = arguments[argument_index];
 				if (false) {
@@ -118,6 +118,18 @@ namespace commands {
 				track_numbers,
 				path
 			};
+		}
+
+		auto get_absolute_path_with_extension(
+			const std::optional<std::string>& path,
+			const std::string& extension = ""
+		) -> std::string {
+			auto fspath = std::filesystem::path(path.value_or(""));
+			if (!fspath.has_stem() || fspath.stem().string().starts_with(".")) {
+				fspath.replace_filename("image");
+			}
+			fspath.replace_extension(extension);
+			return std::filesystem::weakly_canonical(std::filesystem::current_path() / fspath).string();
 		}
 
 		auto get_number_of_identical_copies(
@@ -257,10 +269,8 @@ namespace commands {
 			disc_info.print();
 			auto read_offset_correction = options.read_offset_correction ? options.read_offset_correction.value() : drive_info.read_offset_correction ? drive_info.read_offset_correction.value() : 0;
 			fprintf(stderr, "%s\n", std::format("Using read offset correction [samples]: {}", read_offset_correction).c_str());
-			auto path = std::filesystem::weakly_canonical(std::filesystem::current_path() / options.path).string();
+			auto path = internal::get_absolute_path_with_extension(options.path, ".iso");
 			fprintf(stderr, "%s\n", std::format("Using path: \"{}\"", path).c_str());
-			// TODO: Split path into directory, filename and extensions and set default.
-			// TODO: Open file.
 			auto disc_tracks = disc::get_disc_tracks(disc_info, options.track_numbers);
 			if (disc_tracks.size() != 1) {
 				OVERDRIVE_THROW(exceptions::InvalidValueException("track count", disc_tracks.size(), 1, 1));
@@ -277,7 +287,7 @@ namespace commands {
 					auto bad_sector_indices_per_path = internal::get_bad_sector_indices_per_path(drive, track, bad_sector_indices);
 					if (bad_sector_indices_per_path) {
 						for (auto entry : bad_sector_indices_per_path.value()) {
-							fprintf(stderr, "%s\n", std::format("File at path \"{}\" contains {} bad sectors!", entry.first, entry.second.size()).c_str());
+							fprintf(stderr, "%s\n", std::format("File at path \"{}\" contains {} bad sectors!", std::filesystem::path(entry.first).string(), entry.second.size()).c_str());
 						}
 					} else {
 						fprintf(stderr, "%s\n", std::format("Track {} contains {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
