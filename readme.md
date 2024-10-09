@@ -12,6 +12,7 @@ Utility for interfacing with optical drives. Written for the Windows platform.
 * Add debug logging.
 * Organize main code into subcommands.
 * Add support for injecting files into ISO9660 file systems.
+* Add support for ODI format.
 
 ## Read offset correction
 
