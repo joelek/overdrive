@@ -212,7 +212,7 @@ namespace commands {
 			size_t last_sector,
 			size_t max_pass_count,
 			size_t max_read_retry_count,
-			size_t acceptable_copy_count
+			size_t min_identical_copy_count
 		) -> std::vector<std::vector<ExtractedSector>> {
 			auto length_sectors = last_sector - first_sector;
 			auto extracted_sectors_vector = std::vector<std::vector<ExtractedSector>>(length_sectors);
@@ -242,7 +242,7 @@ namespace commands {
 				}
 				auto number_of_identical_copies = get_number_of_identical_copies(extracted_sectors_vector);
 				fprintf(stderr, "%s\n", std::format("Got {} identical copies", number_of_identical_copies).c_str());
-				if (number_of_identical_copies >= acceptable_copy_count) {
+				if (number_of_identical_copies >= min_identical_copy_count) {
 					break;
 				}
 			}
@@ -257,10 +257,10 @@ namespace commands {
 		try {
 			auto max_retry_count_data = size_t(16);
 			auto max_pass_count_data = size_t(1);
-			auto acceptable_copy_count_data = size_t(1);
+			auto min_identical_copy_count_data = size_t(1);
 			auto max_retry_count_audio = size_t(255);
 			auto max_pass_count_audio = size_t(8);
-			auto acceptable_copy_count_audio = size_t(2);
+			auto min_identical_copy_count_audio = size_t(2);
 			auto options = internal::parse_options(arguments);
 			auto handle = detail.get_handle(options.drive);
 			auto drive = drive::create_drive(handle, detail.ioctl);
@@ -284,7 +284,7 @@ namespace commands {
 					if (user_data_size != iso9660::USER_DATA_SIZE) {
 						OVERDRIVE_THROW(exceptions::InvalidValueException("user data size", user_data_size, iso9660::USER_DATA_SIZE, iso9660::USER_DATA_SIZE));
 					}
-					auto extracted_sectors_vector = internal::copy_track(drive, track.first_sector_relative, track.last_sector_relative, max_pass_count_data, max_retry_count_data, acceptable_copy_count_data);
+					auto extracted_sectors_vector = internal::copy_track(drive, track.first_sector_relative, track.last_sector_relative, max_pass_count_data, max_retry_count_data, min_identical_copy_count_data);
 					auto bad_sector_indices = internal::get_bad_sector_indices(extracted_sectors_vector);
 					auto bad_sector_indices_per_path = internal::get_bad_sector_indices_per_path(drive, track, bad_sector_indices);
 					if (bad_sector_indices_per_path) {
@@ -301,7 +301,9 @@ namespace commands {
 					auto first_sector = idiv::floor(start_offset_bytes, cd::SECTOR_LENGTH);
 					auto last_sector = idiv::ceil(end_offset_bytes, cd::SECTOR_LENGTH);
 					// TODO: Adjust first_sector and last_sector so that they never overlap with data tracks.
-					auto extracted_sectors_vector = internal::copy_track(drive, first_sector, last_sector, max_pass_count_audio, max_retry_count_audio, acceptable_copy_count_audio);
+					auto extracted_sectors_vector = internal::copy_track(drive, first_sector, last_sector, max_pass_count_audio, max_retry_count_audio, min_identical_copy_count_audio);
+					auto bad_sector_indices = internal::get_bad_sector_indices(extracted_sectors_vector);
+					fprintf(stderr, "%s\n", std::format("Track {} contains {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
 					if (read_offset_correction_bytes != 0) {
 						// TODO: Adjust data read.
 					}
