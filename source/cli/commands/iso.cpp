@@ -208,27 +208,22 @@ namespace commands {
 
 		auto copy_track(
 			const drive::Drive& drive,
-			const disc::TrackInfo& track_info
+			size_t first_sector,
+			size_t last_sector,
+			size_t max_pass_count,
+			size_t max_read_retry_count,
+			size_t acceptable_copy_count
 		) -> std::vector<std::vector<ExtractedSector>> {
-			auto max_retry_count = size_t(8);
-			auto max_pass_count = size_t(1);
-			auto acceptable_copy_count = size_t(1);
-			auto read_offset_correction_bytes = si_t(0);
-			fprintf(stderr, "%s\n", std::format("Extracting track number {} containing {} sectors from {} to {}", track_info.number, track_info.length_sectors, track_info.first_sector_relative, track_info.last_sector_relative).c_str());
-			drive.set_read_retry_count(max_retry_count);
-			auto start_offset_bytes = si_t(track_info.first_sector_relative * cd::SECTOR_LENGTH) + read_offset_correction_bytes;
-			auto end_offset_bytes = si_t(track_info.last_sector_relative * cd::SECTOR_LENGTH) + read_offset_correction_bytes;
-			auto adjusted_first_sector = idiv::floor(start_offset_bytes, cd::SECTOR_LENGTH);
-			auto adjusted_last_sector = idiv::ceil(end_offset_bytes, cd::SECTOR_LENGTH);
-			auto adjusted_length_sectors = adjusted_last_sector - adjusted_first_sector;
-			auto extracted_sectors_vector = std::vector<std::vector<ExtractedSector>>(adjusted_length_sectors);
+			auto length_sectors = last_sector - first_sector;
+			auto extracted_sectors_vector = std::vector<std::vector<ExtractedSector>>(length_sectors);
+			drive.set_read_retry_count(max_read_retry_count);
 			for (auto pass_index = size_t(0); pass_index < max_pass_count; pass_index += 1) {
 				fprintf(stderr, "%s\n", std::format("Running pass {}", pass_index).c_str());
-				for (auto sector_index = adjusted_first_sector; sector_index < adjusted_last_sector; sector_index += 1) {
+				for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
 					try {
 						auto sector = ExtractedSector();
 						drive.read_sector(sector_index, &sector.sector_data, &sector.subchannels_data, &sector.c2_data);
-						auto& extracted_sectors = extracted_sectors_vector.at(sector_index - adjusted_first_sector);
+						auto& extracted_sectors = extracted_sectors_vector.at(sector_index - first_sector);
 						auto found = false;
 						for (auto& extracted_sector : extracted_sectors) {
 							if (extracted_sector.has_identical_sector_data(sector)) {
@@ -260,6 +255,12 @@ namespace commands {
 		const Detail& detail
 	) -> void {
 		try {
+			auto max_retry_count_data = size_t(16);
+			auto max_pass_count_data = size_t(1);
+			auto acceptable_copy_count_data = size_t(1);
+			auto max_retry_count_audio = size_t(255);
+			auto max_pass_count_audio = size_t(8);
+			auto acceptable_copy_count_audio = size_t(2);
 			auto options = internal::parse_options(arguments);
 			auto handle = detail.get_handle(options.drive);
 			auto drive = drive::create_drive(handle, detail.ioctl);
@@ -269,20 +270,21 @@ namespace commands {
 			disc_info.print();
 			auto read_offset_correction = options.read_offset_correction ? options.read_offset_correction.value() : drive_info.read_offset_correction ? drive_info.read_offset_correction.value() : 0;
 			fprintf(stderr, "%s\n", std::format("Using read offset correction [samples]: {}", read_offset_correction).c_str());
-			auto path = internal::get_absolute_path_with_extension(options.path, ".iso");
-			fprintf(stderr, "%s\n", std::format("Using path: \"{}\"", path).c_str());
+			auto iso_path = internal::get_absolute_path_with_extension(options.path, ".iso");
+			fprintf(stderr, "%s\n", std::format("Using path: \"{}\"", iso_path).c_str());
 			auto disc_tracks = disc::get_disc_tracks(disc_info, options.track_numbers);
 			if (disc_tracks.size() != 1) {
 				OVERDRIVE_THROW(exceptions::InvalidValueException("track count", disc_tracks.size(), 1, 1));
 			}
 			for (auto track_index = size_t(0); track_index < disc_tracks.size(); track_index += 1) {
 				auto& track = disc_tracks.at(track_index);
+				fprintf(stderr, "%s\n", std::format("Extracting track number {} containing {} sectors from {} to {}", track.number, track.length_sectors, track.first_sector_relative, track.last_sector_relative).c_str());
 				if (disc::is_data_track(track.type)) {
 					auto user_data_size = disc::get_user_data_length(track.type);
 					if (user_data_size != iso9660::USER_DATA_SIZE) {
 						OVERDRIVE_THROW(exceptions::InvalidValueException("user data size", user_data_size, iso9660::USER_DATA_SIZE, iso9660::USER_DATA_SIZE));
 					}
-					auto extracted_sectors_vector = internal::copy_track(drive, track);
+					auto extracted_sectors_vector = internal::copy_track(drive, track.first_sector_relative, track.last_sector_relative, max_pass_count_data, max_retry_count_data, acceptable_copy_count_data);
 					auto bad_sector_indices = internal::get_bad_sector_indices(extracted_sectors_vector);
 					auto bad_sector_indices_per_path = internal::get_bad_sector_indices_per_path(drive, track, bad_sector_indices);
 					if (bad_sector_indices_per_path) {
@@ -293,7 +295,17 @@ namespace commands {
 						fprintf(stderr, "%s\n", std::format("Track {} contains {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
 					}
 				} else {
-					OVERDRIVE_THROW(exceptions::ExpectedDataTrackException(track.number));
+					auto read_offset_correction_bytes = read_offset_correction * si_t(cdda::STEREO_SAMPLE_LENGTH);
+					auto start_offset_bytes = si_t(track.first_sector_relative * cd::SECTOR_LENGTH) + read_offset_correction_bytes;
+					auto end_offset_bytes = si_t(track.last_sector_relative * cd::SECTOR_LENGTH) + read_offset_correction_bytes;
+					auto first_sector = idiv::floor(start_offset_bytes, cd::SECTOR_LENGTH);
+					auto last_sector = idiv::ceil(end_offset_bytes, cd::SECTOR_LENGTH);
+					// TODO: Adjust first_sector and last_sector so that they never overlap with data tracks.
+					auto extracted_sectors_vector = internal::copy_track(drive, first_sector, last_sector, max_pass_count_audio, max_retry_count_audio, acceptable_copy_count_audio);
+					if (read_offset_correction_bytes != 0) {
+						// TODO: Adjust data read.
+					}
+					// OVERDRIVE_THROW(exceptions::ExpectedDataTrackException(track.number));
 				}
 			}
 		} catch (const exceptions::ArgumentException& e) {
