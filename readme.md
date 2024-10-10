@@ -19,6 +19,7 @@ The [AccurateRip drive database](https://www.accuraterip.com/driveoffsets.htm) p
 * Investigate possibility of disabling read cache.
 	Can be done by issuing normal READ SCSI command.
 * Implement C2-based refinement.
+	Transfer block is controlled through ReadWriteErrorRecoveryModePage.
 * Make utility platform-independent.
 * Add debug logging.
 * Organize main code into subcommands.
