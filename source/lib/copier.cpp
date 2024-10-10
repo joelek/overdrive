@@ -69,13 +69,12 @@ namespace copier {
 
 	auto get_bad_sector_indices_per_path(
 		const drive::Drive& drive,
-		const disc::TrackInfo& track_info,
+		size_t user_data_offset,
+		size_t user_data_length,
 		const std::vector<size_t>& bad_sector_indices
 	) -> std::optional<std::map<std::string, std::vector<size_t>>> {
 		try {
 			auto sector = ExtractedSector();
-			auto user_data_offset = disc::get_user_data_offset(track_info.type);
-			auto user_data_length = disc::get_user_data_length(track_info.type);
 			if (user_data_length == iso9660::USER_DATA_SIZE) {
 				auto fs = iso9660::FileSystem([&](size_t sector_index, void* user_data) -> void {
 					drive.read_sector(sector_index, &sector.sector_data, nullptr, nullptr);

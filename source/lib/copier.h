@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 #include "cd.h"
-#include "disc.h"
 #include "drive.h"
 #include "shared.h"
 
@@ -46,7 +45,8 @@ namespace copier {
 
 	auto get_bad_sector_indices_per_path(
 		const drive::Drive& drive,
-		const disc::TrackInfo& track_info,
+		size_t user_data_offset,
+		size_t user_data_length,
 		const std::vector<size_t>& bad_sector_indices
 	) -> std::optional<std::map<std::string, std::vector<size_t>>>;
 

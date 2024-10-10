@@ -1,5 +1,6 @@
 #include "iso.h"
 
+#include <array>
 #include <filesystem>
 #include <format>
 #include <optional>
@@ -323,9 +324,10 @@ namespace commands {
 			auto& track = disc_tracks.at(track_index);
 			fprintf(stderr, "%s\n", std::format("Extracting track number {} containing {} sectors from {} to {}", track.number, track.length_sectors, track.first_sector_relative, track.last_sector_relative).c_str());
 			if (disc::is_data_track(track.type)) {
-				auto user_data_size = disc::get_user_data_length(track.type);
-				if (user_data_size != iso9660::USER_DATA_SIZE) {
-					OVERDRIVE_THROW(exceptions::InvalidValueException("user data size", user_data_size, iso9660::USER_DATA_SIZE, iso9660::USER_DATA_SIZE));
+				auto user_data_offset = disc::get_user_data_offset(track.type);
+				auto user_data_length = disc::get_user_data_length(track.type);
+				if (user_data_length != iso9660::USER_DATA_SIZE) {
+					OVERDRIVE_THROW(exceptions::InvalidValueException("user data length", user_data_length, iso9660::USER_DATA_SIZE, iso9660::USER_DATA_SIZE));
 				}
 				auto extracted_sectors_vector = copier::read_sector_range(
 					drive,
@@ -337,13 +339,36 @@ namespace commands {
 					options.data_max_copies.value_or(1)
 				);
 				auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector);
-				auto bad_sector_indices_per_path = copier::get_bad_sector_indices_per_path(drive, track, bad_sector_indices);
+				auto bad_sector_indices_per_path = copier::get_bad_sector_indices_per_path(drive, user_data_offset, user_data_length, bad_sector_indices);
 				if (bad_sector_indices_per_path) {
 					for (auto entry : bad_sector_indices_per_path.value()) {
 						fprintf(stderr, "%s\n", std::format("File at path \"{}\" contains {} bad sectors!", std::filesystem::path(entry.first).string(), entry.second.size()).c_str());
 					}
 				} else {
 					fprintf(stderr, "%s\n", std::format("Track {} contains {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
+				}
+				auto iso_handle = std::fopen(iso_path.c_str(), "wb+");
+				if (iso_handle == nullptr) {
+					OVERDRIVE_THROW(exceptions::OverdriveException(""));
+				}
+				try {
+					auto empty_sector = std::array<byte_t, iso9660::USER_DATA_SIZE>();
+					for (auto sector_index = size_t(0); sector_index < extracted_sectors_vector.size(); sector_index += 1) {
+						auto& extracted_sectors = extracted_sectors_vector.at(sector_index);
+						if (extracted_sectors.size() > 0) {
+							auto& extracted_sector = extracted_sectors.at(0);
+							if (std::fwrite(extracted_sector.sector_data + user_data_offset, user_data_length, 1, iso_handle) != 1) {
+								OVERDRIVE_THROW(exceptions::OverdriveException(""));
+							}
+						} else {
+							if (std::fwrite(empty_sector.data(), sizeof(empty_sector), 1, iso_handle) != 1) {
+								OVERDRIVE_THROW(exceptions::OverdriveException(""));
+							}
+						}
+					}
+				} catch (...) {
+					std::fclose(iso_handle);
+					throw;
 				}
 			} else {
 				auto read_correction_bytes = read_correction * si_t(cdda::STEREO_SAMPLE_LENGTH);
