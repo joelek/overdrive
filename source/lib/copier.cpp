@@ -107,6 +107,7 @@ namespace copier {
 		size_t min_passes,
 		size_t max_passes,
 		size_t max_read_reties,
+		size_t min_copies,
 		size_t max_copies
 	) -> std::vector<std::vector<ExtractedSector>> {
 		auto length_sectors = last_sector - first_sector;
@@ -140,6 +141,10 @@ namespace copier {
 			if (pass_index >= min_passes && number_of_identical_copies >= max_copies) {
 				break;
 			}
+		}
+		auto number_of_identical_copies = get_number_of_identical_copies(extracted_sectors_vector);
+		if (number_of_identical_copies < min_copies) {
+			OVERDRIVE_THROW(exceptions::InvalidValueException("number of identical copies", number_of_identical_copies, min_copies, max_copies));
 		}
 		return extracted_sectors_vector;
 	}

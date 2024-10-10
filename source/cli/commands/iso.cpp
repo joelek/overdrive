@@ -19,10 +19,12 @@ namespace commands {
 		std::optional<size_t> data_min_passes;
 		std::optional<size_t> data_max_passes;
 		std::optional<size_t> data_max_retries;
+		std::optional<size_t> data_min_copies;
 		std::optional<size_t> data_max_copies;
 		std::optional<size_t> audio_min_passes;
 		std::optional<size_t> audio_max_passes;
 		std::optional<size_t> audio_max_retries;
+		std::optional<size_t> audio_min_copies;
 		std::optional<size_t> audio_max_copies;
 
 		protected:
@@ -107,6 +109,16 @@ namespace commands {
 				}
 			});
 			parsers.push_back(data_max_retries.make_parser());
+			auto data_min_copies = arguments::Argument<size_t>({
+				"data-min-copies",
+				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				false,
+				std::optional<size_t>(),
+				[&](const std::vector<std::string>& matches) -> size_t {
+					return std::atoi(matches.at(0).c_str());
+				}
+			});
+			parsers.push_back(data_min_copies.make_parser());
 			auto data_max_copies = arguments::Argument<size_t>({
 				"data-max-copies",
 				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
@@ -147,6 +159,16 @@ namespace commands {
 				}
 			});
 			parsers.push_back(audio_max_retries.make_parser());
+			auto audio_min_copies = arguments::Argument<size_t>({
+				"audio-min-copies",
+				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				false,
+				std::optional<size_t>(),
+				[&](const std::vector<std::string>& matches) -> size_t {
+					return std::atoi(matches.at(0).c_str());
+				}
+			});
+			parsers.push_back(audio_min_copies.make_parser());
 			auto audio_max_copies = arguments::Argument<size_t>({
 				"audio-max-copies",
 				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
@@ -170,10 +192,12 @@ namespace commands {
 					data_min_passes.value,
 					data_max_passes.value,
 					data_max_retries.value,
+					data_min_copies.value,
 					data_max_copies.value,
 					audio_min_passes.value,
 					audio_max_passes.value,
 					audio_max_retries.value,
+					audio_min_copies.value,
 					audio_max_copies.value
 				};
 			} catch (const exceptions::ArgumentException& e) {
@@ -230,6 +254,7 @@ namespace commands {
 					options.data_min_passes.value_or(1),
 					options.data_max_passes.value_or(4),
 					options.data_max_retries.value_or(16),
+					options.data_min_copies.value_or(1),
 					options.data_max_copies.value_or(1)
 				);
 				auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector);
@@ -278,6 +303,7 @@ namespace commands {
 					options.audio_min_passes.value_or(2),
 					options.audio_max_passes.value_or(8),
 					options.audio_max_retries.value_or(255),
+					options.audio_min_copies.value_or(1),
 					options.audio_max_copies.value_or(2)
 				);
 				auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector);

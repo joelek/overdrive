@@ -57,6 +57,7 @@ namespace copier {
 		size_t min_passes,
 		size_t max_passes,
 		size_t max_read_reties,
+		size_t min_copies,
 		size_t max_copies
 	) -> std::vector<std::vector<ExtractedSector>>;
 }
