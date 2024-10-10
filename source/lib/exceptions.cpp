@@ -61,5 +61,17 @@ namespace exceptions {
 
 	SCSIException::SCSIException(
 	): OverdriveException(std::format("Expected SCSI operation to run successfully!")) {}
+
+	IOException::IOException(
+		const std::string& message
+	): OverdriveException(message) {}
+
+	IOOpenException::IOOpenException(
+		const std::string& path
+	): IOException(std::format("Expected open to succeed for path \"{}\"!", path)) {}
+
+	IOWriteException::IOWriteException(
+		const std::string& path
+	): IOException(std::format("Expected write to succeed for path \"{}\"!", path)) {}
 }
 }

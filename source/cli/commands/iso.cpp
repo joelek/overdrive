@@ -350,7 +350,7 @@ namespace commands {
 				}
 				auto iso_handle = std::fopen(iso_path.c_str(), "wb+");
 				if (iso_handle == nullptr) {
-					OVERDRIVE_THROW(exceptions::OverdriveException(""));
+					OVERDRIVE_THROW(exceptions::IOOpenException(iso_path));
 				}
 				try {
 					auto empty_sector = std::array<byte_t, iso9660::USER_DATA_SIZE>();
@@ -359,11 +359,11 @@ namespace commands {
 						if (extracted_sectors.size() > 0) {
 							auto& extracted_sector = extracted_sectors.at(0);
 							if (std::fwrite(extracted_sector.sector_data + user_data_offset, user_data_length, 1, iso_handle) != 1) {
-								OVERDRIVE_THROW(exceptions::OverdriveException(""));
+								OVERDRIVE_THROW(exceptions::IOWriteException(iso_path));
 							}
 						} else {
 							if (std::fwrite(empty_sector.data(), sizeof(empty_sector), 1, iso_handle) != 1) {
-								OVERDRIVE_THROW(exceptions::OverdriveException(""));
+								OVERDRIVE_THROW(exceptions::IOWriteException(iso_path));
 							}
 						}
 					}

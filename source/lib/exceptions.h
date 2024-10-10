@@ -176,5 +176,35 @@ namespace exceptions {
 
 		protected:
 	};
+
+	class IOException: public OverdriveException {
+		public:
+
+		IOException(
+			const std::string& message
+		);
+
+		protected:
+	};
+
+	class IOOpenException: public IOException {
+		public:
+
+		IOOpenException(
+			const std::string& path
+		);
+
+		protected:
+	};
+
+	class IOWriteException: public IOException {
+		public:
+
+		IOWriteException(
+			const std::string& path
+		);
+
+		protected:
+	};
 }
 }
