@@ -1,6 +1,7 @@
 #include "iso.h"
 
 #include <array>
+#include <cstdio>
 #include <filesystem>
 #include <format>
 #include <optional>
