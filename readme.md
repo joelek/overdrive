@@ -13,7 +13,7 @@ Utility for interfacing with optical drives. Written for the Windows platform.
 * Add support for injecting files into ISO9660 file systems.
 * Add support for ODI format.
 
-## Read offset correction
+## Read correction
 
 Audio tracks on CD-DA and mixed mode CD-ROMs should be extracted using read offset correction. The operation requires knowledge about the `read offset value` of the optical drive used. The value can be either negative or positive where a negative value indicates that the drive in question starts reading audio streams too early. Conversely, a positive value indicates that the drive in question starts reading audio streams too late.
 
