@@ -5,9 +5,7 @@
 #include <regex>
 #include <string>
 #include <vector>
-#include "exceptions.h"
 #include "shared.h"
-#include "string.h"
 
 namespace overdrive {
 namespace arguments {
@@ -16,74 +14,27 @@ namespace arguments {
 	class Parser {
 		public:
 
-		std::function<bool_t(const std::string& key, const std::string& value)> parse_named;
-		std::function<bool_t(size_t& positional_counter, size_t& positional_index, const std::string& argument)> parse_positional;
-
-		protected:
-	};
-
-	template <typename A>
-	class Argument {
-		public:
-
 		std::string key;
 		std::string description;
 		std::regex regex;
 		std::string format;
 		bool_t positional;
-		std::optional<A> value;
-		std::function<A(const std::vector<std::string>& matches)> parser;
-
-		auto make_parser(
-		) -> Parser {
-			return {
-				[&](const std::string& key, const std::string& value) -> bool_t {
-					return this->parse_named(key, value);
-				},
-				[&](size_t& positional_counter, size_t& positional_index, const std::string& argument) -> bool_t {
-					return this->parse_positional(positional_counter, positional_index, argument);
-				}
-			};
-		}
-
-		protected:
+		std::optional<std::string> default_value;
+		bool_t required;
+		std::function<void(const std::vector<std::string>& matches)> parser;
 
 		auto parse_named(
 			const std::string& key,
 			const std::string& value
-		) -> bool_t {
-			if (this->key == key) {
-				auto matches = std::vector<std::string>();
-				if (string::match(value, matches, this->regex)) {
-					this->value = this->parser(matches);
-				} else {
-					OVERDRIVE_THROW(exceptions::BadArgumentException(this->key, this->format));
-				}
-				return true;
-			}
-			return false;
-		}
+		) const -> bool_t;
 
 		auto parse_positional(
 			size_t& positional_counter,
 			size_t& positional_index,
 			const std::string& argument
-		) -> bool_t {
-			if (this->positional) {
-				if (positional_counter == positional_index) {
-					auto matches = std::vector<std::string>();
-					if (string::match(argument, matches, this->format)) {
-						this->value = this->parser(matches);
-					} else {
-						OVERDRIVE_THROW(exceptions::BadArgumentException(this->key, this->format));
-					}
-					positional_index += 1;
-					return true;
-				}
-				positional_counter += 1;
-			}
-			return false;
-		}
+		) const -> bool_t;
+
+		protected:
 	};
 
 	auto parse_options_using_parsers(

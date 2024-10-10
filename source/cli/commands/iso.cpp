@@ -15,18 +15,18 @@ namespace commands {
 
 		std::string drive;
 		std::optional<si_t> read_correction;
-		std::optional<std::set<size_t>> track_numbers;
-		std::optional<std::string> path;
-		std::optional<size_t> data_min_passes;
-		std::optional<size_t> data_max_passes;
-		std::optional<size_t> data_max_retries;
-		std::optional<size_t> data_min_copies;
-		std::optional<size_t> data_max_copies;
-		std::optional<size_t> audio_min_passes;
-		std::optional<size_t> audio_max_passes;
-		std::optional<size_t> audio_max_retries;
-		std::optional<size_t> audio_min_copies;
-		std::optional<size_t> audio_max_copies;
+		std::set<size_t> track_numbers;
+		std::string path;
+		size_t data_min_passes;
+		size_t data_max_passes;
+		size_t data_max_retries;
+		size_t data_min_copies;
+		size_t data_max_copies;
+		size_t audio_min_passes;
+		size_t audio_max_passes;
+		size_t audio_max_retries;
+		size_t audio_min_copies;
+		size_t audio_max_copies;
 
 		protected:
 	};
@@ -35,202 +35,192 @@ namespace commands {
 		auto parse_options(
 			const std::vector<std::string>& arguments
 		) -> ISOOptions {
+			auto options = ISOOptions();
 			auto parsers = std::vector<arguments::Parser>();
-			auto drive = arguments::Argument<std::string>({
+			parsers.push_back(arguments::Parser({
 				"drive",
 				"Specify which drive to read from.",
 				std::regex("^([A-Z])[:]?$"),
 				"string",
 				true,
 				std::optional<std::string>(),
-				[&](const std::vector<std::string>& matches) -> std::string {
-					return matches.at(0);
+				true,
+				[&](const std::vector<std::string>& matches) -> void {
+					options.drive = matches.at(0);
 				}
-			});
-			parsers.push_back(drive.make_parser());
-			auto path = arguments::Argument<std::string>({
+			}));
+			parsers.push_back(arguments::Parser({
 				"path",
 				"Specify which path to write to.",
 				std::regex("^(.+)$"),
 				"string",
 				true,
 				std::optional<std::string>(),
-				[&](const std::vector<std::string>& matches) -> std::string {
-					return matches.at(0);
+				false,
+				[&](const std::vector<std::string>& matches) -> void {
+					options.path = matches.at(0);
 				}
-			});
-			parsers.push_back(path.make_parser());
-			auto read_correction = arguments::Argument<si_t>({
+			}));
+			parsers.push_back(arguments::Parser({
 				"read-correction",
 				"Specify read offset correction in number of samples.",
 				std::regex("^([+-]?(?:[0-9]|[1-9][0-9]+))$"),
 				"integer",
 				false,
-				std::optional<si_t>(),
-				[&](const std::vector<std::string>& matches) -> si_t {
-					return std::atoi(matches.at(0).c_str());
+				std::optional<std::string>(),
+				false,
+				[&](const std::vector<std::string>& matches) -> void {
+					options.read_correction = std::atoi(matches.at(0).c_str());
 				}
-			});
-			parsers.push_back(read_correction.make_parser());
-			auto track_numbers = arguments::Argument<std::set<size_t>>({
+			}));
+			parsers.push_back(arguments::Parser({
 				"track-numbers",
 				"Specify which track numbers to read.",
 				std::regex("^([1-9]|[1-9][0-9])(?:[,]([1-9]|[1-9][0-9]))*$"),
 				"set<integer>",
 				false,
-				std::optional<std::set<size_t>>(),
-				[&](const std::vector<std::string>& matches) -> std::set<size_t> {
+				std::optional<std::string>(),
+				false,
+				[&](const std::vector<std::string>& matches) -> void {
 					auto track_numbers = std::set<size_t>();
 					for (auto& match : matches) {
 						track_numbers.insert(std::atoi(match.c_str()));
 					}
-					return track_numbers;
+					options.track_numbers = track_numbers;
 				}
-			});
-			parsers.push_back(track_numbers.make_parser());
-			auto data_min_passes = arguments::Argument<size_t>({
+			}));
+			parsers.push_back(arguments::Parser({
 				"data-min-passes",
 				"Specify the minimum number of read passes for data tracks.",
 				std::regex("^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 				"integer",
 				false,
-				std::optional<size_t>(),
-				[&](const std::vector<std::string>& matches) -> size_t {
-					return std::atoi(matches.at(0).c_str());
+				std::optional<std::string>("1"),
+				false,
+				[&](const std::vector<std::string>& matches) -> void {
+					options.data_min_passes = std::atoi(matches.at(0).c_str());
 				}
-			});
-			parsers.push_back(data_min_passes.make_parser());
-			auto data_max_passes = arguments::Argument<size_t>({
+			}));
+			parsers.push_back(arguments::Parser({
 				"data-max-passes",
 				"Specify the maximum number of read passes for data tracks.",
 				std::regex("^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 				"integer",
 				false,
-				std::optional<size_t>(),
-				[&](const std::vector<std::string>& matches) -> size_t {
-					return std::atoi(matches.at(0).c_str());
+				std::optional<std::string>("4"),
+				false,
+				[&](const std::vector<std::string>& matches) -> void {
+					options.data_max_passes = std::atoi(matches.at(0).c_str());
 				}
-			});
-			parsers.push_back(data_max_passes.make_parser());
-			auto data_max_retries = arguments::Argument<size_t>({
+			}));
+			parsers.push_back(arguments::Parser({
 				"data-max-retries",
 				"Specify the maximum number of read retires for data tracks.",
 				std::regex("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 				"integer",
 				false,
-				std::optional<size_t>(),
-				[&](const std::vector<std::string>& matches) -> size_t {
-					return std::atoi(matches.at(0).c_str());
+				std::optional<std::string>("16"),
+				false,
+				[&](const std::vector<std::string>& matches) -> void {
+					options.data_max_retries = std::atoi(matches.at(0).c_str());
 				}
-			});
-			parsers.push_back(data_max_retries.make_parser());
-			auto data_min_copies = arguments::Argument<size_t>({
+			}));
+			parsers.push_back(arguments::Parser({
 				"data-min-copies",
 				"Specify the minimum acceptable number of identical copies for data tracks.",
 				std::regex("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 				"integer",
 				false,
-				std::optional<size_t>(),
-				[&](const std::vector<std::string>& matches) -> size_t {
-					return std::atoi(matches.at(0).c_str());
+				std::optional<std::string>("1"),
+				false,
+				[&](const std::vector<std::string>& matches) -> void {
+					options.data_min_copies = std::atoi(matches.at(0).c_str());
 				}
-			});
-			parsers.push_back(data_min_copies.make_parser());
-			auto data_max_copies = arguments::Argument<size_t>({
+			}));
+			parsers.push_back(arguments::Parser({
 				"data-max-copies",
 				"Specify the maximum acceptable number of identical copies for data tracks.",
 				std::regex("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 				"integer",
 				false,
-				std::optional<size_t>(),
-				[&](const std::vector<std::string>& matches) -> size_t {
-					return std::atoi(matches.at(0).c_str());
+				std::optional<std::string>("1"),
+				false,
+				[&](const std::vector<std::string>& matches) -> void {
+					options.data_max_copies = std::atoi(matches.at(0).c_str());
 				}
-			});
-			parsers.push_back(data_max_copies.make_parser());
-			auto audio_min_passes = arguments::Argument<size_t>({
+			}));
+			parsers.push_back(arguments::Parser({
 				"audio-min-passes",
 				"Specify the minimum number of read passes for audio tracks.",
 				std::regex("^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 				"integer",
 				false,
-				std::optional<size_t>(),
-				[&](const std::vector<std::string>& matches) -> size_t {
-					return std::atoi(matches.at(0).c_str());
+				std::optional<std::string>("2"),
+				false,
+				[&](const std::vector<std::string>& matches) -> void {
+					options.audio_min_passes = std::atoi(matches.at(0).c_str());
 				}
-			});
-			parsers.push_back(audio_min_passes.make_parser());
-			auto audio_max_passes = arguments::Argument<size_t>({
+			}));
+			parsers.push_back(arguments::Parser({
 				"audio-max-passes",
 				"Specify the maximum number of read passes for audio tracks.",
 				std::regex("^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 				"integer",
 				false,
-				std::optional<size_t>(),
-				[&](const std::vector<std::string>& matches) -> size_t {
-					return std::atoi(matches.at(0).c_str());
+				std::optional<std::string>("8"),
+				false,
+				[&](const std::vector<std::string>& matches) -> void {
+					options.audio_max_passes = std::atoi(matches.at(0).c_str());
 				}
-			});
-			parsers.push_back(audio_max_passes.make_parser());
-			auto audio_max_retries = arguments::Argument<size_t>({
+			}));
+			parsers.push_back(arguments::Parser({
 				"audio-max-retries",
 				"Specify the maximum number of read retires for audio tracks.",
 				std::regex("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 				"integer",
 				false,
-				std::optional<size_t>(),
-				[&](const std::vector<std::string>& matches) -> size_t {
-					return std::atoi(matches.at(0).c_str());
+				std::optional<std::string>("255"),
+				false,
+				[&](const std::vector<std::string>& matches) -> void {
+					options.audio_max_retries = std::atoi(matches.at(0).c_str());
 				}
-			});
-			parsers.push_back(audio_max_retries.make_parser());
-			auto audio_min_copies = arguments::Argument<size_t>({
+			}));
+			parsers.push_back(arguments::Parser({
 				"audio-min-copies",
 				"Specify the minimum acceptable number of identical copies for audio tracks.",
 				std::regex("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 				"integer",
 				false,
-				std::optional<size_t>(),
-				[&](const std::vector<std::string>& matches) -> size_t {
-					return std::atoi(matches.at(0).c_str());
+				std::optional<std::string>("1"),
+				false,
+				[&](const std::vector<std::string>& matches) -> void {
+					options.audio_min_copies = std::atoi(matches.at(0).c_str());
 				}
-			});
-			parsers.push_back(audio_min_copies.make_parser());
-			auto audio_max_copies = arguments::Argument<size_t>({
+			}));
+			parsers.push_back(arguments::Parser({
 				"audio-max-copies",
 				"Specify the maximum acceptable number of identical copies for audio tracks.",
 				std::regex("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 				"integer",
 				false,
-				std::optional<size_t>(),
-				[&](const std::vector<std::string>& matches) -> size_t {
-					return std::atoi(matches.at(0).c_str());
+				std::optional<std::string>("2"),
+				false,
+				[&](const std::vector<std::string>& matches) -> void {
+					options.audio_max_copies = std::atoi(matches.at(0).c_str());
 				}
-			});
-			parsers.push_back(audio_max_copies.make_parser());
+			}));
 			try {
-				parse_options_using_parsers(arguments, parsers);
-				if (!drive.value) {
-					OVERDRIVE_THROW(exceptions::MissingArgumentException("drive"));
-				}
-				return {
-					drive.value.value(),
-					read_correction.value,
-					track_numbers.value,
-					path.value,
-					data_min_passes.value,
-					data_max_passes.value,
-					data_max_retries.value,
-					data_min_copies.value,
-					data_max_copies.value,
-					audio_min_passes.value,
-					audio_max_passes.value,
-					audio_max_retries.value,
-					audio_min_copies.value,
-					audio_max_copies.value
-				};
+				arguments::parse_options_using_parsers(arguments, parsers);
+				return options;
 			} catch (const exceptions::ArgumentException& e) {
-				fprintf(stderr, "%s\n", "arguments::Arguments:");
+				fprintf(stderr, "%s\n", std::format("Arguments:").c_str());
+				fprintf(stderr, "%s\n", std::format("").c_str());
+				for (auto parser_index = size_t(0); parser_index < parsers.size(); parser_index += 1) {
+					auto& parser = parsers.at(parser_index);
+					fprintf(stderr, "%s\n", std::format("--{}={} [{}]", parser.key, parser.format, parser.required ? "required" : "optional").c_str());
+					fprintf(stderr, "%s\n", std::format("\t{}{}", parser.description, parser.default_value ? std::format(" ({})", parser.default_value.value()) : "").c_str());
+				}
+				fprintf(stderr, "%s\n", std::format("").c_str());
 				throw;
 			}
 		}
@@ -261,7 +251,7 @@ namespace commands {
 		disc_info.print();
 		auto read_correction = options.read_correction ? options.read_correction.value() : drive_info.read_offset_correction ? drive_info.read_offset_correction.value() : 0;
 		fprintf(stderr, "%s\n", std::format("Using read correction [samples]: {}", read_correction).c_str());
-		auto iso_path = internal::get_absolute_path_with_extension(options.path.value_or(""), ".iso");
+		auto iso_path = internal::get_absolute_path_with_extension(options.path, ".iso");
 		fprintf(stderr, "%s\n", std::format("Using path: \"{}\"", iso_path).c_str());
 		auto disc_tracks = disc::get_disc_tracks(disc_info, options.track_numbers);
 		if (disc_tracks.size() != 1) {
@@ -280,11 +270,11 @@ namespace commands {
 					drive,
 					track.first_sector_relative,
 					track.last_sector_relative,
-					options.data_min_passes.value_or(1),
-					options.data_max_passes.value_or(4),
-					options.data_max_retries.value_or(16),
-					options.data_min_copies.value_or(1),
-					options.data_max_copies.value_or(1)
+					options.data_min_passes,
+					options.data_max_passes,
+					options.data_max_retries,
+					options.data_min_copies,
+					options.data_max_copies
 				);
 				auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector);
 				auto bad_sector_indices_per_path = copier::get_bad_sector_indices_per_path(drive, user_data_offset, user_data_length, bad_sector_indices);
@@ -328,11 +318,11 @@ namespace commands {
 					drive,
 					first_sector,
 					last_sector,
-					options.audio_min_passes.value_or(2),
-					options.audio_max_passes.value_or(8),
-					options.audio_max_retries.value_or(255),
-					options.audio_min_copies.value_or(1),
-					options.audio_max_copies.value_or(2)
+					options.audio_min_passes,
+					options.audio_max_passes,
+					options.audio_max_retries,
+					options.audio_min_copies,
+					options.audio_max_copies
 				);
 				auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector);
 				fprintf(stderr, "%s\n", std::format("Track {} contains {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
