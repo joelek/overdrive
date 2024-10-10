@@ -272,22 +272,27 @@ namespace commands {
 				}
 			});
 			parsers.push_back(audio_min_copies.make_parser());
-			parse_options_using_parsers(arguments, parsers);
-			if (!drive.value) {
-				OVERDRIVE_THROW(exceptions::MissingArgumentException("drive"));
+			try {
+				parse_options_using_parsers(arguments, parsers);
+				if (!drive.value) {
+					OVERDRIVE_THROW(exceptions::MissingArgumentException("drive"));
+				}
+				return {
+					drive.value.value(),
+					read_correction.value,
+					track_numbers.value,
+					path.value,
+					data_max_passes.value,
+					data_max_retries.value,
+					data_min_copies.value,
+					audio_max_passes.value,
+					audio_max_retries.value,
+					audio_min_copies.value
+				};
+			} catch (const exceptions::ArgumentException& e) {
+				fprintf(stderr, "%s\n", "Arguments:");
+				throw;
 			}
-			return {
-				drive.value.value(),
-				read_correction.value,
-				track_numbers.value,
-				path.value,
-				data_max_passes.value,
-				data_max_retries.value,
-				data_min_copies.value,
-				audio_max_passes.value,
-				audio_max_retries.value,
-				audio_min_copies.value
-			};
 		}
 
 		auto get_absolute_path_with_extension(
@@ -424,73 +429,68 @@ namespace commands {
 		const std::vector<std::string>& arguments,
 		const Detail& detail
 	) -> void {
-		try {
-			auto options = internal::parse_options(arguments);
-			auto handle = detail.get_handle(options.drive);
-			auto drive = drive::create_drive(handle, detail.ioctl);
-			auto drive_info = drive.read_drive_info();
-			drive_info.print();
-			auto disc_info = drive.read_disc_info();
-			disc_info.print();
-			auto read_correction = options.read_correction ? options.read_correction.value() : drive_info.read_offset_correction ? drive_info.read_offset_correction.value() : 0;
-			fprintf(stderr, "%s\n", std::format("Using read correction [samples]: {}", read_correction).c_str());
-			auto iso_path = internal::get_absolute_path_with_extension(options.path, ".iso");
-			fprintf(stderr, "%s\n", std::format("Using path: \"{}\"", iso_path).c_str());
-			auto disc_tracks = disc::get_disc_tracks(disc_info, options.track_numbers);
-			if (disc_tracks.size() != 1) {
-				OVERDRIVE_THROW(exceptions::InvalidValueException("track count", disc_tracks.size(), 1, 1));
-			}
-			for (auto track_index = size_t(0); track_index < disc_tracks.size(); track_index += 1) {
-				auto& track = disc_tracks.at(track_index);
-				fprintf(stderr, "%s\n", std::format("Extracting track number {} containing {} sectors from {} to {}", track.number, track.length_sectors, track.first_sector_relative, track.last_sector_relative).c_str());
-				if (disc::is_data_track(track.type)) {
-					auto user_data_size = disc::get_user_data_length(track.type);
-					if (user_data_size != iso9660::USER_DATA_SIZE) {
-						OVERDRIVE_THROW(exceptions::InvalidValueException("user data size", user_data_size, iso9660::USER_DATA_SIZE, iso9660::USER_DATA_SIZE));
-					}
-					auto extracted_sectors_vector = internal::copy_track(
-						drive,
-						track.first_sector_relative,
-						track.last_sector_relative,
-						options.data_max_passes.value_or(4),
-						options.data_max_retries.value_or(16),
-						options.data_min_copies.value_or(1)
-					);
-					auto bad_sector_indices = internal::get_bad_sector_indices(extracted_sectors_vector);
-					auto bad_sector_indices_per_path = internal::get_bad_sector_indices_per_path(drive, track, bad_sector_indices);
-					if (bad_sector_indices_per_path) {
-						for (auto entry : bad_sector_indices_per_path.value()) {
-							fprintf(stderr, "%s\n", std::format("File at path \"{}\" contains {} bad sectors!", std::filesystem::path(entry.first).string(), entry.second.size()).c_str());
-						}
-					} else {
-						fprintf(stderr, "%s\n", std::format("Track {} contains {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
+		auto options = internal::parse_options(arguments);
+		auto handle = detail.get_handle(options.drive);
+		auto drive = drive::create_drive(handle, detail.ioctl);
+		auto drive_info = drive.read_drive_info();
+		drive_info.print();
+		auto disc_info = drive.read_disc_info();
+		disc_info.print();
+		auto read_correction = options.read_correction ? options.read_correction.value() : drive_info.read_offset_correction ? drive_info.read_offset_correction.value() : 0;
+		fprintf(stderr, "%s\n", std::format("Using read correction [samples]: {}", read_correction).c_str());
+		auto iso_path = internal::get_absolute_path_with_extension(options.path, ".iso");
+		fprintf(stderr, "%s\n", std::format("Using path: \"{}\"", iso_path).c_str());
+		auto disc_tracks = disc::get_disc_tracks(disc_info, options.track_numbers);
+		if (disc_tracks.size() != 1) {
+			OVERDRIVE_THROW(exceptions::InvalidValueException("track count", disc_tracks.size(), 1, 1));
+		}
+		for (auto track_index = size_t(0); track_index < disc_tracks.size(); track_index += 1) {
+			auto& track = disc_tracks.at(track_index);
+			fprintf(stderr, "%s\n", std::format("Extracting track number {} containing {} sectors from {} to {}", track.number, track.length_sectors, track.first_sector_relative, track.last_sector_relative).c_str());
+			if (disc::is_data_track(track.type)) {
+				auto user_data_size = disc::get_user_data_length(track.type);
+				if (user_data_size != iso9660::USER_DATA_SIZE) {
+					OVERDRIVE_THROW(exceptions::InvalidValueException("user data size", user_data_size, iso9660::USER_DATA_SIZE, iso9660::USER_DATA_SIZE));
+				}
+				auto extracted_sectors_vector = internal::copy_track(
+					drive,
+					track.first_sector_relative,
+					track.last_sector_relative,
+					options.data_max_passes.value_or(4),
+					options.data_max_retries.value_or(16),
+					options.data_min_copies.value_or(1)
+				);
+				auto bad_sector_indices = internal::get_bad_sector_indices(extracted_sectors_vector);
+				auto bad_sector_indices_per_path = internal::get_bad_sector_indices_per_path(drive, track, bad_sector_indices);
+				if (bad_sector_indices_per_path) {
+					for (auto entry : bad_sector_indices_per_path.value()) {
+						fprintf(stderr, "%s\n", std::format("File at path \"{}\" contains {} bad sectors!", std::filesystem::path(entry.first).string(), entry.second.size()).c_str());
 					}
 				} else {
-					auto read_correction_bytes = read_correction * si_t(cdda::STEREO_SAMPLE_LENGTH);
-					auto start_offset_bytes = si_t(track.first_sector_relative * cd::SECTOR_LENGTH) + read_correction_bytes;
-					auto end_offset_bytes = si_t(track.last_sector_relative * cd::SECTOR_LENGTH) + read_correction_bytes;
-					auto first_sector = idiv::floor(start_offset_bytes, cd::SECTOR_LENGTH);
-					auto last_sector = idiv::ceil(end_offset_bytes, cd::SECTOR_LENGTH);
-					// TODO: Adjust first_sector and last_sector so that they never overlap with data tracks.
-					auto extracted_sectors_vector = internal::copy_track(
-						drive,
-						first_sector,
-						last_sector,
-						options.audio_max_passes.value_or(8),
-						options.audio_max_retries.value_or(255),
-						options.audio_min_copies.value_or(2)
-					);
-					auto bad_sector_indices = internal::get_bad_sector_indices(extracted_sectors_vector);
 					fprintf(stderr, "%s\n", std::format("Track {} contains {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
-					if (read_correction_bytes != 0) {
-						// TODO: Adjust data read.
-					}
-					// OVERDRIVE_THROW(exceptions::ExpectedDataTrackException(track.number));
 				}
+			} else {
+				auto read_correction_bytes = read_correction * si_t(cdda::STEREO_SAMPLE_LENGTH);
+				auto start_offset_bytes = si_t(track.first_sector_relative * cd::SECTOR_LENGTH) + read_correction_bytes;
+				auto end_offset_bytes = si_t(track.last_sector_relative * cd::SECTOR_LENGTH) + read_correction_bytes;
+				auto first_sector = idiv::floor(start_offset_bytes, cd::SECTOR_LENGTH);
+				auto last_sector = idiv::ceil(end_offset_bytes, cd::SECTOR_LENGTH);
+				// TODO: Adjust first_sector and last_sector so that they never overlap with data tracks.
+				auto extracted_sectors_vector = internal::copy_track(
+					drive,
+					first_sector,
+					last_sector,
+					options.audio_max_passes.value_or(8),
+					options.audio_max_retries.value_or(255),
+					options.audio_min_copies.value_or(2)
+				);
+				auto bad_sector_indices = internal::get_bad_sector_indices(extracted_sectors_vector);
+				fprintf(stderr, "%s\n", std::format("Track {} contains {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
+				if (read_correction_bytes != 0) {
+					// TODO: Adjust data read.
+				}
+				// OVERDRIVE_THROW(exceptions::ExpectedDataTrackException(track.number));
 			}
-		} catch (const exceptions::ArgumentException& e) {
-			fprintf(stderr, "%s\n", "Arguments:");
-			throw;
 		}
 	};
 }
