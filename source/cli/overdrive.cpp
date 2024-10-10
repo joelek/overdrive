@@ -1173,8 +1173,8 @@ auto main(
 	ch08_t** argv
 ) -> si_t {
 	try {
-		auto arguments = std::vector<std::string>(argv + 0, argv + argc);
-		auto command = arguments.size() >= 2 ? arguments[1] : "";
+		auto arguments = std::vector<std::string>(argv + std::min<size_t>(2, argc), argv + argc);
+		auto command = argc >= 2 ? std::string(argv[1]) : "";
 		if (false) {
 		} else if (command == "cue") {
 			commands::cue(arguments);

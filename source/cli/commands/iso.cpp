@@ -57,6 +57,17 @@ namespace commands {
 		protected:
 	};
 
+	class Parser {
+		public:
+
+		std::string key;
+		std::string format;
+		bool_t positional;
+		std::function<void(const std::vector<std::string>& matches)> parse;
+
+		protected:
+	};
+
 	namespace internal {
 		auto parse_options(
 			const std::vector<std::string>& arguments
@@ -71,113 +82,130 @@ namespace commands {
 			auto audio_max_pass_count = std::optional<si_t>();
 			auto audio_max_retry_count = std::optional<si_t>();
 			auto audio_min_identical_copy_count = std::optional<si_t>();
-			for (auto argument_index = size_t(2); argument_index < arguments.size(); argument_index += 1) {
+			auto parsers = std::vector<Parser>();
+			parsers.push_back({
+				"drive",
+				"^([A-Z])[:]?$",
+				true,
+				[&](const std::vector<std::string>& matches) -> void {
+					drive = matches.at(0);
+				}
+			});
+			parsers.push_back({
+				"path",
+				"^(.+)$",
+				true,
+				[&](const std::vector<std::string>& matches) -> void {
+					path = matches.at(0);
+				}
+			});
+			parsers.push_back({
+				"read-offset-correction",
+				"^([+-]?(?:[0-9]|[1-9][0-9]+))$",
+				false,
+				[&](const std::vector<std::string>& matches) -> void {
+					read_offset_correction = std::atoi(matches.at(0).c_str());
+				}
+			});
+			parsers.push_back({
+				"track-numbers",
+				"^([1-9]|[1-9][0-9])(?:[,]([1-9]|[1-9][0-9]))*$",
+				false,
+				[&](const std::vector<std::string>& matches) -> void {
+					track_numbers = std::set<size_t>();
+					for (auto& match : matches) {
+						track_numbers->insert(std::atoi(match.c_str()));
+					}
+				}
+			});
+			parsers.push_back({
+				"data-max-pass-count",
+				"^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				false,
+				[&](const std::vector<std::string>& matches) -> void {
+					data_max_pass_count = std::atoi(matches.at(0).c_str());
+				}
+			});
+			parsers.push_back({
+				"data-max-retry-count",
+				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				false,
+				[&](const std::vector<std::string>& matches) -> void {
+					data_max_retry_count = std::atoi(matches.at(0).c_str());
+				}
+			});
+			parsers.push_back({
+				"data-min-identical-copy-count",
+				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				false,
+				[&](const std::vector<std::string>& matches) -> void {
+					data_min_identical_copy_count = std::atoi(matches.at(0).c_str());
+				}
+			});
+			parsers.push_back({
+				"audio-max-pass-count",
+				"^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				false,
+				[&](const std::vector<std::string>& matches) -> void {
+					audio_max_pass_count = std::atoi(matches.at(0).c_str());
+				}
+			});
+			parsers.push_back({
+				"audio-max-retry-count",
+				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				false,
+				[&](const std::vector<std::string>& matches) -> void {
+					audio_max_retry_count = std::atoi(matches.at(0).c_str());
+				}
+			});
+			parsers.push_back({
+				"audio-min-identical-copy-count",
+				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				false,
+				[&](const std::vector<std::string>& matches) -> void {
+					audio_min_identical_copy_count = std::atoi(matches.at(0).c_str());
+				}
+			});
+			for (auto argument_index = size_t(0); argument_index < arguments.size(); argument_index += 1) {
 				auto& argument = arguments[argument_index];
-				if (false) {
-				} else if (argument.find("--drive=") == 0) {
-					auto value = argument.substr(sizeof("--drive=") - 1);
-					auto format = std::string("^([A-Z])[:]?$");
-					auto matches = std::vector<std::string>();
-					if (false) {
-					} else if (string::match(value, matches, std::regex(format))) {
-						drive = matches[0];
-					} else {
-						OVERDRIVE_THROW(exceptions::BadArgumentException("drive", format));
-					}
-				} else if (argument.find("--read-offset-correction=") == 0) {
-					auto value = argument.substr(sizeof("--read-offset-correction=") - 1);
-					auto format = std::string("^([+-]?(?:[0-9]|[1-9][0-9]+))$");
-					auto matches = std::vector<std::string>();
-					if (false) {
-					} else if (string::match(value, matches, std::regex(format))) {
-						read_offset_correction = std::atoi(matches[0].c_str());
-					} else {
-						OVERDRIVE_THROW(exceptions::BadArgumentException("read-offset-correction", format));
-					}
-				} else if (argument.find("--track-numbers=") == 0) {
-					auto value = argument.substr(sizeof("--track-numbers=") - 1);
-					auto format = std::string("^([1-9]|[1-9][0-9])(?:[,]([1-9]|[1-9][0-9]))*$");
-					auto matches = std::vector<std::string>();
-					if (false) {
-					} else if (string::match(value, matches, std::regex(format))) {
-						track_numbers = std::set<size_t>();
-						for (auto& match : matches) {
-							track_numbers->insert(std::atoi(match.c_str()));
+				auto found = false;
+				auto matches = std::vector<std::string>();
+				if (string::match(argument, matches, std::regex("^[-][-]([^=]+)[=]([^=]+)$"))) {
+					auto& key = matches.at(0);
+					auto& value = matches.at(1);
+					for (auto parser_index = size_t(0); parser_index < parsers.size(); parser_index += 1) {
+						auto& parser = parsers.at(parser_index);
+						if (parser.key == key) {
+							auto matches = std::vector<std::string>();
+							if (string::match(value, matches, std::regex(parser.format))) {
+								parser.parse(matches);
+							} else {
+								OVERDRIVE_THROW(exceptions::BadArgumentException(parser.key, parser.format));
+							}
+							found = true;
+							break;
 						}
-					} else {
-						OVERDRIVE_THROW(exceptions::BadArgumentException("track-numbers", format));
-					}
-				} else if (argument.find("--path=") == 0) {
-					auto value = argument.substr(sizeof("--path=") - 1);
-					auto format = std::string("^(.+)$");
-					auto matches = std::vector<std::string>();
-					if (false) {
-					} else if (string::match(value, matches, std::regex(format))) {
-						path = matches[0];
-					} else {
-						OVERDRIVE_THROW(exceptions::BadArgumentException("path", format));
-					}
-				} else if (argument.find("--data-max-pass-count=") == 0) {
-					auto value = argument.substr(sizeof("--data-max-pass-count=") - 1);
-					auto format = std::string("^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$");
-					auto matches = std::vector<std::string>();
-					if (false) {
-					} else if (string::match(value, matches, std::regex(format))) {
-						data_max_pass_count = std::atoi(matches[0].c_str());
-					} else {
-						OVERDRIVE_THROW(exceptions::BadArgumentException("data-max-pass-count", format));
-					}
-				} else if (argument.find("--data-max-retry-count=") == 0) {
-					auto value = argument.substr(sizeof("--data-max-retry-count=") - 1);
-					auto format = std::string("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$");
-					auto matches = std::vector<std::string>();
-					if (false) {
-					} else if (string::match(value, matches, std::regex(format))) {
-						data_max_retry_count = std::atoi(matches[0].c_str());
-					} else {
-						OVERDRIVE_THROW(exceptions::BadArgumentException("data-max-retry-count", format));
-					}
-				} else if (argument.find("--data-min-identical-copy-count=") == 0) {
-					auto value = argument.substr(sizeof("--data-min-identical-copy-count=") - 1);
-					auto format = std::string("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$");
-					auto matches = std::vector<std::string>();
-					if (false) {
-					} else if (string::match(value, matches, std::regex(format))) {
-						data_min_identical_copy_count = std::atoi(matches[0].c_str());
-					} else {
-						OVERDRIVE_THROW(exceptions::BadArgumentException("data-min-identical-copy-count", format));
-					}
-				} else if (argument.find("--audio-max-pass-count=") == 0) {
-					auto value = argument.substr(sizeof("--audio-max-pass-count=") - 1);
-					auto format = std::string("^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$");
-					auto matches = std::vector<std::string>();
-					if (false) {
-					} else if (string::match(value, matches, std::regex(format))) {
-						audio_max_pass_count = std::atoi(matches[0].c_str());
-					} else {
-						OVERDRIVE_THROW(exceptions::BadArgumentException("audio-max-pass-count", format));
-					}
-				} else if (argument.find("--audio-max-retry-count=") == 0) {
-					auto value = argument.substr(sizeof("--audio-max-retry-count=") - 1);
-					auto format = std::string("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$");
-					auto matches = std::vector<std::string>();
-					if (false) {
-					} else if (string::match(value, matches, std::regex(format))) {
-						audio_max_retry_count = std::atoi(matches[0].c_str());
-					} else {
-						OVERDRIVE_THROW(exceptions::BadArgumentException("audio-max-retry-count", format));
-					}
-				} else if (argument.find("--audio-min-identical-copy-count=") == 0) {
-					auto value = argument.substr(sizeof("--audio-min-identical-copy-count=") - 1);
-					auto format = std::string("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$");
-					auto matches = std::vector<std::string>();
-					if (false) {
-					} else if (string::match(value, matches, std::regex(format))) {
-						audio_min_identical_copy_count = std::atoi(matches[0].c_str());
-					} else {
-						OVERDRIVE_THROW(exceptions::BadArgumentException("audio-min-identical-copy-count", format));
 					}
 				} else {
+					auto position = size_t(0);
+					for (auto parser_index = size_t(0); parser_index < parsers.size(); parser_index += 1) {
+						auto& parser = parsers.at(parser_index);
+						if (parser.positional) {
+							if (position == argument_index) {
+								auto matches = std::vector<std::string>();
+								if (string::match(argument, matches, std::regex(parser.format))) {
+									parser.parse(matches);
+								} else {
+									OVERDRIVE_THROW(exceptions::BadArgumentException(parser.key, parser.format));
+								}
+								found = true;
+								break;
+							}
+							position += 1;
+						}
+					}
+				}
+				if (!found) {
 					OVERDRIVE_THROW(exceptions::UnknownArgumentException(argument));
 				}
 			}
