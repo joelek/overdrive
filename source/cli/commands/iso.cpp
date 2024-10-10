@@ -295,7 +295,6 @@ namespace commands {
 				auto end_offset_bytes = si_t(track.last_sector_relative * cd::SECTOR_LENGTH) + read_correction_bytes;
 				auto first_sector = idiv::floor(start_offset_bytes, cd::SECTOR_LENGTH);
 				auto last_sector = idiv::ceil(end_offset_bytes, cd::SECTOR_LENGTH);
-				// TODO: Adjust first_sector and last_sector so that they never overlap with data tracks.
 				auto extracted_sectors_vector = copier::read_sector_range(
 					drive,
 					first_sector,
