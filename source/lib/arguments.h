@@ -27,6 +27,8 @@ namespace arguments {
 		public:
 
 		std::string key;
+		std::string description;
+		std::regex regex;
 		std::string format;
 		bool_t positional;
 		std::optional<A> value;
@@ -52,7 +54,7 @@ namespace arguments {
 		) -> bool_t {
 			if (this->key == key) {
 				auto matches = std::vector<std::string>();
-				if (string::match(value, matches, std::regex(this->format))) {
+				if (string::match(value, matches, this->regex)) {
 					this->value = this->parser(matches);
 				} else {
 					OVERDRIVE_THROW(exceptions::BadArgumentException(this->key, this->format));
@@ -70,7 +72,7 @@ namespace arguments {
 			if (this->positional) {
 				if (positional_counter == positional_index) {
 					auto matches = std::vector<std::string>();
-					if (string::match(argument, matches, std::regex(this->format))) {
+					if (string::match(argument, matches, this->format)) {
 						this->value = this->parser(matches);
 					} else {
 						OVERDRIVE_THROW(exceptions::BadArgumentException(this->key, this->format));

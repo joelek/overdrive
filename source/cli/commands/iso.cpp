@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <format>
 #include <optional>
+#include <regex>
 #include <set>
 #include <string>
 
@@ -37,7 +38,9 @@ namespace commands {
 			auto parsers = std::vector<arguments::Parser>();
 			auto drive = arguments::Argument<std::string>({
 				"drive",
-				"^([A-Z])[:]?$",
+				"Specify which drive to read from.",
+				std::regex("^([A-Z])[:]?$"),
+				"string",
 				true,
 				std::optional<std::string>(),
 				[&](const std::vector<std::string>& matches) -> std::string {
@@ -47,7 +50,9 @@ namespace commands {
 			parsers.push_back(drive.make_parser());
 			auto path = arguments::Argument<std::string>({
 				"path",
-				"^(.+)$",
+				"Specify which path to write to.",
+				std::regex("^(.+)$"),
+				"string",
 				true,
 				std::optional<std::string>(),
 				[&](const std::vector<std::string>& matches) -> std::string {
@@ -57,7 +62,9 @@ namespace commands {
 			parsers.push_back(path.make_parser());
 			auto read_correction = arguments::Argument<si_t>({
 				"read-correction",
-				"^([+-]?(?:[0-9]|[1-9][0-9]+))$",
+				"Specify read offset correction in number of samples.",
+				std::regex("^([+-]?(?:[0-9]|[1-9][0-9]+))$"),
+				"integer",
 				false,
 				std::optional<si_t>(),
 				[&](const std::vector<std::string>& matches) -> si_t {
@@ -67,7 +74,9 @@ namespace commands {
 			parsers.push_back(read_correction.make_parser());
 			auto track_numbers = arguments::Argument<std::set<size_t>>({
 				"track-numbers",
-				"^([1-9]|[1-9][0-9])(?:[,]([1-9]|[1-9][0-9]))*$",
+				"Specify which track numbers to read.",
+				std::regex("^([1-9]|[1-9][0-9])(?:[,]([1-9]|[1-9][0-9]))*$"),
+				"set<integer>",
 				false,
 				std::optional<std::set<size_t>>(),
 				[&](const std::vector<std::string>& matches) -> std::set<size_t> {
@@ -81,7 +90,9 @@ namespace commands {
 			parsers.push_back(track_numbers.make_parser());
 			auto data_min_passes = arguments::Argument<size_t>({
 				"data-min-passes",
-				"^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				"Specify the minimum number of read passes for data tracks.",
+				std::regex("^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
+				"integer",
 				false,
 				std::optional<size_t>(),
 				[&](const std::vector<std::string>& matches) -> size_t {
@@ -91,7 +102,9 @@ namespace commands {
 			parsers.push_back(data_min_passes.make_parser());
 			auto data_max_passes = arguments::Argument<size_t>({
 				"data-max-passes",
-				"^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				"Specify the maximum number of read passes for data tracks.",
+				std::regex("^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
+				"integer",
 				false,
 				std::optional<size_t>(),
 				[&](const std::vector<std::string>& matches) -> size_t {
@@ -101,7 +114,9 @@ namespace commands {
 			parsers.push_back(data_max_passes.make_parser());
 			auto data_max_retries = arguments::Argument<size_t>({
 				"data-max-retries",
-				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				"Specify the maximum number of read retires for data tracks.",
+				std::regex("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
+				"integer",
 				false,
 				std::optional<size_t>(),
 				[&](const std::vector<std::string>& matches) -> size_t {
@@ -111,7 +126,9 @@ namespace commands {
 			parsers.push_back(data_max_retries.make_parser());
 			auto data_min_copies = arguments::Argument<size_t>({
 				"data-min-copies",
-				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				"Specify the minimum acceptable number of identical copies for data tracks.",
+				std::regex("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
+				"integer",
 				false,
 				std::optional<size_t>(),
 				[&](const std::vector<std::string>& matches) -> size_t {
@@ -121,7 +138,9 @@ namespace commands {
 			parsers.push_back(data_min_copies.make_parser());
 			auto data_max_copies = arguments::Argument<size_t>({
 				"data-max-copies",
-				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				"Specify the maximum acceptable number of identical copies for data tracks.",
+				std::regex("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
+				"integer",
 				false,
 				std::optional<size_t>(),
 				[&](const std::vector<std::string>& matches) -> size_t {
@@ -131,7 +150,9 @@ namespace commands {
 			parsers.push_back(data_max_copies.make_parser());
 			auto audio_min_passes = arguments::Argument<size_t>({
 				"audio-min-passes",
-				"^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				"Specify the minimum number of read passes for audio tracks.",
+				std::regex("^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
+				"integer",
 				false,
 				std::optional<size_t>(),
 				[&](const std::vector<std::string>& matches) -> size_t {
@@ -141,7 +162,9 @@ namespace commands {
 			parsers.push_back(audio_min_passes.make_parser());
 			auto audio_max_passes = arguments::Argument<size_t>({
 				"audio-max-passes",
-				"^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				"Specify the maximum number of read passes for audio tracks.",
+				std::regex("^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
+				"integer",
 				false,
 				std::optional<size_t>(),
 				[&](const std::vector<std::string>& matches) -> size_t {
@@ -151,7 +174,9 @@ namespace commands {
 			parsers.push_back(audio_max_passes.make_parser());
 			auto audio_max_retries = arguments::Argument<size_t>({
 				"audio-max-retries",
-				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				"Specify the maximum number of read retires for audio tracks.",
+				std::regex("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
+				"integer",
 				false,
 				std::optional<size_t>(),
 				[&](const std::vector<std::string>& matches) -> size_t {
@@ -161,7 +186,9 @@ namespace commands {
 			parsers.push_back(audio_max_retries.make_parser());
 			auto audio_min_copies = arguments::Argument<size_t>({
 				"audio-min-copies",
-				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				"Specify the minimum acceptable number of identical copies for audio tracks.",
+				std::regex("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
+				"integer",
 				false,
 				std::optional<size_t>(),
 				[&](const std::vector<std::string>& matches) -> size_t {
@@ -171,7 +198,9 @@ namespace commands {
 			parsers.push_back(audio_min_copies.make_parser());
 			auto audio_max_copies = arguments::Argument<size_t>({
 				"audio-max-copies",
-				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				"Specify the maximum acceptable number of identical copies for audio tracks.",
+				std::regex("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
+				"integer",
 				false,
 				std::optional<size_t>(),
 				[&](const std::vector<std::string>& matches) -> size_t {
