@@ -7,7 +7,6 @@ Utility for interfacing with optical drives. Written for the Windows platform.
 * Investigate possibility of disabling read cache.
 	Can be done by issuing normal READ SCSI command.
 * Implement C2-based refinement.
-* Prevent read offset correction from reading into data tracks.
 * Make utility platform-independent.
 * Add debug logging.
 * Organize main code into subcommands.
