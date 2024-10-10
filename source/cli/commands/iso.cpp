@@ -15,15 +15,15 @@ namespace commands {
 		public:
 
 		std::string drive;
-		std::optional<si_t> read_offset_correction;
+		std::optional<si_t> read_correction;
 		std::optional<std::set<size_t>> track_numbers;
 		std::optional<std::string> path;
-		std::optional<size_t> data_max_pass_count;
-		std::optional<size_t> data_max_retry_count;
-		std::optional<size_t> data_min_identical_copy_count;
-		std::optional<size_t> audio_max_pass_count;
-		std::optional<size_t> audio_max_retry_count;
-		std::optional<size_t> audio_min_identical_copy_count;
+		std::optional<size_t> data_max_passes;
+		std::optional<size_t> data_max_retries;
+		std::optional<size_t> data_min_copies;
+		std::optional<size_t> audio_max_passes;
+		std::optional<size_t> audio_max_retries;
+		std::optional<size_t> audio_min_copies;
 
 		protected:
 	};
@@ -188,8 +188,8 @@ namespace commands {
 				}
 			});
 			parsers.push_back(path.make_parser());
-			auto read_offset_correction = Argument<si_t>({
-				"read-offset-correction",
+			auto read_correction = Argument<si_t>({
+				"read-correction",
 				"^([+-]?(?:[0-9]|[1-9][0-9]+))$",
 				false,
 				std::optional<si_t>(),
@@ -197,7 +197,7 @@ namespace commands {
 					return std::atoi(matches.at(0).c_str());
 				}
 			});
-			parsers.push_back(read_offset_correction.make_parser());
+			parsers.push_back(read_correction.make_parser());
 			auto track_numbers = Argument<std::set<size_t>>({
 				"track-numbers",
 				"^([1-9]|[1-9][0-9])(?:[,]([1-9]|[1-9][0-9]))*$",
@@ -212,8 +212,8 @@ namespace commands {
 				}
 			});
 			parsers.push_back(track_numbers.make_parser());
-			auto data_max_pass_count = Argument<size_t>({
-				"data-max-pass-count",
+			auto data_max_passes = Argument<size_t>({
+				"data-max-passes",
 				"^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
 				false,
 				std::optional<size_t>(),
@@ -221,9 +221,9 @@ namespace commands {
 					return std::atoi(matches.at(0).c_str());
 				}
 			});
-			parsers.push_back(data_max_pass_count.make_parser());
-			auto data_max_retry_count = Argument<size_t>({
-				"data-max-retry-count",
+			parsers.push_back(data_max_passes.make_parser());
+			auto data_max_retries = Argument<size_t>({
+				"data-max-retries",
 				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
 				false,
 				std::optional<size_t>(),
@@ -231,9 +231,9 @@ namespace commands {
 					return std::atoi(matches.at(0).c_str());
 				}
 			});
-			parsers.push_back(data_max_retry_count.make_parser());
-			auto data_min_identical_copy_count = Argument<size_t>({
-				"data-min-identical-copy-count",
+			parsers.push_back(data_max_retries.make_parser());
+			auto data_min_copies = Argument<size_t>({
+				"data-min-copies",
 				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
 				false,
 				std::optional<size_t>(),
@@ -241,9 +241,9 @@ namespace commands {
 					return std::atoi(matches.at(0).c_str());
 				}
 			});
-			parsers.push_back(data_min_identical_copy_count.make_parser());
-			auto audio_max_pass_count = Argument<size_t>({
-				"audio-max-pass-count",
+			parsers.push_back(data_min_copies.make_parser());
+			auto audio_max_passes = Argument<size_t>({
+				"audio-max-passes",
 				"^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
 				false,
 				std::optional<size_t>(),
@@ -251,9 +251,9 @@ namespace commands {
 					return std::atoi(matches.at(0).c_str());
 				}
 			});
-			parsers.push_back(audio_max_pass_count.make_parser());
-			auto audio_max_retry_count = Argument<size_t>({
-				"audio-max-retry-count",
+			parsers.push_back(audio_max_passes.make_parser());
+			auto audio_max_retries = Argument<size_t>({
+				"audio-max-retries",
 				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
 				false,
 				std::optional<size_t>(),
@@ -261,9 +261,9 @@ namespace commands {
 					return std::atoi(matches.at(0).c_str());
 				}
 			});
-			parsers.push_back(audio_max_retry_count.make_parser());
-			auto audio_min_identical_copy_count = Argument<size_t>({
-				"audio-min-identical-copy-count",
+			parsers.push_back(audio_max_retries.make_parser());
+			auto audio_min_copies = Argument<size_t>({
+				"audio-min-copies",
 				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
 				false,
 				std::optional<size_t>(),
@@ -271,22 +271,22 @@ namespace commands {
 					return std::atoi(matches.at(0).c_str());
 				}
 			});
-			parsers.push_back(audio_min_identical_copy_count.make_parser());
+			parsers.push_back(audio_min_copies.make_parser());
 			parse_options_using_parsers(arguments, parsers);
 			if (!drive.value) {
 				OVERDRIVE_THROW(exceptions::MissingArgumentException("drive"));
 			}
 			return {
 				drive.value.value(),
-				read_offset_correction.value,
+				read_correction.value,
 				track_numbers.value,
 				path.value,
-				data_max_pass_count.value,
-				data_max_retry_count.value,
-				data_min_identical_copy_count.value,
-				audio_max_pass_count.value,
-				audio_max_retry_count.value,
-				audio_min_identical_copy_count.value
+				data_max_passes.value,
+				data_max_retries.value,
+				data_min_copies.value,
+				audio_max_passes.value,
+				audio_max_retries.value,
+				audio_min_copies.value
 			};
 		}
 
@@ -380,14 +380,14 @@ namespace commands {
 			const drive::Drive& drive,
 			size_t first_sector,
 			size_t last_sector,
-			size_t max_pass_count,
-			size_t max_read_retry_count,
-			size_t min_identical_copy_count
+			size_t max_passes,
+			size_t max_read_reties,
+			size_t min_copies
 		) -> std::vector<std::vector<ExtractedSector>> {
 			auto length_sectors = last_sector - first_sector;
 			auto extracted_sectors_vector = std::vector<std::vector<ExtractedSector>>(length_sectors);
-			drive.set_read_retry_count(max_read_retry_count);
-			for (auto pass_index = size_t(0); pass_index < max_pass_count; pass_index += 1) {
+			drive.set_read_retry_count(max_read_reties);
+			for (auto pass_index = size_t(0); pass_index < max_passes; pass_index += 1) {
 				fprintf(stderr, "%s\n", std::format("Running pass {}", pass_index).c_str());
 				for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
 					try {
@@ -412,7 +412,7 @@ namespace commands {
 				}
 				auto number_of_identical_copies = get_number_of_identical_copies(extracted_sectors_vector);
 				fprintf(stderr, "%s\n", std::format("Got {} identical copies", number_of_identical_copies).c_str());
-				if (number_of_identical_copies >= min_identical_copy_count) {
+				if (number_of_identical_copies >= min_copies) {
 					break;
 				}
 			}
@@ -432,8 +432,8 @@ namespace commands {
 			drive_info.print();
 			auto disc_info = drive.read_disc_info();
 			disc_info.print();
-			auto read_offset_correction = options.read_offset_correction ? options.read_offset_correction.value() : drive_info.read_offset_correction ? drive_info.read_offset_correction.value() : 0;
-			fprintf(stderr, "%s\n", std::format("Using read offset correction [samples]: {}", read_offset_correction).c_str());
+			auto read_correction = options.read_correction ? options.read_correction.value() : drive_info.read_offset_correction ? drive_info.read_offset_correction.value() : 0;
+			fprintf(stderr, "%s\n", std::format("Using read correction [samples]: {}", read_correction).c_str());
 			auto iso_path = internal::get_absolute_path_with_extension(options.path, ".iso");
 			fprintf(stderr, "%s\n", std::format("Using path: \"{}\"", iso_path).c_str());
 			auto disc_tracks = disc::get_disc_tracks(disc_info, options.track_numbers);
@@ -452,9 +452,9 @@ namespace commands {
 						drive,
 						track.first_sector_relative,
 						track.last_sector_relative,
-						options.data_max_pass_count.value_or(4),
-						options.data_max_retry_count.value_or(16),
-						options.data_min_identical_copy_count.value_or(1)
+						options.data_max_passes.value_or(4),
+						options.data_max_retries.value_or(16),
+						options.data_min_copies.value_or(1)
 					);
 					auto bad_sector_indices = internal::get_bad_sector_indices(extracted_sectors_vector);
 					auto bad_sector_indices_per_path = internal::get_bad_sector_indices_per_path(drive, track, bad_sector_indices);
@@ -466,9 +466,9 @@ namespace commands {
 						fprintf(stderr, "%s\n", std::format("Track {} contains {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
 					}
 				} else {
-					auto read_offset_correction_bytes = read_offset_correction * si_t(cdda::STEREO_SAMPLE_LENGTH);
-					auto start_offset_bytes = si_t(track.first_sector_relative * cd::SECTOR_LENGTH) + read_offset_correction_bytes;
-					auto end_offset_bytes = si_t(track.last_sector_relative * cd::SECTOR_LENGTH) + read_offset_correction_bytes;
+					auto read_correction_bytes = read_correction * si_t(cdda::STEREO_SAMPLE_LENGTH);
+					auto start_offset_bytes = si_t(track.first_sector_relative * cd::SECTOR_LENGTH) + read_correction_bytes;
+					auto end_offset_bytes = si_t(track.last_sector_relative * cd::SECTOR_LENGTH) + read_correction_bytes;
 					auto first_sector = idiv::floor(start_offset_bytes, cd::SECTOR_LENGTH);
 					auto last_sector = idiv::ceil(end_offset_bytes, cd::SECTOR_LENGTH);
 					// TODO: Adjust first_sector and last_sector so that they never overlap with data tracks.
@@ -476,13 +476,13 @@ namespace commands {
 						drive,
 						first_sector,
 						last_sector,
-						options.audio_max_pass_count.value_or(8),
-						options.audio_max_retry_count.value_or(255),
-						options.audio_min_identical_copy_count.value_or(2)
+						options.audio_max_passes.value_or(8),
+						options.audio_max_retries.value_or(255),
+						options.audio_min_copies.value_or(2)
 					);
 					auto bad_sector_indices = internal::get_bad_sector_indices(extracted_sectors_vector);
 					fprintf(stderr, "%s\n", std::format("Track {} contains {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
-					if (read_offset_correction_bytes != 0) {
+					if (read_correction_bytes != 0) {
 						// TODO: Adjust data read.
 					}
 					// OVERDRIVE_THROW(exceptions::ExpectedDataTrackException(track.number));
