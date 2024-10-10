@@ -18,12 +18,14 @@ namespace commands {
 		std::optional<si_t> read_correction;
 		std::optional<std::set<size_t>> track_numbers;
 		std::optional<std::string> path;
+		std::optional<size_t> data_min_passes;
 		std::optional<size_t> data_max_passes;
 		std::optional<size_t> data_max_retries;
-		std::optional<size_t> data_min_copies;
+		std::optional<size_t> data_max_copies;
+		std::optional<size_t> audio_min_passes;
 		std::optional<size_t> audio_max_passes;
 		std::optional<size_t> audio_max_retries;
-		std::optional<size_t> audio_min_copies;
+		std::optional<size_t> audio_max_copies;
 
 		protected:
 	};
@@ -212,6 +214,16 @@ namespace commands {
 				}
 			});
 			parsers.push_back(track_numbers.make_parser());
+			auto data_min_passes = Argument<size_t>({
+				"data-min-passes",
+				"^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				false,
+				std::optional<size_t>(),
+				[&](const std::vector<std::string>& matches) -> size_t {
+					return std::atoi(matches.at(0).c_str());
+				}
+			});
+			parsers.push_back(data_min_passes.make_parser());
 			auto data_max_passes = Argument<size_t>({
 				"data-max-passes",
 				"^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
@@ -232,8 +244,8 @@ namespace commands {
 				}
 			});
 			parsers.push_back(data_max_retries.make_parser());
-			auto data_min_copies = Argument<size_t>({
-				"data-min-copies",
+			auto data_max_copies = Argument<size_t>({
+				"data-max-copies",
 				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
 				false,
 				std::optional<size_t>(),
@@ -241,7 +253,17 @@ namespace commands {
 					return std::atoi(matches.at(0).c_str());
 				}
 			});
-			parsers.push_back(data_min_copies.make_parser());
+			parsers.push_back(data_max_copies.make_parser());
+			auto audio_min_passes = Argument<size_t>({
+				"audio-min-passes",
+				"^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				false,
+				std::optional<size_t>(),
+				[&](const std::vector<std::string>& matches) -> size_t {
+					return std::atoi(matches.at(0).c_str());
+				}
+			});
+			parsers.push_back(audio_min_passes.make_parser());
 			auto audio_max_passes = Argument<size_t>({
 				"audio-max-passes",
 				"^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
@@ -262,8 +284,8 @@ namespace commands {
 				}
 			});
 			parsers.push_back(audio_max_retries.make_parser());
-			auto audio_min_copies = Argument<size_t>({
-				"audio-min-copies",
+			auto audio_max_copies = Argument<size_t>({
+				"audio-max-copies",
 				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
 				false,
 				std::optional<size_t>(),
@@ -271,7 +293,7 @@ namespace commands {
 					return std::atoi(matches.at(0).c_str());
 				}
 			});
-			parsers.push_back(audio_min_copies.make_parser());
+			parsers.push_back(audio_max_copies.make_parser());
 			try {
 				parse_options_using_parsers(arguments, parsers);
 				if (!drive.value) {
@@ -282,12 +304,14 @@ namespace commands {
 					read_correction.value,
 					track_numbers.value,
 					path.value,
+					data_min_passes.value,
 					data_max_passes.value,
 					data_max_retries.value,
-					data_min_copies.value,
+					data_max_copies.value,
+					audio_min_passes.value,
 					audio_max_passes.value,
 					audio_max_retries.value,
-					audio_min_copies.value
+					audio_max_copies.value
 				};
 			} catch (const exceptions::ArgumentException& e) {
 				fprintf(stderr, "%s\n", "Arguments:");
@@ -385,9 +409,10 @@ namespace commands {
 			const drive::Drive& drive,
 			size_t first_sector,
 			size_t last_sector,
+			size_t min_passes,
 			size_t max_passes,
 			size_t max_read_reties,
-			size_t min_copies
+			size_t max_copies
 		) -> std::vector<std::vector<ExtractedSector>> {
 			auto length_sectors = last_sector - first_sector;
 			auto extracted_sectors_vector = std::vector<std::vector<ExtractedSector>>(length_sectors);
@@ -417,7 +442,7 @@ namespace commands {
 				}
 				auto number_of_identical_copies = get_number_of_identical_copies(extracted_sectors_vector);
 				fprintf(stderr, "%s\n", std::format("Got {} identical copies", number_of_identical_copies).c_str());
-				if (number_of_identical_copies >= min_copies) {
+				if (pass_index >= min_passes && number_of_identical_copies >= max_copies) {
 					break;
 				}
 			}
@@ -456,9 +481,10 @@ namespace commands {
 					drive,
 					track.first_sector_relative,
 					track.last_sector_relative,
+					options.data_min_passes.value_or(1),
 					options.data_max_passes.value_or(4),
 					options.data_max_retries.value_or(16),
-					options.data_min_copies.value_or(1)
+					options.data_max_copies.value_or(1)
 				);
 				auto bad_sector_indices = internal::get_bad_sector_indices(extracted_sectors_vector);
 				auto bad_sector_indices_per_path = internal::get_bad_sector_indices_per_path(drive, track, bad_sector_indices);
@@ -480,9 +506,10 @@ namespace commands {
 					drive,
 					first_sector,
 					last_sector,
+					options.audio_min_passes.value_or(2),
 					options.audio_max_passes.value_or(8),
 					options.audio_max_retries.value_or(255),
-					options.audio_min_copies.value_or(2)
+					options.audio_max_copies.value_or(2)
 				);
 				auto bad_sector_indices = internal::get_bad_sector_indices(extracted_sectors_vector);
 				fprintf(stderr, "%s\n", std::format("Track {} contains {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
