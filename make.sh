@@ -24,6 +24,7 @@ SOURCES=(
 	"cli/commands/iso"
 	"cli/commands/mds"
 	"lib/accuraterip"
+	"lib/arguments"
 	"lib/bcd"
 	"lib/byteswap"
 	"lib/cd"

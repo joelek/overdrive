@@ -1,6 +1,7 @@
 #pragma once
 
 #include "accuraterip.h"
+#include "arguments.h"
 #include "bcd.h"
 #include "byteswap.h"
 #include "cd.h"

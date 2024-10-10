@@ -5,7 +5,6 @@
 #include <filesystem>
 #include <format>
 #include <optional>
-#include <regex>
 #include <set>
 #include <string>
 
@@ -29,118 +28,12 @@ namespace commands {
 		protected:
 	};
 
-	class Parser {
-		public:
-
-		std::function<bool_t(const std::string& key, const std::string& value)> parse_named;
-		std::function<bool_t(size_t& positional_counter, size_t& positional_index, const std::string& argument)> parse_positional;
-
-		protected:
-	};
-
-	template <typename A>
-	class Argument {
-		public:
-
-		std::string key;
-		std::string format;
-		bool_t positional;
-		std::optional<A> value;
-		std::function<A(const std::vector<std::string>& matches)> parser;
-
-		auto make_parser(
-		) -> Parser {
-			return {
-				[&](const std::string& key, const std::string& value) -> bool_t {
-					return this->parse_named(key, value);
-				},
-				[&](size_t& positional_counter, size_t& positional_index, const std::string& argument) -> bool_t {
-					return this->parse_positional(positional_counter, positional_index, argument);
-				}
-			};
-		}
-
-		protected:
-
-		auto parse_named(
-			const std::string& key,
-			const std::string& value
-		) -> bool_t {
-			if (this->key == key) {
-				auto matches = std::vector<std::string>();
-				if (string::match(value, matches, std::regex(this->format))) {
-					this->value = this->parser(matches);
-				} else {
-					OVERDRIVE_THROW(exceptions::BadArgumentException(this->key, this->format));
-				}
-				return true;
-			}
-			return false;
-		}
-
-		auto parse_positional(
-			size_t& positional_counter,
-			size_t& positional_index,
-			const std::string& argument
-		) -> bool_t {
-			if (this->positional) {
-				if (positional_counter == positional_index) {
-					auto matches = std::vector<std::string>();
-					if (string::match(argument, matches, std::regex(this->format))) {
-						this->value = this->parser(matches);
-					} else {
-						OVERDRIVE_THROW(exceptions::BadArgumentException(this->key, this->format));
-					}
-					positional_index += 1;
-					return true;
-				}
-				positional_counter += 1;
-			}
-			return false;
-		}
-	};
-
 	namespace internal {
-		auto parse_options_using_parsers(
-			const std::vector<std::string>& arguments,
-			const std::vector<Parser>& parsers
-		) -> void {
-			auto positional_index = size_t(0);
-			for (auto argument_index = size_t(0); argument_index < arguments.size(); argument_index += 1) {
-				auto& argument = arguments[argument_index];
-				auto parsed = false;
-				auto matches = std::vector<std::string>();
-				if (string::match(argument, matches, std::regex("^[-][-]([^=]+)[=]([^=]+)$"))) {
-					auto& key = matches.at(0);
-					auto& value = matches.at(1);
-					for (auto parser_index = size_t(0); parser_index < parsers.size(); parser_index += 1) {
-						auto& parser = parsers.at(parser_index);
-						parsed = parser.parse_named(key, value);
-						if (parsed) {
-							break;
-						}
-					}
-				} else {
-					auto positional_counter = size_t(0);
-					for (auto parser_index = size_t(0); parser_index < parsers.size(); parser_index += 1) {
-						auto& parser = parsers.at(parser_index);
-						parsed = parser.parse_positional(positional_counter, positional_index, argument);
-						if (parsed) {
-							break;
-						}
-					}
-				}
-				if (!parsed) {
-					OVERDRIVE_THROW(exceptions::UnknownArgumentException(argument));
-				}
-			}
-		}
-
 		auto parse_options(
 			const std::vector<std::string>& arguments
 		) -> ISOOptions {
-			auto parsers = std::vector<Parser>();
-			auto drive = Argument<std::string>({
+			auto parsers = std::vector<arguments::Parser>();
+			auto drive = arguments::Argument<std::string>({
 				"drive",
 				"^([A-Z])[:]?$",
 				true,
@@ -150,7 +43,7 @@ namespace commands {
 				}
 			});
 			parsers.push_back(drive.make_parser());
-			auto path = Argument<std::string>({
+			auto path = arguments::Argument<std::string>({
 				"path",
 				"^(.+)$",
 				true,
@@ -160,7 +53,7 @@ namespace commands {
 				}
 			});
 			parsers.push_back(path.make_parser());
-			auto read_correction = Argument<si_t>({
+			auto read_correction = arguments::Argument<si_t>({
 				"read-correction",
 				"^([+-]?(?:[0-9]|[1-9][0-9]+))$",
 				false,
@@ -170,7 +63,7 @@ namespace commands {
 				}
 			});
 			parsers.push_back(read_correction.make_parser());
-			auto track_numbers = Argument<std::set<size_t>>({
+			auto track_numbers = arguments::Argument<std::set<size_t>>({
 				"track-numbers",
 				"^([1-9]|[1-9][0-9])(?:[,]([1-9]|[1-9][0-9]))*$",
 				false,
@@ -184,7 +77,7 @@ namespace commands {
 				}
 			});
 			parsers.push_back(track_numbers.make_parser());
-			auto data_min_passes = Argument<size_t>({
+			auto data_min_passes = arguments::Argument<size_t>({
 				"data-min-passes",
 				"^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
 				false,
@@ -194,7 +87,7 @@ namespace commands {
 				}
 			});
 			parsers.push_back(data_min_passes.make_parser());
-			auto data_max_passes = Argument<size_t>({
+			auto data_max_passes = arguments::Argument<size_t>({
 				"data-max-passes",
 				"^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
 				false,
@@ -204,7 +97,7 @@ namespace commands {
 				}
 			});
 			parsers.push_back(data_max_passes.make_parser());
-			auto data_max_retries = Argument<size_t>({
+			auto data_max_retries = arguments::Argument<size_t>({
 				"data-max-retries",
 				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
 				false,
@@ -214,7 +107,7 @@ namespace commands {
 				}
 			});
 			parsers.push_back(data_max_retries.make_parser());
-			auto data_max_copies = Argument<size_t>({
+			auto data_max_copies = arguments::Argument<size_t>({
 				"data-max-copies",
 				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
 				false,
@@ -224,7 +117,7 @@ namespace commands {
 				}
 			});
 			parsers.push_back(data_max_copies.make_parser());
-			auto audio_min_passes = Argument<size_t>({
+			auto audio_min_passes = arguments::Argument<size_t>({
 				"audio-min-passes",
 				"^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
 				false,
@@ -234,7 +127,7 @@ namespace commands {
 				}
 			});
 			parsers.push_back(audio_min_passes.make_parser());
-			auto audio_max_passes = Argument<size_t>({
+			auto audio_max_passes = arguments::Argument<size_t>({
 				"audio-max-passes",
 				"^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
 				false,
@@ -244,7 +137,7 @@ namespace commands {
 				}
 			});
 			parsers.push_back(audio_max_passes.make_parser());
-			auto audio_max_retries = Argument<size_t>({
+			auto audio_max_retries = arguments::Argument<size_t>({
 				"audio-max-retries",
 				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
 				false,
@@ -254,7 +147,7 @@ namespace commands {
 				}
 			});
 			parsers.push_back(audio_max_retries.make_parser());
-			auto audio_max_copies = Argument<size_t>({
+			auto audio_max_copies = arguments::Argument<size_t>({
 				"audio-max-copies",
 				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
 				false,
@@ -284,7 +177,7 @@ namespace commands {
 					audio_max_copies.value
 				};
 			} catch (const exceptions::ArgumentException& e) {
-				fprintf(stderr, "%s\n", "Arguments:");
+				fprintf(stderr, "%s\n", "arguments::Arguments:");
 				throw;
 			}
 		}
