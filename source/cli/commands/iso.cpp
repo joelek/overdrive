@@ -60,169 +60,233 @@ namespace commands {
 	class Parser {
 		public:
 
-		std::string key;
-		std::string format;
-		bool_t positional;
-		std::function<void(const std::vector<std::string>& matches)> parse;
+		std::function<bool_t(const std::string& key, const std::string& value)> parse_named;
+		std::function<bool_t(size_t& positional_counter, size_t& positional_index, const std::string& argument)> parse_positional;
 
 		protected:
 	};
 
-	namespace internal {
-		auto parse_options(
-			const std::vector<std::string>& arguments
-		) -> ISOOptions {
-			auto drive = std::optional<std::string>();
-			auto read_offset_correction = std::optional<si_t>();
-			auto track_numbers = std::optional<std::set<size_t>>();
-			auto path = std::optional<std::string>();
-			auto data_max_pass_count = std::optional<si_t>();
-			auto data_max_retry_count = std::optional<si_t>();
-			auto data_min_identical_copy_count = std::optional<si_t>();
-			auto audio_max_pass_count = std::optional<si_t>();
-			auto audio_max_retry_count = std::optional<si_t>();
-			auto audio_min_identical_copy_count = std::optional<si_t>();
-			auto parsers = std::vector<Parser>();
-			parsers.push_back({
-				"drive",
-				"^([A-Z])[:]?$",
-				true,
-				[&](const std::vector<std::string>& matches) -> void {
-					drive = matches.at(0);
+	template <typename A>
+	class Argument {
+		public:
+
+		std::string key;
+		std::string format;
+		bool_t positional;
+		std::optional<A> value;
+		std::function<A(const std::vector<std::string>& matches)> parser;
+
+		auto make_parser(
+		) -> Parser {
+			return {
+				[&](const std::string& key, const std::string& value) -> bool_t {
+					return this->parse_named(key, value);
+				},
+				[&](size_t& positional_counter, size_t& positional_index, const std::string& argument) -> bool_t {
+					return this->parse_positional(positional_counter, positional_index, argument);
 				}
-			});
-			parsers.push_back({
-				"path",
-				"^(.+)$",
-				true,
-				[&](const std::vector<std::string>& matches) -> void {
-					path = matches.at(0);
+			};
+		}
+
+		protected:
+
+		auto parse_named(
+			const std::string& key,
+			const std::string& value
+		) -> bool_t {
+			if (this->key == key) {
+				auto matches = std::vector<std::string>();
+				if (string::match(value, matches, std::regex(this->format))) {
+					this->value = this->parser(matches);
+				} else {
+					OVERDRIVE_THROW(exceptions::BadArgumentException(this->key, this->format));
 				}
-			});
-			parsers.push_back({
-				"read-offset-correction",
-				"^([+-]?(?:[0-9]|[1-9][0-9]+))$",
-				false,
-				[&](const std::vector<std::string>& matches) -> void {
-					read_offset_correction = std::atoi(matches.at(0).c_str());
-				}
-			});
-			parsers.push_back({
-				"track-numbers",
-				"^([1-9]|[1-9][0-9])(?:[,]([1-9]|[1-9][0-9]))*$",
-				false,
-				[&](const std::vector<std::string>& matches) -> void {
-					track_numbers = std::set<size_t>();
-					for (auto& match : matches) {
-						track_numbers->insert(std::atoi(match.c_str()));
+				return true;
+			}
+			return false;
+		}
+
+		auto parse_positional(
+			size_t& positional_counter,
+			size_t& positional_index,
+			const std::string& argument
+		) -> bool_t {
+			if (this->positional) {
+				if (positional_counter == positional_index) {
+					auto matches = std::vector<std::string>();
+					if (string::match(argument, matches, std::regex(this->format))) {
+						this->value = this->parser(matches);
+					} else {
+						OVERDRIVE_THROW(exceptions::BadArgumentException(this->key, this->format));
 					}
+					positional_index += 1;
+					return true;
 				}
-			});
-			parsers.push_back({
-				"data-max-pass-count",
-				"^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
-				false,
-				[&](const std::vector<std::string>& matches) -> void {
-					data_max_pass_count = std::atoi(matches.at(0).c_str());
-				}
-			});
-			parsers.push_back({
-				"data-max-retry-count",
-				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
-				false,
-				[&](const std::vector<std::string>& matches) -> void {
-					data_max_retry_count = std::atoi(matches.at(0).c_str());
-				}
-			});
-			parsers.push_back({
-				"data-min-identical-copy-count",
-				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
-				false,
-				[&](const std::vector<std::string>& matches) -> void {
-					data_min_identical_copy_count = std::atoi(matches.at(0).c_str());
-				}
-			});
-			parsers.push_back({
-				"audio-max-pass-count",
-				"^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
-				false,
-				[&](const std::vector<std::string>& matches) -> void {
-					audio_max_pass_count = std::atoi(matches.at(0).c_str());
-				}
-			});
-			parsers.push_back({
-				"audio-max-retry-count",
-				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
-				false,
-				[&](const std::vector<std::string>& matches) -> void {
-					audio_max_retry_count = std::atoi(matches.at(0).c_str());
-				}
-			});
-			parsers.push_back({
-				"audio-min-identical-copy-count",
-				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
-				false,
-				[&](const std::vector<std::string>& matches) -> void {
-					audio_min_identical_copy_count = std::atoi(matches.at(0).c_str());
-				}
-			});
+				positional_counter += 1;
+			}
+			return false;
+		}
+	};
+
+	namespace internal {
+		auto parse_options_using_parsers(
+			const std::vector<std::string>& arguments,
+			const std::vector<Parser>& parsers
+		) -> void {
+			auto positional_index = size_t(0);
 			for (auto argument_index = size_t(0); argument_index < arguments.size(); argument_index += 1) {
 				auto& argument = arguments[argument_index];
-				auto found = false;
+				auto parsed = false;
 				auto matches = std::vector<std::string>();
 				if (string::match(argument, matches, std::regex("^[-][-]([^=]+)[=]([^=]+)$"))) {
 					auto& key = matches.at(0);
 					auto& value = matches.at(1);
 					for (auto parser_index = size_t(0); parser_index < parsers.size(); parser_index += 1) {
 						auto& parser = parsers.at(parser_index);
-						if (parser.key == key) {
-							auto matches = std::vector<std::string>();
-							if (string::match(value, matches, std::regex(parser.format))) {
-								parser.parse(matches);
-							} else {
-								OVERDRIVE_THROW(exceptions::BadArgumentException(parser.key, parser.format));
-							}
-							found = true;
+						parsed = parser.parse_named(key, value);
+						if (parsed) {
 							break;
 						}
 					}
 				} else {
-					auto position = size_t(0);
+					auto positional_counter = size_t(0);
 					for (auto parser_index = size_t(0); parser_index < parsers.size(); parser_index += 1) {
 						auto& parser = parsers.at(parser_index);
-						if (parser.positional) {
-							if (position == argument_index) {
-								auto matches = std::vector<std::string>();
-								if (string::match(argument, matches, std::regex(parser.format))) {
-									parser.parse(matches);
-								} else {
-									OVERDRIVE_THROW(exceptions::BadArgumentException(parser.key, parser.format));
-								}
-								found = true;
-								break;
-							}
-							position += 1;
+						parsed = parser.parse_positional(positional_counter, positional_index, argument);
+						if (parsed) {
+							break;
 						}
 					}
 				}
-				if (!found) {
+				if (!parsed) {
 					OVERDRIVE_THROW(exceptions::UnknownArgumentException(argument));
 				}
 			}
-			if (!drive) {
+		}
+
+		auto parse_options(
+			const std::vector<std::string>& arguments
+		) -> ISOOptions {
+			auto parsers = std::vector<Parser>();
+			auto drive = Argument<std::string>({
+				"drive",
+				"^([A-Z])[:]?$",
+				true,
+				std::optional<std::string>(),
+				[&](const std::vector<std::string>& matches) -> std::string {
+					return matches.at(0);
+				}
+			});
+			parsers.push_back(drive.make_parser());
+			auto path = Argument<std::string>({
+				"path",
+				"^(.+)$",
+				true,
+				std::optional<std::string>(),
+				[&](const std::vector<std::string>& matches) -> std::string {
+					return matches.at(0);
+				}
+			});
+			parsers.push_back(path.make_parser());
+			auto read_offset_correction = Argument<si_t>({
+				"read-offset-correction",
+				"^([+-]?(?:[0-9]|[1-9][0-9]+))$",
+				false,
+				std::optional<si_t>(),
+				[&](const std::vector<std::string>& matches) -> si_t {
+					return std::atoi(matches.at(0).c_str());
+				}
+			});
+			parsers.push_back(read_offset_correction.make_parser());
+			auto track_numbers = Argument<std::set<size_t>>({
+				"track-numbers",
+				"^([1-9]|[1-9][0-9])(?:[,]([1-9]|[1-9][0-9]))*$",
+				false,
+				std::optional<std::set<size_t>>(),
+				[&](const std::vector<std::string>& matches) -> std::set<size_t> {
+					auto track_numbers = std::set<size_t>();
+					for (auto& match : matches) {
+						track_numbers.insert(std::atoi(match.c_str()));
+					}
+					return track_numbers;
+				}
+			});
+			parsers.push_back(track_numbers.make_parser());
+			auto data_max_pass_count = Argument<size_t>({
+				"data-max-pass-count",
+				"^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				false,
+				std::optional<size_t>(),
+				[&](const std::vector<std::string>& matches) -> size_t {
+					return std::atoi(matches.at(0).c_str());
+				}
+			});
+			parsers.push_back(data_max_pass_count.make_parser());
+			auto data_max_retry_count = Argument<size_t>({
+				"data-max-retry-count",
+				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				false,
+				std::optional<size_t>(),
+				[&](const std::vector<std::string>& matches) -> size_t {
+					return std::atoi(matches.at(0).c_str());
+				}
+			});
+			parsers.push_back(data_max_retry_count.make_parser());
+			auto data_min_identical_copy_count = Argument<size_t>({
+				"data-min-identical-copy-count",
+				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				false,
+				std::optional<size_t>(),
+				[&](const std::vector<std::string>& matches) -> size_t {
+					return std::atoi(matches.at(0).c_str());
+				}
+			});
+			parsers.push_back(data_min_identical_copy_count.make_parser());
+			auto audio_max_pass_count = Argument<size_t>({
+				"audio-max-pass-count",
+				"^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				false,
+				std::optional<size_t>(),
+				[&](const std::vector<std::string>& matches) -> size_t {
+					return std::atoi(matches.at(0).c_str());
+				}
+			});
+			parsers.push_back(audio_max_pass_count.make_parser());
+			auto audio_max_retry_count = Argument<size_t>({
+				"audio-max-retry-count",
+				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				false,
+				std::optional<size_t>(),
+				[&](const std::vector<std::string>& matches) -> size_t {
+					return std::atoi(matches.at(0).c_str());
+				}
+			});
+			parsers.push_back(audio_max_retry_count.make_parser());
+			auto audio_min_identical_copy_count = Argument<size_t>({
+				"audio-min-identical-copy-count",
+				"^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$",
+				false,
+				std::optional<size_t>(),
+				[&](const std::vector<std::string>& matches) -> size_t {
+					return std::atoi(matches.at(0).c_str());
+				}
+			});
+			parsers.push_back(audio_min_identical_copy_count.make_parser());
+			parse_options_using_parsers(arguments, parsers);
+			if (!drive.value) {
 				OVERDRIVE_THROW(exceptions::MissingArgumentException("drive"));
 			}
 			return {
-				drive.value(),
-				read_offset_correction,
-				track_numbers,
-				path,
-				data_max_pass_count,
-				data_max_retry_count,
-				data_min_identical_copy_count,
-				audio_max_pass_count,
-				audio_max_retry_count,
-				audio_min_identical_copy_count
+				drive.value.value(),
+				read_offset_correction.value,
+				track_numbers.value,
+				path.value,
+				data_max_pass_count.value,
+				data_max_retry_count.value,
+				data_min_identical_copy_count.value,
+				audio_max_pass_count.value,
+				audio_max_retry_count.value,
+				audio_min_identical_copy_count.value
 			};
 		}
 
