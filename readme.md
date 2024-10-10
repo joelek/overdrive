@@ -2,17 +2,6 @@
 
 Utility for interfacing with optical drives. Written for the Windows platform.
 
-## Roadmap
-
-* Investigate possibility of disabling read cache.
-	Can be done by issuing normal READ SCSI command.
-* Implement C2-based refinement.
-* Make utility platform-independent.
-* Add debug logging.
-* Organize main code into subcommands.
-* Add support for injecting files into ISO9660 file systems.
-* Add support for ODI format.
-
 ## Read correction
 
 Audio tracks on CD-DA and mixed mode CD-ROMs should be extracted using read offset correction. The operation requires knowledge about the `read offset value` of the optical drive used. The value can be either negative or positive where a negative value indicates that the drive in question starts reading audio streams too early. Conversely, a positive value indicates that the drive in question starts reading audio streams too late.
@@ -24,6 +13,17 @@ Every sector of a CD has a length of 2352 bytes which for CD-DA sectors are used
 In order to correctly read audio streams, read offset correction has to be performed. The proper `read offset correction value` for an optical drive is the negative value of its `read offset value`. A positive `read offset correction value` should be used for a drive with a negative `read offset value`. Conversely, a negative `read offset correction value` should be used for a drive with a positive `read offset value`.
 
 The [AccurateRip drive database](https://www.accuraterip.com/driveoffsets.htm) provides a list of correction values for a large number of drives. Positive values indicate the number of samples that should be discarded at the beginning of each track and the number of samples that should be included from the following track. Negative values indicate the number of samples that should be discarded at the end of each track and the number of samples that should be included from the previous track.
+
+## Roadmap
+
+* Investigate possibility of disabling read cache.
+	Can be done by issuing normal READ SCSI command.
+* Implement C2-based refinement.
+* Make utility platform-independent.
+* Add debug logging.
+* Organize main code into subcommands.
+* Add support for injecting files into ISO9660 file systems.
+* Add support for ODI format.
 
 ## References
 
