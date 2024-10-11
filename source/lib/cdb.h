@@ -346,7 +346,7 @@ namespace cdb {
 
 	static_assert(sizeof(ModeSense10) == 10);
 
-	struct ModeParameterResponseHeader {
+	struct ModeParameterHeader10 {
 		ui16_t mode_data_length_be;
 		ui08_t : 8;
 		ui08_t : 8;
@@ -355,7 +355,7 @@ namespace cdb {
 		ui16_t block_descriptor_length_be;
 	};
 
-	static_assert(sizeof(ModeParameterResponseHeader) == 8);
+	static_assert(sizeof(ModeParameterHeader10) == 8);
 
 	struct ModeSelect10 {
 		ui08_t operation_code = 0x55;
@@ -592,21 +592,21 @@ namespace cdb {
 	static_assert(sizeof(ReadCDResponseDataB) == READ_CD_LENGTH);
 
 	struct ModeSenseReadWriteErrorRecoveryModePageResponse {
-		ModeParameterResponseHeader header;
+		ModeParameterHeader10 header;
 		ReadWriteErrorRecoveryModePage page;
 	};
 
 	static_assert(sizeof(ModeSenseReadWriteErrorRecoveryModePageResponse) == 20);
 
 	struct ModeSenseCachingModePageResponse {
-		ModeParameterResponseHeader header;
+		ModeParameterHeader10 header;
 		CachingModePage page;
 	};
 
 	static_assert(sizeof(ModeSenseCachingModePageResponse) == 28);
 
 	struct ModeSenseCapabilitiesAndMechanicalStatusPageResponse {
-		ModeParameterResponseHeader header;
+		ModeParameterHeader10 header;
 		CapabilitiesAndMechanicalStatusPage page;
 	};
 
