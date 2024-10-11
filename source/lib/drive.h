@@ -54,9 +54,6 @@ namespace drive {
 		auto read_atip_toc(
 		) const -> cdb::ReadTOCResponseATIPTOC;
 
-		auto read_unit_attention_parameters_page(
-		) const -> cdb::ModeSenseUnitAttentionParametersPageResponse;
-
 		auto read_error_recovery_mode_page(
 		) const -> cdb::ModeSenseReadWriteErrorRecoveryModePageResponse;
 

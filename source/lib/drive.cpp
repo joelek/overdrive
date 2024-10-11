@@ -190,19 +190,6 @@ namespace drive {
 		return data;
 	}
 
-	auto Drive::read_unit_attention_parameters_page(
-	) const -> cdb::ModeSenseUnitAttentionParametersPageResponse {
-		auto cdb = cdb::ModeSense10();
-		auto data = cdb::ModeSenseUnitAttentionParametersPageResponse();
-		cdb.page_code = cdb::SensePage::UnitAttentionParametersPage;
-		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
-		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
-		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
-			OVERDRIVE_THROW(exceptions::SCSIException());
-		}
-		return data;
-	}
-
 	auto Drive::read_error_recovery_mode_page(
 	) const -> cdb::ModeSenseReadWriteErrorRecoveryModePageResponse {
 		auto cdb = cdb::ModeSense10();
