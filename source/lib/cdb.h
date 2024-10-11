@@ -275,6 +275,7 @@ namespace cdb {
 
 	enum class SensePage: ui08_t {
 		ReadWriteErrorRecoveryModePage = 0x01,
+		CachingModePage = 0x08,
 		CapabilitiesAndMechanicalStatusPage = 0x2A
 	};
 
@@ -398,6 +399,39 @@ namespace cdb {
 	};
 
 	static_assert(sizeof(ReadWriteErrorRecoveryModePage) == 12);
+
+	struct CachingModePage {
+		ui08_t page_code: 6;
+		ui08_t subpage_format: 1;
+		ui08_t parameters_savable: 1;
+		ui08_t page_length: 8 = 0x12;
+		ui08_t rcd: 1;
+		ui08_t mf: 1;
+		ui08_t wce: 1;
+		ui08_t size: 1;
+		ui08_t disc: 1;
+		ui08_t cap: 1;
+		ui08_t abpf: 1;
+		ui08_t ic: 1;
+		ui08_t write_retention_policy: 4;
+		ui08_t demand_read_retention_policy: 4;
+		ui16_t disable_prefetch_transfer_length_be: 16;
+		ui16_t minimum_prefetch_be: 16;
+		ui16_t maximum_prefetch_be: 16;
+		ui16_t maximum_prefetch_ceiling_be: 16;
+		ui08_t nv_dis: 1;
+		ui08_t sync_prog: 2;
+		ui08_t vendor_specific: 2;
+		ui08_t dra: 1;
+		ui08_t lbcss: 1;
+		ui08_t fsw: 1;
+		ui08_t number_of_cache_segments: 8;
+		ui16_t cache_segment_size_be: 16;
+		ui08_t reserved: 8;
+		ui08_t obsolete[3];
+	};
+
+	static_assert(sizeof(CachingModePage) == 20);
 
 	struct CapabilitiesAndMechanicalStatusPage {
 		ui08_t page_code: 6;
