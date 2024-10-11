@@ -215,6 +215,31 @@ namespace drive {
 		}
 	}
 
+	auto Drive::read_caching_mode_page(
+	) const -> cdb::ModeSenseCachingModePageResponse {
+		auto cdb = cdb::ModeSense10();
+		auto data = cdb::ModeSenseCachingModePageResponse();
+		cdb.page_code = cdb::SensePage::CachingModePage;
+		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
+		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
+		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+			OVERDRIVE_THROW(exceptions::SCSIException());
+		}
+		return data;
+	}
+
+	auto Drive::write_caching_mode_page(
+		cdb::ModeSenseCachingModePageResponse& data
+	) const -> void {
+		auto cdb = cdb::ModeSelect10();
+		cdb.page_format = 1;
+		cdb.parameter_list_length_be = byteswap::byteswap16(sizeof(data));
+		auto status = this->ioctl(handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), true);
+		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+			OVERDRIVE_THROW(exceptions::SCSIException());
+		}
+	}
+
 	auto Drive::read_capabilites_and_mechanical_status_page(
 	) const -> cdb::ModeSenseCapabilitiesAndMechanicalStatusPageResponse {
 		auto cdb = cdb::ModeSense10();

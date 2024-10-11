@@ -61,6 +61,13 @@ namespace drive {
 			cdb::ModeSenseReadWriteErrorRecoveryModePageResponse& data
 		) const -> void;
 
+		auto read_caching_mode_page(
+		) const -> cdb::ModeSenseCachingModePageResponse;
+
+		auto write_caching_mode_page(
+			cdb::ModeSenseCachingModePageResponse& data
+		) const -> void;
+
 		auto read_capabilites_and_mechanical_status_page(
 		) const -> cdb::ModeSenseCapabilitiesAndMechanicalStatusPageResponse;
 

@@ -598,6 +598,13 @@ namespace cdb {
 
 	static_assert(sizeof(ModeSenseReadWriteErrorRecoveryModePageResponse) == 20);
 
+	struct ModeSenseCachingModePageResponse {
+		ModeParameterResponseHeader header;
+		CachingModePage page;
+	};
+
+	static_assert(sizeof(ModeSenseCachingModePageResponse) == 28);
+
 	struct ModeSenseCapabilitiesAndMechanicalStatusPageResponse {
 		ModeParameterResponseHeader header;
 		CapabilitiesAndMechanicalStatusPage page;
