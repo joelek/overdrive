@@ -17,7 +17,7 @@ namespace commands {
 		std::string drive;
 		std::optional<si_t> read_correction;
 		std::optional<std::set<size_t>> track_numbers;
-		std::string path;
+		std::optional<std::string> path;
 		size_t data_min_passes;
 		size_t data_max_passes;
 		size_t data_max_retries;
@@ -249,7 +249,7 @@ namespace commands {
 		disc_info.print();
 		auto read_correction = options.read_correction ? options.read_correction.value() : drive_info.read_offset_correction ? drive_info.read_offset_correction.value() : 0;
 		fprintf(stderr, "%s\n", std::format("Using read correction [samples]: {}", read_correction).c_str());
-		auto iso_path = internal::get_absolute_path_with_extension(options.path, ".iso");
+		auto iso_path = internal::get_absolute_path_with_extension(options.path.value_or(""), ".iso");
 		fprintf(stderr, "%s\n", std::format("Using path: \"{}\"", iso_path).c_str());
 		auto disc_tracks = disc::get_disc_tracks(disc_info, options.track_numbers);
 		if (disc_tracks.size() != 1) {
