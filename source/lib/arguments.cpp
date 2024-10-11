@@ -53,7 +53,7 @@ namespace arguments {
 			auto& argument = arguments[argument_index];
 			auto parsed = false;
 			auto matches = std::vector<std::string>();
-			if (string::match(argument, matches, std::regex("^[-][-]([^=]+)[=]([^=]+)$"))) {
+			if (string::match(argument, matches, std::regex("^[-][-]([^=]+)[=]([^=]*)$"))) {
 				auto& key = matches.at(0);
 				auto& value = matches.at(1);
 				for (auto parser_index = size_t(0); parser_index < parsers.size(); parser_index += 1) {
