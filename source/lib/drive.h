@@ -1,7 +1,9 @@
 #pragma once
 
 #include <functional>
+#include <map>
 #include <optional>
+#include <vector>
 #include "cd.h"
 #include "cdb.h"
 #include "disc.h"
@@ -73,6 +75,9 @@ namespace drive {
 
 		auto read_standard_inquiry(
 		) const -> cdb::StandardInquiryResponse;
+
+		auto read_all_pages(
+		) const -> std::map<cdb::SensePage, std::vector<byte_t>>;
 
 		auto test_unit_ready(
 		) const -> bool_t;

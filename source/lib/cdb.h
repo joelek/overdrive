@@ -276,7 +276,8 @@ namespace cdb {
 	enum class SensePage: ui08_t {
 		READ_WRITE_ERROR_RECOVERY_MODE_PAGE = 0x01,
 		CACHING_MODE_PAGE = 0x08,
-		CAPABILITIES_AND_MECHANICAL_STATUS_PAGE = 0x2A
+		CAPABILITIES_AND_MECHANICAL_STATUS_PAGE = 0x2A,
+		ALL_PAGES = 0x3F
 	};
 
 	static_assert(sizeof(SensePage) == 1);
@@ -303,6 +304,15 @@ namespace cdb {
 	};
 
 	static_assert(sizeof(ModeSense6) == 6);
+
+	struct ModePageHeader {
+		ui08_t page_code: 6;
+		ui08_t subpage_format: 1;
+		ui08_t parameters_savable: 1;
+		ui08_t page_length;
+	};
+
+	static_assert(sizeof(ModePageHeader) == 2);
 
 	struct ModeParameterHeader6 {
 		ui08_t mode_data_length;

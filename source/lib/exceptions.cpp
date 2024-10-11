@@ -73,5 +73,12 @@ namespace exceptions {
 	IOWriteException::IOWriteException(
 		const std::string& path
 	): IOException(std::format("Expected write to succeed for path \"{}\"!", path)) {}
+
+	MemoryException::MemoryException(
+		const std::string& message
+	): OverdriveException(message) {}
+
+	MemoryReadException::MemoryReadException(
+	): MemoryException(std::format("Expected memory read operation to be within bounds!")) {}
 }
 }

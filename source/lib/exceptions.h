@@ -206,5 +206,23 @@ namespace exceptions {
 
 		protected:
 	};
+
+	class MemoryException: public OverdriveException {
+		public:
+
+		MemoryException(
+			const std::string& message
+		);
+
+		protected:
+	};
+
+	class MemoryReadException: public MemoryException {
+		public:
+
+		MemoryReadException();
+
+		protected:
+	};
 }
 }
