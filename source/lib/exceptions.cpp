@@ -35,7 +35,7 @@ namespace exceptions {
 	BadArgumentException::BadArgumentException(
 		const std::string& name,
 		const std::string& format
-	): ArgumentException(std::format("Expected argument \"{}\" to have format \"{}\"!", name, format)) {}
+	): ArgumentException(std::format("Expected argument \"{}\" to have format {}!", name, format)) {}
 
 	MissingArgumentException::MissingArgumentException(
 		const std::string& name
