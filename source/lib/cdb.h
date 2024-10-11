@@ -274,6 +274,7 @@ namespace cdb {
 	static_assert(sizeof(StandardInquiryResponse) == 128);
 
 	enum class SensePage: ui08_t {
+		UnitAttentionParametersPage = 0x00,
 		ReadWriteErrorRecoveryModePage = 0x01,
 		CachingModePage = 0x08,
 		CapabilitiesAndMechanicalStatusPage = 0x2A
@@ -346,7 +347,7 @@ namespace cdb {
 
 	static_assert(sizeof(ModeSense10) == 10);
 
-	struct ModeParameterResponseHeader {
+	struct ModeParameterHeader10 {
 		ui16_t mode_data_length_be;
 		ui08_t : 8;
 		ui08_t : 8;
@@ -355,7 +356,7 @@ namespace cdb {
 		ui16_t block_descriptor_length_be;
 	};
 
-	static_assert(sizeof(ModeParameterResponseHeader) == 8);
+	static_assert(sizeof(ModeParameterHeader10) == 8);
 
 	struct ModeSelect10 {
 		ui08_t operation_code = 0x55;
@@ -373,6 +374,35 @@ namespace cdb {
 	};
 
 	static_assert(sizeof(ModeSelect10) == 10);
+
+	struct UnitAttentionParametersPage {
+		ui08_t page_code: 6 = 0x00;
+		ui08_t subpage_format: 1;
+		ui08_t parameters_savable: 1;
+		ui08_t page_length = 0x06;
+		ui08_t scsi2: 1;
+		ui08_t strict: 1;
+		ui08_t round: 1;
+		ui08_t dfua: 1;
+		ui08_t unit_attention: 1;
+		ui08_t inquiry_length: 1;
+		ui08_t ssm: 1;
+		ui08_t pm: 1;
+		ui08_t : 6;
+		ui08_t self_seek: 1;
+		ui08_t dar: 1;
+		ui08_t jit0: 1;
+		ui08_t jit1: 1;
+		ui08_t jit2: 1;
+		ui08_t jit3: 1;
+		ui08_t : 3;
+		ui08_t vjit_disabled: 1;
+		ui08_t : 8;
+		ui08_t : 8;
+		ui08_t : 8;
+	};
+
+	static_assert(sizeof(UnitAttentionParametersPage) == 8);
 
 	struct ReadWriteErrorRecoveryModePage {
 		ui08_t page_code: 6;
@@ -400,8 +430,27 @@ namespace cdb {
 
 	static_assert(sizeof(ReadWriteErrorRecoveryModePage) == 12);
 
+	struct CachingModePageLegacy {
+		ui08_t page_code: 6 = 0x08;
+		ui08_t subpage_format: 1;
+		ui08_t parameters_savable: 1;
+		ui08_t page_length: 8 = 0x0A;
+		ui08_t rcd: 1;
+		ui08_t mf: 1;
+		ui08_t wce: 1;
+		ui08_t : 5;
+		ui08_t write_retention_policy: 4;
+		ui08_t demand_read_retention_policy: 4;
+		ui16_t disable_prefetch_transfer_length_be: 16;
+		ui16_t minimum_prefetch_be: 16;
+		ui16_t maximum_prefetch_be: 16;
+		ui16_t maximum_prefetch_ceiling_be: 16;
+	};
+
+	static_assert(sizeof(CachingModePageLegacy) == 12);
+
 	struct CachingModePage {
-		ui08_t page_code: 6;
+		ui08_t page_code: 6 = 0x08;
 		ui08_t subpage_format: 1;
 		ui08_t parameters_savable: 1;
 		ui08_t page_length: 8 = 0x12;
@@ -591,22 +640,29 @@ namespace cdb {
 
 	static_assert(sizeof(ReadCDResponseDataB) == READ_CD_LENGTH);
 
+	struct ModeSenseUnitAttentionParametersPageResponse {
+		ModeParameterHeader10 header;
+		UnitAttentionParametersPage page;
+	};
+
+	static_assert(sizeof(ModeSenseUnitAttentionParametersPageResponse) == 16);
+
 	struct ModeSenseReadWriteErrorRecoveryModePageResponse {
-		ModeParameterResponseHeader header;
+		ModeParameterHeader10 header;
 		ReadWriteErrorRecoveryModePage page;
 	};
 
 	static_assert(sizeof(ModeSenseReadWriteErrorRecoveryModePageResponse) == 20);
 
 	struct ModeSenseCachingModePageResponse {
-		ModeParameterResponseHeader header;
+		ModeParameterHeader10 header;
 		CachingModePage page;
 	};
 
 	static_assert(sizeof(ModeSenseCachingModePageResponse) == 28);
 
 	struct ModeSenseCapabilitiesAndMechanicalStatusPageResponse {
-		ModeParameterResponseHeader header;
+		ModeParameterHeader10 header;
 		CapabilitiesAndMechanicalStatusPage page;
 	};
 
