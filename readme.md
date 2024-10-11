@@ -18,7 +18,6 @@ The [AccurateRip drive database](https://www.accuraterip.com/driveoffsets.htm) p
 
 * Investigate possibility of disabling read cache.
 	Can be done by issuing normal READ SCSI command.
-	Caching Mode Page has RCD bit.
 * Implement C2-based refinement.
 	Transfer block is controlled through ReadWriteErrorRecoveryModePage.
 * Make utility platform-independent.
@@ -27,6 +26,7 @@ The [AccurateRip drive database](https://www.accuraterip.com/driveoffsets.htm) p
 * Add support for injecting files into ISO9660 file systems.
 * Add support for ODI format.
 * Reorganize exceptions so that enums and types can be re-used.
+* Assert that all values in mode pages written are changable.
 
 ## References
 
