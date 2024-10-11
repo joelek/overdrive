@@ -194,7 +194,7 @@ namespace drive {
 	) const -> cdb::ModeSenseReadWriteErrorRecoveryModePageResponse {
 		auto cdb = cdb::ModeSense10();
 		auto data = cdb::ModeSenseReadWriteErrorRecoveryModePageResponse();
-		cdb.page_code = cdb::SensePage::ReadWriteErrorRecoveryModePage;
+		cdb.page_code = cdb::SensePage::READ_WRITE_ERROR_RECOVERY_MODE_PAGE;
 		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
 		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
@@ -219,7 +219,7 @@ namespace drive {
 	) const -> cdb::ModeSenseCachingModePageResponse {
 		auto cdb = cdb::ModeSense10();
 		auto data = cdb::ModeSenseCachingModePageResponse();
-		cdb.page_code = cdb::SensePage::CachingModePage;
+		cdb.page_code = cdb::SensePage::CACHING_MODE_PAGE;
 		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
 		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
@@ -244,7 +244,7 @@ namespace drive {
 	) const -> cdb::ModeSenseCapabilitiesAndMechanicalStatusPageResponse {
 		auto cdb = cdb::ModeSense10();
 		auto data = cdb::ModeSenseCapabilitiesAndMechanicalStatusPageResponse();
-		cdb.page_code = cdb::SensePage::CapabilitiesAndMechanicalStatusPage;
+		cdb.page_code = cdb::SensePage::CAPABILITIES_AND_MECHANICAL_STATUS_PAGE;
 		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
 		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {

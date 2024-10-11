@@ -274,9 +274,9 @@ namespace cdb {
 	static_assert(sizeof(StandardInquiryResponse) == 128);
 
 	enum class SensePage: ui08_t {
-		ReadWriteErrorRecoveryModePage = 0x01,
-		CachingModePage = 0x08,
-		CapabilitiesAndMechanicalStatusPage = 0x2A
+		READ_WRITE_ERROR_RECOVERY_MODE_PAGE = 0x01,
+		CACHING_MODE_PAGE = 0x08,
+		CAPABILITIES_AND_MECHANICAL_STATUS_PAGE = 0x2A
 	};
 
 	static_assert(sizeof(SensePage) == 1);
