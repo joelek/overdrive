@@ -1,5 +1,6 @@
 #include "iso.h"
 
+#include <algorithm>
 #include <array>
 #include <cstdio>
 #include <filesystem>
@@ -77,7 +78,7 @@ namespace commands {
 				"track-numbers",
 				"Specify which track numbers to read.",
 				std::regex("^([1-9]|[1-9][0-9])(?:[,]([1-9]|[1-9][0-9]))*$"),
-				"set<integer>",
+				"list<integer>",
 				false,
 				std::optional<std::string>(),
 				false,
@@ -209,18 +210,15 @@ namespace commands {
 					options.audio_max_copies = std::atoi(matches.at(0).c_str());
 				}
 			}));
+			// Sort in increasing order.
+			std::sort(parsers.begin(), parsers.end(), [](const arguments::Parser& one, const arguments::Parser& two) -> bool_t {
+				return one.key < two.key;
+			});
 			try {
-				arguments::parse_options_using_parsers(arguments, parsers);
+				arguments::parse(arguments, parsers);
 				return options;
 			} catch (const exceptions::ArgumentException& e) {
-				fprintf(stderr, "%s\n", std::format("Arguments:").c_str());
-				fprintf(stderr, "%s\n", std::format("").c_str());
-				for (auto parser_index = size_t(0); parser_index < parsers.size(); parser_index += 1) {
-					auto& parser = parsers.at(parser_index);
-					fprintf(stderr, "%s\n", std::format("--{}={} [{}]", parser.key, parser.format, parser.required ? "required" : "optional").c_str());
-					fprintf(stderr, "%s\n", std::format("\t{}{}", parser.description, parser.default_value ? std::format(" ({})", parser.default_value.value()) : "").c_str());
-				}
-				fprintf(stderr, "%s\n", std::format("").c_str());
+				arguments::print(parsers);
 				throw;
 			}
 		}

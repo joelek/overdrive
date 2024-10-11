@@ -1,6 +1,6 @@
 #include "arguments.h"
 
-#include <algorithm>
+#include <format>
 #include "exceptions.h"
 #include "string.h"
 
@@ -43,7 +43,7 @@ namespace arguments {
 		return false;
 	}
 
-	auto parse_options_using_parsers(
+	auto parse(
 		const std::vector<std::string>& arguments,
 		const std::vector<Parser>& parsers
 	) -> void {
@@ -82,14 +82,28 @@ namespace arguments {
 		for (auto parser_index = size_t(0); parser_index < parsers.size(); parser_index += 1) {
 			if (!states.at(parser_index)) {
 				auto& parser = parsers.at(parser_index);
-				if (parser.default_value) {
-					parser.parse_named(parser.key, parser.default_value.value());
+				if (parser.fallback) {
+					parser.parse_named(parser.key, parser.fallback.value());
 				} else {
 					if (parser.required) {
 						OVERDRIVE_THROW(exceptions::MissingArgumentException(parser.key));
 					}
 				}
 			}
+		}
+	}
+
+	auto print(
+		const std::vector<Parser>& parsers
+	) -> void {
+		fprintf(stderr, "%s\n", std::format("Arguments:").c_str());
+		fprintf(stderr, "%s\n", std::format("").c_str());
+		for (auto parser_index = size_t(0); parser_index < parsers.size(); parser_index += 1) {
+			auto& parser = parsers.at(parser_index);
+			fprintf(stderr, "%s\n", std::format("--{}={}", parser.key, parser.format).c_str());
+			fprintf(stderr, "%s\n", std::format("\t{}", parser.description).c_str());
+			fprintf(stderr, "%s\n", std::format("\t{}", parser.fallback ? std::format("Optional with \"{}\" as default.", parser.fallback.value()) : parser.required ? "Required." : "Optional with dynamic default.").c_str());
+			fprintf(stderr, "%s\n", std::format("").c_str());
 		}
 	}
 }

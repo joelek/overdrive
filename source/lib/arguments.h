@@ -19,7 +19,7 @@ namespace arguments {
 		std::regex regex;
 		std::string format;
 		bool_t positional;
-		std::optional<std::string> default_value;
+		std::optional<std::string> fallback;
 		bool_t required;
 		std::function<void(const std::vector<std::string>& matches)> parser;
 
@@ -37,8 +37,12 @@ namespace arguments {
 		protected:
 	};
 
-	auto parse_options_using_parsers(
+	auto parse(
 		const std::vector<std::string>& arguments,
+		const std::vector<Parser>& parsers
+	) -> void;
+
+	auto print(
 		const std::vector<Parser>& parsers
 	) -> void;
 }
