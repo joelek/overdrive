@@ -277,7 +277,7 @@ namespace commands {
 				auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector);
 				auto bad_sector_indices_per_path = copier::get_bad_sector_indices_per_path(drive, user_data_offset, user_data_length, bad_sector_indices);
 				if (bad_sector_indices_per_path) {
-					for (auto entry : bad_sector_indices_per_path.value()) {
+					for (auto& entry : bad_sector_indices_per_path.value()) {
 						fprintf(stderr, "%s\n", std::format("File at path \"{}\" contains {} bad sectors!", std::filesystem::path(entry.first).string(), entry.second.size()).c_str());
 					}
 				} else {
