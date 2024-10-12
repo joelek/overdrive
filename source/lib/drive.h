@@ -60,14 +60,14 @@ namespace drive {
 		) const -> cdb::ReadWriteErrorRecoveryModePage;
 
 		auto write_error_recovery_mode_page(
-			cdb::ReadWriteErrorRecoveryModePage& page
+			const cdb::ReadWriteErrorRecoveryModePage& page
 		) const -> void;
 
 		auto read_caching_mode_page(
 		) const -> cdb::CachingModePage;
 
 		auto write_caching_mode_page(
-			cdb::CachingModePage& page
+			const cdb::CachingModePage& page
 		) const -> void;
 
 		auto read_capabilites_and_mechanical_status_page(

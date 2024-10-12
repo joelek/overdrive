@@ -223,7 +223,7 @@ namespace drive {
 	}
 
 	auto Drive::write_error_recovery_mode_page(
-		cdb::ReadWriteErrorRecoveryModePage& page
+		const cdb::ReadWriteErrorRecoveryModePage& page
 	) const -> void {
 		auto cdb = cdb::ModeSelect10();
 		auto data = cdb::ModeSenseReadWriteErrorRecoveryModePageResponse();
@@ -251,7 +251,7 @@ namespace drive {
 	}
 
 	auto Drive::write_caching_mode_page(
-		cdb::CachingModePage& page
+		const cdb::CachingModePage& page
 	) const -> void {
 		auto cdb = cdb::ModeSelect10();
 		auto data = cdb::ModeSenseCachingModePageResponse();
