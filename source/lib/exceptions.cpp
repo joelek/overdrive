@@ -13,9 +13,9 @@ namespace exceptions {
 	InvalidValueException::InvalidValueException(
 		const std::string& name,
 		si_t value,
-		si_t min,
-		si_t max
-	): OverdriveException(std::format("Expected value for \"{}\" {} to be at least {} and at most {}!", name, value, min, max)) {}
+		std::optional<si_t> min,
+		std::optional<si_t> max
+	): OverdriveException(std::format("Expected value for \"{}\" {} to be at least {} and at most {}!", name, value, min ? std::format("{}", min.value()) : "?", max ? std::format("{}", max.value()) : "?")) {}
 
 	MissingValueException::MissingValueException(
 		const std::string& name

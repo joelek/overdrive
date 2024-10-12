@@ -3,6 +3,7 @@
 #include <format>
 #include <stdexcept>
 #include <string>
+#include <optional>
 #include "shared.h"
 
 namespace overdrive {
@@ -55,8 +56,8 @@ namespace exceptions {
 		InvalidValueException(
 			const std::string& name,
 			si_t value,
-			si_t min,
-			si_t max
+			std::optional<si_t> min,
+			std::optional<si_t> max
 		);
 
 		protected:
