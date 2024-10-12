@@ -66,8 +66,17 @@ namespace exceptions {
 	InvalidSCSIStatusException::InvalidSCSIStatusException(
 	): SCSIException(std::format("Expected SCSI operation to execute successfully!")) {}
 
+	InvalidSCSIModePageException::InvalidSCSIModePageException(
+	): SCSIException(std::format("Expected SCSI mode page to exist!")) {}
+
+	InvalidSCSIModePageSizeException::InvalidSCSIModePageSizeException(
+		const std::string& page,
+		size_t page_size,
+		size_t device_page_size
+	): SCSIException(std::format("Expected device page size ({}) for mode page {} to be at least {}!", device_page_size, page, page_size)) {}
+
 	InvalidSCSIModePageWriteException::InvalidSCSIModePageWriteException(
-	): SCSIException(std::format("Expected SCSI mode page to only contain changable values!")) {}
+	): SCSIException(std::format("Expected SCSI mode page data to only contain changable values!")) {}
 
 	IOException::IOException(
 		const std::string& message

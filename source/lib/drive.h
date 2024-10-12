@@ -105,8 +105,14 @@ namespace drive {
 			cdb::ModeSensePageControl page_control
 		) const -> std::map<cdb::SensePage, std::vector<byte_t>>;
 
+		auto validate_page_read(
+			cdb::SensePage page,
+			size_t page_size
+		) const -> void;
+
 		auto validate_page_write(
 			cdb::SensePage page,
+			size_t page_size,
 			const byte_t* page_pointer
 		) const -> void;
 
@@ -115,7 +121,7 @@ namespace drive {
 		std::optional<size_t> subchannels_data_offset;
 		std::optional<size_t> c2_data_offset;
 		std::function<byte_t(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)> ioctl;
-		std::optional<std::map<cdb::SensePage, std::vector<byte_t>>> page_masks;
+		std::map<cdb::SensePage, std::vector<byte_t>> page_masks;
 	};
 
 	auto create_drive(

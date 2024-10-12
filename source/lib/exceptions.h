@@ -188,6 +188,26 @@ namespace exceptions {
 		protected:
 	};
 
+	class InvalidSCSIModePageException: public SCSIException {
+		public:
+
+		InvalidSCSIModePageException();
+
+		protected:
+	};
+
+	class InvalidSCSIModePageSizeException: public SCSIException {
+		public:
+
+		InvalidSCSIModePageSizeException(
+			const std::string& page,
+			size_t page_size,
+			size_t device_page_size
+		);
+
+		protected:
+	};
+
 	class InvalidSCSIModePageWriteException: public SCSIException {
 		public:
 

@@ -8,6 +8,7 @@
 #include "byteswap.h"
 #include "cdrom.h"
 #include "cdxa.h"
+#include "enums.h"
 #include "exceptions.h"
 #include "iso9660.h"
 #include "scsi.h"
@@ -26,26 +27,7 @@ namespace drive {
 		this->subchannels_data_offset = subchannels_data_offset;
 		this->c2_data_offset = c2_data_offset;
 		this->ioctl = ioctl;
-		auto page_masks = this->read_all_pages_with_control(cdb::ModeSensePageControl::CHANGABLE_VALUES);
-		if (page_masks.contains(cdb::SensePage::CACHING_MODE_PAGE)) {
-			auto& page_mask = page_masks[cdb::SensePage::CACHING_MODE_PAGE];
-			if (page_mask.size() < sizeof(cdb::CachingModePage)) {
-				OVERDRIVE_THROW(exceptions::InvalidValueException("size of CACHING_MODE_PAGE", page_mask.size(), sizeof(cdb::CachingModePage), std::nullopt));
-			}
-		}
-		if (page_masks.contains(cdb::SensePage::CAPABILITIES_AND_MECHANICAL_STATUS_PAGE)) {
-			auto& page_mask = page_masks[cdb::SensePage::CAPABILITIES_AND_MECHANICAL_STATUS_PAGE];
-			if (page_mask.size() < sizeof(cdb::CapabilitiesAndMechanicalStatusPage)) {
-				OVERDRIVE_THROW(exceptions::InvalidValueException("size of CAPABILITIES_AND_MECHANICAL_STATUS_PAGE", page_mask.size(), sizeof(cdb::CapabilitiesAndMechanicalStatusPage), std::nullopt));
-			}
-		}
-		if (page_masks.contains(cdb::SensePage::READ_WRITE_ERROR_RECOVERY_MODE_PAGE)) {
-			auto& page_mask = page_masks[cdb::SensePage::READ_WRITE_ERROR_RECOVERY_MODE_PAGE];
-			if (page_mask.size() < sizeof(cdb::ReadWriteErrorRecoveryModePage)) {
-				OVERDRIVE_THROW(exceptions::InvalidValueException("size of READ_WRITE_ERROR_RECOVERY_MODE_PAGE", page_mask.size(), sizeof(cdb::ReadWriteErrorRecoveryModePage), std::nullopt));
-			}
-		}
-		this->page_masks = std::move(page_masks);
+		this->page_masks = this->read_all_pages_with_control(cdb::ModeSensePageControl::CHANGABLE_VALUES);
 	}
 
 	auto Drive::detect_subchannel_timing_offset(
@@ -212,6 +194,7 @@ namespace drive {
 
 	auto Drive::read_error_recovery_mode_page(
 	) const -> cdb::ReadWriteErrorRecoveryModePage {
+		this->validate_page_read(cdb::SensePage::READ_WRITE_ERROR_RECOVERY_MODE_PAGE, sizeof(cdb::ReadWriteErrorRecoveryModePage));
 		auto cdb = cdb::ModeSense10();
 		auto data = cdb::ModeSenseReadWriteErrorRecoveryModePageResponse();
 		cdb.page_code = cdb::SensePage::READ_WRITE_ERROR_RECOVERY_MODE_PAGE;
@@ -226,7 +209,7 @@ namespace drive {
 	auto Drive::write_error_recovery_mode_page(
 		const cdb::ReadWriteErrorRecoveryModePage& page
 	) const -> void {
-		this->validate_page_write(cdb::SensePage::READ_WRITE_ERROR_RECOVERY_MODE_PAGE, reinterpret_cast<const byte_t*>(&page));
+		this->validate_page_write(cdb::SensePage::READ_WRITE_ERROR_RECOVERY_MODE_PAGE, sizeof(cdb::ReadWriteErrorRecoveryModePage), reinterpret_cast<const byte_t*>(&page));
 		auto cdb = cdb::ModeSelect10();
 		auto data = cdb::ModeSenseReadWriteErrorRecoveryModePageResponse();
 		cdb.page_format = 1;
@@ -241,6 +224,7 @@ namespace drive {
 
 	auto Drive::read_caching_mode_page(
 	) const -> cdb::CachingModePage {
+		this->validate_page_read(cdb::SensePage::CACHING_MODE_PAGE, sizeof(cdb::CachingModePage));
 		auto cdb = cdb::ModeSense10();
 		auto data = cdb::ModeSenseCachingModePageResponse();
 		cdb.page_code = cdb::SensePage::CACHING_MODE_PAGE;
@@ -255,7 +239,7 @@ namespace drive {
 	auto Drive::write_caching_mode_page(
 		const cdb::CachingModePage& page
 	) const -> void {
-		this->validate_page_write(cdb::SensePage::CACHING_MODE_PAGE, reinterpret_cast<const byte_t*>(&page));
+		this->validate_page_write(cdb::SensePage::CACHING_MODE_PAGE, sizeof(cdb::CachingModePage), reinterpret_cast<const byte_t*>(&page));
 		auto cdb = cdb::ModeSelect10();
 		auto data = cdb::ModeSenseCachingModePageResponse();
 		cdb.page_format = 1;
@@ -270,6 +254,7 @@ namespace drive {
 
 	auto Drive::read_capabilites_and_mechanical_status_page(
 	) const -> cdb::CapabilitiesAndMechanicalStatusPage {
+		this->validate_page_read(cdb::SensePage::CAPABILITIES_AND_MECHANICAL_STATUS_PAGE, sizeof(cdb::CapabilitiesAndMechanicalStatusPage));
 		auto cdb = cdb::ModeSense10();
 		auto data = cdb::ModeSenseCapabilitiesAndMechanicalStatusPageResponse();
 		cdb.page_code = cdb::SensePage::CAPABILITIES_AND_MECHANICAL_STATUS_PAGE;
@@ -474,18 +459,36 @@ namespace drive {
 		return map;
 	}
 
+	auto Drive::validate_page_read(
+		cdb::SensePage page,
+		size_t page_size
+	) const -> void {
+		if (!this->page_masks.contains(page)) {
+			OVERDRIVE_THROW(exceptions::InvalidSCSIModePageException());
+		}
+		auto& page_mask = this->page_masks.at(page);
+		if (page_mask.size() < page_size) {
+			OVERDRIVE_THROW(exceptions::InvalidSCSIModePageSizeException(enums::SensePage(page), page_size, page_mask.size()));
+		}
+	}
+
 	auto Drive::validate_page_write(
 		cdb::SensePage page,
+		size_t page_size,
 		const byte_t* page_pointer
 	) const -> void {
-		if (this->page_masks && this->page_masks->contains(page)) {
-			auto& page_mask = this->page_masks->at(page);
-			for (auto byte_index = size_t(0); byte_index < page_mask.size(); byte_index += 1) {
-				auto mask = page_mask[byte_index];
-				auto byte = page_pointer[byte_index];
-				if ((~mask & byte) != 0) {
-					OVERDRIVE_THROW(exceptions::InvalidSCSIModePageWriteException());
-				}
+		if (!this->page_masks.contains(page)) {
+			OVERDRIVE_THROW(exceptions::InvalidSCSIModePageException());
+		}
+		auto& page_mask = this->page_masks.at(page);
+		if (page_mask.size() < page_size) {
+			OVERDRIVE_THROW(exceptions::InvalidSCSIModePageSizeException(enums::SensePage(page), page_size, page_mask.size()));
+		}
+		for (auto byte_index = size_t(0); byte_index < page_mask.size(); byte_index += 1) {
+			auto mask = page_mask[byte_index];
+			auto byte = page_pointer[byte_index];
+			if ((~mask & byte) != 0) {
+				OVERDRIVE_THROW(exceptions::InvalidSCSIModePageWriteException());
 			}
 		}
 	}
