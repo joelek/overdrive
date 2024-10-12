@@ -101,6 +101,10 @@ namespace drive {
 
 		protected:
 
+		auto read_all_pages_with_control(
+			cdb::ModeSensePageControl page_control
+		) const -> std::map<cdb::SensePage, std::vector<byte_t>>;
+
 		void* handle;
 		std::optional<size_t> sector_data_offset;
 		std::optional<size_t> subchannels_data_offset;

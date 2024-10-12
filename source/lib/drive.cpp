@@ -273,36 +273,7 @@ namespace drive {
 
 	auto Drive::read_all_pages(
 	) const -> std::map<cdb::SensePage, std::vector<byte_t>> {
-		auto cdb = cdb::ModeSense10();
-		auto data = std::vector<byte_t>(65535);
-		cdb.page_code = cdb::SensePage::ALL_PAGES;
-		cdb.allocation_length_be = byteswap::byteswap16(65535);
-		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(data.data()), 65535, false);
-		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
-			OVERDRIVE_THROW(exceptions::SCSIException());
-		}
-		auto offset = size_t(0);
-		auto& header = *reinterpret_cast<cdb::ModeParameterHeader10*>(data.data() + offset);
-		offset += sizeof(cdb::ModeParameterHeader10);
-		auto length = sizeof(header.mode_data_length_be) + byteswap::byteswap16(header.mode_data_length_be);
-		auto map = std::map<cdb::SensePage, std::vector<byte_t>>();
-		while (offset < length) {
-			auto header_length = sizeof(cdb::ModePageHeader);
-			if (offset + header_length > length) {
-				OVERDRIVE_THROW(exceptions::MemoryReadException());
-			}
-			auto& header = *reinterpret_cast<cdb::ModePageHeader*>(data.data() + offset);
-			auto total_page_length = sizeof(cdb::ModePageHeader) + header.page_length;
-			if (offset + total_page_length > length) {
-				OVERDRIVE_THROW(exceptions::MemoryReadException());
-			}
-			auto key = cdb::SensePage(header.page_code);
-			auto value = std::vector<byte_t>(total_page_length);
-			std::memcpy(value.data(), data.data() + offset, total_page_length);
-			map[key] = std::move(value);
-			offset += total_page_length;
-		}
-		return map;
+		return this->read_all_pages_with_control(cdb::ModeSensePageControl::CURRENT_VALUES);
 	}
 
 	auto Drive::test_unit_ready(
@@ -443,6 +414,42 @@ namespace drive {
 		auto error_recovery_mode_page = this->read_error_recovery_mode_page();
 		error_recovery_mode_page.read_retry_count = max_retry_count;
 		this->write_error_recovery_mode_page(error_recovery_mode_page);
+	}
+
+	auto Drive::read_all_pages_with_control(
+		cdb::ModeSensePageControl page_control
+	) const -> std::map<cdb::SensePage, std::vector<byte_t>> {
+		auto cdb = cdb::ModeSense10();
+		auto data = std::vector<byte_t>(65535);
+		cdb.page_control = page_control;
+		cdb.page_code = cdb::SensePage::ALL_PAGES;
+		cdb.allocation_length_be = byteswap::byteswap16(65535);
+		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(data.data()), 65535, false);
+		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+			OVERDRIVE_THROW(exceptions::SCSIException());
+		}
+		auto offset = size_t(0);
+		auto& header = *reinterpret_cast<cdb::ModeParameterHeader10*>(data.data() + offset);
+		offset += sizeof(cdb::ModeParameterHeader10);
+		auto length = sizeof(header.mode_data_length_be) + byteswap::byteswap16(header.mode_data_length_be);
+		auto map = std::map<cdb::SensePage, std::vector<byte_t>>();
+		while (offset < length) {
+			auto header_length = sizeof(cdb::ModePageHeader);
+			if (offset + header_length > length) {
+				OVERDRIVE_THROW(exceptions::MemoryReadException());
+			}
+			auto& header = *reinterpret_cast<cdb::ModePageHeader*>(data.data() + offset);
+			auto total_page_length = sizeof(cdb::ModePageHeader) + header.page_length;
+			if (offset + total_page_length > length) {
+				OVERDRIVE_THROW(exceptions::MemoryReadException());
+			}
+			auto key = cdb::SensePage(header.page_code);
+			auto value = std::vector<byte_t>(total_page_length);
+			std::memcpy(value.data(), data.data() + offset, total_page_length);
+			map[key] = std::move(value);
+			offset += total_page_length;
+		}
+		return map;
 	}
 
 	auto create_drive(
