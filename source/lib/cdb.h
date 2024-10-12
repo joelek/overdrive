@@ -429,19 +429,9 @@ namespace cdb {
 		ui16_t minimum_prefetch_be: 16;
 		ui16_t maximum_prefetch_be: 16;
 		ui16_t maximum_prefetch_ceiling_be: 16;
-		ui08_t nv_dis: 1;
-		ui08_t sync_prog: 2;
-		ui08_t vendor_specific: 2;
-		ui08_t dra: 1;
-		ui08_t lbcss: 1;
-		ui08_t fsw: 1;
-		ui08_t number_of_cache_segments: 8;
-		ui16_t cache_segment_size_be: 16;
-		ui08_t reserved: 8;
-		ui08_t obsolete[3];
 	};
 
-	static_assert(sizeof(CachingModePage) == 20);
+	static_assert(sizeof(CachingModePage) == 12);
 
 	struct CapabilitiesAndMechanicalStatusPage {
 		ui08_t page_code: 6;
@@ -613,7 +603,7 @@ namespace cdb {
 		CachingModePage page;
 	};
 
-	static_assert(sizeof(ModeSenseCachingModePageResponse) == 28);
+	static_assert(sizeof(ModeSenseCachingModePageResponse) == 20);
 
 	struct ModeSenseCapabilitiesAndMechanicalStatusPageResponse {
 		ModeParameterHeader10 header;
