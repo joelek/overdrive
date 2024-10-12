@@ -173,7 +173,17 @@ namespace exceptions {
 	class SCSIException: public OverdriveException {
 		public:
 
-		SCSIException();
+		SCSIException(
+			const std::string& message
+		);
+
+		protected:
+	};
+
+	class InvalidSCSIStatusException: public SCSIException {
+		public:
+
+		InvalidSCSIStatusException();
 
 		protected:
 	};

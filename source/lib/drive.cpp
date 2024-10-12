@@ -148,7 +148,7 @@ namespace drive {
 		cdb.time = 1;
 		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
-			OVERDRIVE_THROW(exceptions::SCSIException());
+			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
 		return data;
 	}
@@ -162,7 +162,7 @@ namespace drive {
 		cdb.time = 1;
 		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
-			OVERDRIVE_THROW(exceptions::SCSIException());
+			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
 		return data;
 	}
@@ -176,7 +176,7 @@ namespace drive {
 		cdb.time = 1;
 		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
-			OVERDRIVE_THROW(exceptions::SCSIException());
+			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
 		return data;
 	}
@@ -190,7 +190,7 @@ namespace drive {
 		cdb.time = 1;
 		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
-			OVERDRIVE_THROW(exceptions::SCSIException());
+			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
 		return data;
 	}
@@ -204,7 +204,7 @@ namespace drive {
 		cdb.time = 1;
 		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
-			OVERDRIVE_THROW(exceptions::SCSIException());
+			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
 		return data;
 	}
@@ -217,7 +217,7 @@ namespace drive {
 		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
 		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
-			OVERDRIVE_THROW(exceptions::SCSIException());
+			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
 		return data.page;
 	}
@@ -233,7 +233,7 @@ namespace drive {
 		data.page = page;
 		auto status = this->ioctl(handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), true);
 		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
-			OVERDRIVE_THROW(exceptions::SCSIException());
+			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
 	}
 
@@ -245,7 +245,7 @@ namespace drive {
 		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
 		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
-			OVERDRIVE_THROW(exceptions::SCSIException());
+			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
 		return data.page;
 	}
@@ -261,7 +261,7 @@ namespace drive {
 		data.page = page;
 		auto status = this->ioctl(handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), true);
 		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
-			OVERDRIVE_THROW(exceptions::SCSIException());
+			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
 	}
 
@@ -273,7 +273,7 @@ namespace drive {
 		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
 		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
-			OVERDRIVE_THROW(exceptions::SCSIException());
+			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
 		return data.page;
 	}
@@ -285,7 +285,7 @@ namespace drive {
 		cdb.allocation_length_be = byteswap::byteswap16(sizeof(data));
 		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), false);
 		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
-			OVERDRIVE_THROW(exceptions::SCSIException());
+			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
 		return data;
 	}
@@ -321,7 +321,7 @@ namespace drive {
 		auto buffer = std::array<byte_t, cdb::READ_CD_LENGTH>();
 		auto status = this->ioctl(handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(buffer.data()), sizeof(buffer), false);
 		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
-			OVERDRIVE_THROW(exceptions::SCSIException());
+			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
 		if (sector_data != nullptr) {
 			if (!this->sector_data_offset) {
@@ -445,7 +445,7 @@ namespace drive {
 		cdb.allocation_length_be = byteswap::byteswap16(65535);
 		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(data.data()), 65535, false);
 		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
-			OVERDRIVE_THROW(exceptions::SCSIException());
+			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
 		auto offset = size_t(0);
 		auto& header = *reinterpret_cast<cdb::ModeParameterHeader10*>(data.data() + offset);

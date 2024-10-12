@@ -60,7 +60,11 @@ namespace exceptions {
 	): OverdriveException(std::format("Expected an optical disc!")) {}
 
 	SCSIException::SCSIException(
-	): OverdriveException(std::format("Expected SCSI operation to run successfully!")) {}
+		const std::string& message
+	): OverdriveException(message) {}
+
+	InvalidSCSIStatusException::InvalidSCSIStatusException(
+	): SCSIException(std::format("Expected SCSI operation to execute successfully!")) {}
 
 	IOException::IOException(
 		const std::string& message
