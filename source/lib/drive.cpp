@@ -191,7 +191,7 @@ namespace drive {
 	}
 
 	auto Drive::read_error_recovery_mode_page(
-	) const -> cdb::ModeSenseReadWriteErrorRecoveryModePageResponse {
+	) const -> cdb::ReadWriteErrorRecoveryModePage {
 		auto cdb = cdb::ModeSense10();
 		auto data = cdb::ModeSenseReadWriteErrorRecoveryModePageResponse();
 		cdb.page_code = cdb::SensePage::READ_WRITE_ERROR_RECOVERY_MODE_PAGE;
@@ -200,15 +200,18 @@ namespace drive {
 		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
 			OVERDRIVE_THROW(exceptions::SCSIException());
 		}
-		return data;
+		return data.page;
 	}
 
 	auto Drive::write_error_recovery_mode_page(
-		cdb::ModeSenseReadWriteErrorRecoveryModePageResponse& data
+		cdb::ReadWriteErrorRecoveryModePage& page
 	) const -> void {
 		auto cdb = cdb::ModeSelect10();
+		auto data = cdb::ModeSenseReadWriteErrorRecoveryModePageResponse();
 		cdb.page_format = 1;
 		cdb.parameter_list_length_be = byteswap::byteswap16(sizeof(data));
+		data.header.mode_data_length_be = sizeof(data) - sizeof(data.header.mode_data_length_be);
+		data.page = page;
 		auto status = this->ioctl(handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), true);
 		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
 			OVERDRIVE_THROW(exceptions::SCSIException());
@@ -216,7 +219,7 @@ namespace drive {
 	}
 
 	auto Drive::read_caching_mode_page(
-	) const -> cdb::ModeSenseCachingModePageResponse {
+	) const -> cdb::CachingModePage {
 		auto cdb = cdb::ModeSense10();
 		auto data = cdb::ModeSenseCachingModePageResponse();
 		cdb.page_code = cdb::SensePage::CACHING_MODE_PAGE;
@@ -225,15 +228,18 @@ namespace drive {
 		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
 			OVERDRIVE_THROW(exceptions::SCSIException());
 		}
-		return data;
+		return data.page;
 	}
 
 	auto Drive::write_caching_mode_page(
-		cdb::ModeSenseCachingModePageResponse& data
+		cdb::CachingModePage& page
 	) const -> void {
 		auto cdb = cdb::ModeSelect10();
+		auto data = cdb::ModeSenseCachingModePageResponse();
 		cdb.page_format = 1;
 		cdb.parameter_list_length_be = byteswap::byteswap16(sizeof(data));
+		data.header.mode_data_length_be = sizeof(data) - sizeof(data.header.mode_data_length_be);
+		data.page = page;
 		auto status = this->ioctl(handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), true);
 		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
 			OVERDRIVE_THROW(exceptions::SCSIException());
@@ -241,7 +247,7 @@ namespace drive {
 	}
 
 	auto Drive::read_capabilites_and_mechanical_status_page(
-	) const -> cdb::ModeSenseCapabilitiesAndMechanicalStatusPageResponse {
+	) const -> cdb::CapabilitiesAndMechanicalStatusPage {
 		auto cdb = cdb::ModeSense10();
 		auto data = cdb::ModeSenseCapabilitiesAndMechanicalStatusPageResponse();
 		cdb.page_code = cdb::SensePage::CAPABILITIES_AND_MECHANICAL_STATUS_PAGE;
@@ -250,7 +256,7 @@ namespace drive {
 		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
 			OVERDRIVE_THROW(exceptions::SCSIException());
 		}
-		return data;
+		return data.page;
 	}
 
 	auto Drive::read_standard_inquiry(
@@ -359,9 +365,9 @@ namespace drive {
 		auto subchannels_data_offset = this->subchannels_data_offset;
 		auto c2_data_offset = this->c2_data_offset;
 		auto capabilites_and_mechanical_status_page = this->read_capabilites_and_mechanical_status_page();
-		auto buffer_size = size_t(byteswap::byteswap16(capabilites_and_mechanical_status_page.page.buffer_size_supported_be)) * 1024;
-		auto supports_accurate_stream = capabilites_and_mechanical_status_page.page.cdda_stream_is_accurate == 1;
-		auto supports_c2_error_reporting = capabilites_and_mechanical_status_page.page.c2_pointers_supported == 1;
+		auto buffer_size = size_t(byteswap::byteswap16(capabilites_and_mechanical_status_page.buffer_size_supported_be)) * 1024;
+		auto supports_accurate_stream = capabilites_and_mechanical_status_page.cdda_stream_is_accurate == 1;
+		auto supports_c2_error_reporting = capabilites_and_mechanical_status_page.c2_pointers_supported == 1;
 		auto read_offset_correction = accuraterip::DATABASE().get_read_offset_correction_value(standard_inquiry.vendor_identification, standard_inquiry.product_identification);
 		return {
 			vendor,
@@ -435,7 +441,7 @@ namespace drive {
 		size_t max_retry_count
 	) const -> void {
 		auto error_recovery_mode_page = this->read_error_recovery_mode_page();
-		error_recovery_mode_page.page.read_retry_count = max_retry_count;
+		error_recovery_mode_page.read_retry_count = max_retry_count;
 		this->write_error_recovery_mode_page(error_recovery_mode_page);
 	}
 

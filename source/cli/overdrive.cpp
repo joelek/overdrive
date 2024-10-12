@@ -935,7 +935,7 @@ auto save(
 		fprintf(stderr, "C2 data offset is %llu\n", c2_offset.value());
 		{
 			auto error_recovery_mode_page = scsi_drive.read_error_recovery_mode_page();
-			error_recovery_mode_page.page.read_retry_count = max_read_retries;
+			error_recovery_mode_page.read_retry_count = max_read_retries;
 			scsi_drive.write_error_recovery_mode_page(error_recovery_mode_page);
 		}
 		auto session_type = cdb::get_session_type(toc_ex);
@@ -962,10 +962,10 @@ auto save(
 		fprintf(stderr, "Data track sector length is %llu\n", data_length);
 		{
 			auto mode_sense = scsi_drive.read_capabilites_and_mechanical_status_page();
-			fprintf(stderr, "Drive has a read cache size of %u kB\n", byteswap::byteswap16(mode_sense.page.buffer_size_supported_be));
-			fprintf(stderr, "Drive %s read audio streams accurately\n", mode_sense.page.cdda_stream_is_accurate ? "can" : "cannot");
-			fprintf(stderr, "Drive %s support for reading C2 error pointers\n", mode_sense.page.c2_pointers_supported ? "has" : "lacks");
-			if (!mode_sense.page.cdda_stream_is_accurate) {
+			fprintf(stderr, "Drive has a read cache size of %u kB\n", byteswap::byteswap16(mode_sense.buffer_size_supported_be));
+			fprintf(stderr, "Drive %s read audio streams accurately\n", mode_sense.cdda_stream_is_accurate ? "can" : "cannot");
+			fprintf(stderr, "Drive %s support for reading C2 error pointers\n", mode_sense.c2_pointers_supported ? "has" : "lacks");
+			if (!mode_sense.cdda_stream_is_accurate) {
 				throw EXIT_FAILURE;
 			}
 		}

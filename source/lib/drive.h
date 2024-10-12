@@ -57,21 +57,21 @@ namespace drive {
 		) const -> cdb::ReadTOCResponseATIPTOC;
 
 		auto read_error_recovery_mode_page(
-		) const -> cdb::ModeSenseReadWriteErrorRecoveryModePageResponse;
+		) const -> cdb::ReadWriteErrorRecoveryModePage;
 
 		auto write_error_recovery_mode_page(
-			cdb::ModeSenseReadWriteErrorRecoveryModePageResponse& data
+			cdb::ReadWriteErrorRecoveryModePage& page
 		) const -> void;
 
 		auto read_caching_mode_page(
-		) const -> cdb::ModeSenseCachingModePageResponse;
+		) const -> cdb::CachingModePage;
 
 		auto write_caching_mode_page(
-			cdb::ModeSenseCachingModePageResponse& data
+			cdb::CachingModePage& page
 		) const -> void;
 
 		auto read_capabilites_and_mechanical_status_page(
-		) const -> cdb::ModeSenseCapabilitiesAndMechanicalStatusPageResponse;
+		) const -> cdb::CapabilitiesAndMechanicalStatusPage;
 
 		auto read_standard_inquiry(
 		) const -> cdb::StandardInquiryResponse;
