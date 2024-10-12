@@ -26,7 +26,6 @@ The [AccurateRip drive database](https://www.accuraterip.com/driveoffsets.htm) p
 * Add support for injecting files into ISO9660 file systems.
 * Add support for ODI format.
 * Reorganize exceptions so that enums and types can be re-used.
-* Assert that all values in mode pages written are changable.
 
 ## References
 
