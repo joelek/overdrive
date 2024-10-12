@@ -26,6 +26,25 @@ namespace drive {
 		this->subchannels_data_offset = subchannels_data_offset;
 		this->c2_data_offset = c2_data_offset;
 		this->ioctl = ioctl;
+		auto page_masks = this->read_all_pages_with_control(cdb::ModeSensePageControl::CHANGABLE_VALUES);
+		if (page_masks.contains(cdb::SensePage::CACHING_MODE_PAGE)) {
+			auto& page_mask = page_masks[cdb::SensePage::CACHING_MODE_PAGE];
+			if (page_mask.size() < sizeof(cdb::CachingModePage)) {
+				OVERDRIVE_THROW(exceptions::InvalidValueException("size of CACHING_MODE_PAGE", page_mask.size(), sizeof(cdb::CachingModePage), std::nullopt));
+			}
+		}
+		if (page_masks.contains(cdb::SensePage::CAPABILITIES_AND_MECHANICAL_STATUS_PAGE)) {
+			auto& page_mask = page_masks[cdb::SensePage::CAPABILITIES_AND_MECHANICAL_STATUS_PAGE];
+			if (page_mask.size() < sizeof(cdb::CapabilitiesAndMechanicalStatusPage)) {
+				OVERDRIVE_THROW(exceptions::InvalidValueException("size of CAPABILITIES_AND_MECHANICAL_STATUS_PAGE", page_mask.size(), sizeof(cdb::CapabilitiesAndMechanicalStatusPage), std::nullopt));
+			}
+		}
+		if (page_masks.contains(cdb::SensePage::READ_WRITE_ERROR_RECOVERY_MODE_PAGE)) {
+			auto& page_mask = page_masks[cdb::SensePage::READ_WRITE_ERROR_RECOVERY_MODE_PAGE];
+			if (page_mask.size() < sizeof(cdb::ReadWriteErrorRecoveryModePage)) {
+				OVERDRIVE_THROW(exceptions::InvalidValueException("size of READ_WRITE_ERROR_RECOVERY_MODE_PAGE", page_mask.size(), sizeof(cdb::ReadWriteErrorRecoveryModePage), std::nullopt));
+			}
+		}
 	}
 
 	auto Drive::detect_subchannel_timing_offset(
