@@ -19,6 +19,7 @@
 #include "commands/cue.h"
 #include "commands/iso.h"
 #include "commands/mds.h"
+#include "commands/odi.h"
 #include "../lib/overdrive.h"
 
 using namespace overdrive;
@@ -1185,6 +1186,8 @@ auto main(
 			});
 		} else if (command == "mds") {
 			commands::mds(arguments);
+		} else if (command == "odi") {
+			commands::odi(arguments);
 		} else {
 			fprintf(stderr, "%s\n", "Expected a valid command!");
 		}

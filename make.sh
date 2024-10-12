@@ -23,6 +23,7 @@ SOURCES=(
 	"cli/commands/cue"
 	"cli/commands/iso"
 	"cli/commands/mds"
+	"cli/commands/odi"
 	"lib/accuraterip"
 	"lib/arguments"
 	"lib/bcd"
