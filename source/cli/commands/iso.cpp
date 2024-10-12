@@ -249,17 +249,17 @@ namespace commands {
 		disc_info.print();
 		auto read_correction = options.read_correction ? options.read_correction.value() : drive_info.read_offset_correction ? drive_info.read_offset_correction.value() : 0;
 		fprintf(stderr, "%s\n", std::format("Using read correction [samples]: {}", read_correction).c_str());
-		auto iso_path = internal::get_absolute_path_with_extension(options.path.value_or(""), ".iso");
-		fprintf(stderr, "%s\n", std::format("Using path: \"{}\"", iso_path).c_str());
 		auto disc_tracks = disc::get_disc_tracks(disc_info, options.track_numbers);
 		if (disc_tracks.size() != 1) {
 			OVERDRIVE_THROW(exceptions::InvalidValueException("track count", disc_tracks.size(), 1, 1));
 		}
 		for (auto track_index = size_t(0); track_index < disc_tracks.size(); track_index += 1) {
 			auto& track = disc_tracks.at(track_index);
-			auto user_data_length = disc::get_user_data_length(track.type);
-			if (user_data_length != iso9660::USER_DATA_SIZE) {
-				OVERDRIVE_THROW(exceptions::InvalidValueException("user data length", user_data_length, iso9660::USER_DATA_SIZE, iso9660::USER_DATA_SIZE));
+			if (disc::is_data_track(track.type)) {
+				auto user_data_length = disc::get_user_data_length(track.type);
+				if (user_data_length != iso9660::USER_DATA_SIZE) {
+					OVERDRIVE_THROW(exceptions::InvalidValueException("user data length", user_data_length, iso9660::USER_DATA_SIZE, iso9660::USER_DATA_SIZE));
+				}
 			}
 		}
 		for (auto track_index = size_t(0); track_index < disc_tracks.size(); track_index += 1) {
@@ -287,6 +287,9 @@ namespace commands {
 				} else {
 					fprintf(stderr, "%s\n", std::format("Track {} contains {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
 				}
+				// TODO: Fill gaps in extracted_sectors_vector.
+				auto iso_path = internal::get_absolute_path_with_extension(options.path.value_or(""), std::format("{:0>2}.iso", track_index));
+				fprintf(stderr, "%s\n", std::format("Saving track {} to: \"{}\"", track.number, iso_path).c_str());
 				auto iso_handle = std::fopen(iso_path.c_str(), "wb+");
 				if (iso_handle == nullptr) {
 					OVERDRIVE_THROW(exceptions::IOOpenException(iso_path));
@@ -328,8 +331,36 @@ namespace commands {
 				);
 				auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector);
 				fprintf(stderr, "%s\n", std::format("Track {} contains {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
+				// TODO: Fill gaps in extracted_sectors_vector.
 				if (read_correction_bytes != 0) {
-					// TODO: Adjust data read.
+					auto sector_data_offset = read_correction_bytes - ((first_sector - track.first_sector_relative) * cd::SECTOR_LENGTH);
+					fprintf(stderr, "%s\n", std::format("The first {} bytes will be discarded", sector_data_offset).c_str());
+					// TODO: Shift back bytes to offset 0 and resize vector to final size.
+				}
+				auto bin_path = internal::get_absolute_path_with_extension(options.path.value_or(""), std::format("{:0>2}.bin", track_index));
+				fprintf(stderr, "%s\n", std::format("Saving track {} to: \"{}\"", track.number, bin_path).c_str());
+				auto bin_handle = std::fopen(bin_path.c_str(), "wb+");
+				if (bin_handle == nullptr) {
+					OVERDRIVE_THROW(exceptions::IOOpenException(bin_path));
+				}
+				try {
+					auto empty_sector = std::array<byte_t, cd::SECTOR_LENGTH>();
+					for (auto sector_index = size_t(0); sector_index < extracted_sectors_vector.size(); sector_index += 1) {
+						auto& extracted_sectors = extracted_sectors_vector.at(sector_index);
+						if (extracted_sectors.size() > 0) {
+							auto& extracted_sector = extracted_sectors.at(0);
+							if (std::fwrite(extracted_sector.sector_data, cd::SECTOR_LENGTH, 1, bin_handle) != 1) {
+								OVERDRIVE_THROW(exceptions::IOWriteException(bin_path));
+							}
+						} else {
+							if (std::fwrite(empty_sector.data(), sizeof(empty_sector), 1, bin_handle) != 1) {
+								OVERDRIVE_THROW(exceptions::IOWriteException(bin_path));
+							}
+						}
+					}
+				} catch (...) {
+					std::fclose(bin_handle);
+					throw;
 				}
 				// OVERDRIVE_THROW(exceptions::ExpectedDataTrackException(track.number));
 			}
