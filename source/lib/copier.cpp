@@ -74,8 +74,8 @@ namespace copier {
 		const std::vector<size_t>& bad_sector_indices
 	) -> std::optional<std::map<std::string, std::vector<size_t>>> {
 		try {
-			auto sector = ExtractedSector();
 			if (user_data_length == iso9660::USER_DATA_SIZE) {
+				auto sector = ExtractedSector();
 				auto fs = iso9660::FileSystem([&](size_t sector_index, void* user_data) -> void {
 					drive.read_sector(sector_index, &sector.sector_data, nullptr, nullptr);
 					std::memcpy(user_data, sector.sector_data + user_data_offset, iso9660::USER_DATA_SIZE);

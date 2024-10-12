@@ -257,13 +257,17 @@ namespace commands {
 		}
 		for (auto track_index = size_t(0); track_index < disc_tracks.size(); track_index += 1) {
 			auto& track = disc_tracks.at(track_index);
+			auto user_data_length = disc::get_user_data_length(track.type);
+			if (user_data_length != iso9660::USER_DATA_SIZE) {
+				OVERDRIVE_THROW(exceptions::InvalidValueException("user data length", user_data_length, iso9660::USER_DATA_SIZE, iso9660::USER_DATA_SIZE));
+			}
+		}
+		for (auto track_index = size_t(0); track_index < disc_tracks.size(); track_index += 1) {
+			auto& track = disc_tracks.at(track_index);
 			fprintf(stderr, "%s\n", std::format("Extracting track number {} containing {} sectors from {} to {}", track.number, track.length_sectors, track.first_sector_relative, track.last_sector_relative).c_str());
 			if (disc::is_data_track(track.type)) {
 				auto user_data_offset = disc::get_user_data_offset(track.type);
 				auto user_data_length = disc::get_user_data_length(track.type);
-				if (user_data_length != iso9660::USER_DATA_SIZE) {
-					OVERDRIVE_THROW(exceptions::InvalidValueException("user data length", user_data_length, iso9660::USER_DATA_SIZE, iso9660::USER_DATA_SIZE));
-				}
 				auto extracted_sectors_vector = copier::read_sector_range(
 					drive,
 					track.first_sector_relative,
