@@ -66,6 +66,9 @@ namespace exceptions {
 	InvalidSCSIStatusException::InvalidSCSIStatusException(
 	): SCSIException(std::format("Expected SCSI operation to execute successfully!")) {}
 
+	InvalidSCSIModePageWriteException::InvalidSCSIModePageWriteException(
+	): SCSIException(std::format("Expected SCSI mode page to only contain changable values!")) {}
+
 	IOException::IOException(
 		const std::string& message
 	): OverdriveException(message) {}

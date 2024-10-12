@@ -188,6 +188,14 @@ namespace exceptions {
 		protected:
 	};
 
+	class InvalidSCSIModePageWriteException: public SCSIException {
+		public:
+
+		InvalidSCSIModePageWriteException();
+
+		protected:
+	};
+
 	class IOException: public OverdriveException {
 		public:
 
