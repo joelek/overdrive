@@ -16,5 +16,9 @@ namespace enums {
 	auto TrackType(
 		disc::TrackType value
 	) -> const std::string&;
+
+	auto SensePage(
+		cdb::SensePage value
+	) -> const std::string&;
 }
 }

@@ -38,5 +38,20 @@ namespace enums {
 		}
 		return iterator->second;
 	}
+
+	auto SensePage(
+		cdb::SensePage value
+	) -> const std::string& {
+		static const auto names = std::map<cdb::SensePage, std::string>({
+			{ cdb::SensePage::CACHING_MODE_PAGE, "CACHING_MODE_PAGE" },
+			{ cdb::SensePage::CAPABILITIES_AND_MECHANICAL_STATUS_PAGE, "CAPABILITIES_AND_MECHANICAL_STATUS_PAGE" },
+			{ cdb::SensePage::READ_WRITE_ERROR_RECOVERY_MODE_PAGE, "READ_WRITE_ERROR_RECOVERY_MODE_PAGE" }
+		});
+		auto iterator = names.find(value);
+		if (iterator == names.end()) {
+			OVERDRIVE_THROW(exceptions::MissingValueException("name"));
+		}
+		return iterator->second;
+	}
 }
 }
