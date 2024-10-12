@@ -138,7 +138,7 @@ namespace copier {
 			}
 			auto number_of_identical_copies = get_number_of_identical_copies(extracted_sectors_vector);
 			fprintf(stderr, "%s\n", std::format("Got {} identical copies", number_of_identical_copies).c_str());
-			if (pass_index >= min_passes && number_of_identical_copies >= max_copies) {
+			if (pass_index + 1 >= min_passes && number_of_identical_copies >= max_copies) {
 				break;
 			}
 		}
