@@ -281,7 +281,7 @@ namespace drive {
 		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
 			OVERDRIVE_THROW(exceptions::SCSIException());
 		}
-		auto offset = 0;
+		auto offset = size_t(0);
 		auto& header = *reinterpret_cast<cdb::ModeParameterHeader10*>(data.data() + offset);
 		offset += sizeof(cdb::ModeParameterHeader10);
 		auto length = sizeof(header.mode_data_length_be) + byteswap::byteswap16(header.mode_data_length_be);
