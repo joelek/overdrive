@@ -497,16 +497,18 @@ namespace drive {
 		void* handle,
 		const std::function<byte_t(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)>& ioctl
 	) -> Drive {
-		try {
-			auto drive = Drive(handle, offsetof(cdb::ReadCDResponseDataA, sector_data), offsetof(cdb::ReadCDResponseDataA, subchannels_data), offsetof(cdb::ReadCDResponseDataA, c2_data), ioctl);
-			drive.detect_subchannel_timing_offset();
-			return drive;
-		} catch (const exceptions::AutoDetectFailureException& e) {}
-		try {
-			auto drive = Drive(handle, offsetof(cdb::ReadCDResponseDataB, sector_data), offsetof(cdb::ReadCDResponseDataB, subchannels_data), offsetof(cdb::ReadCDResponseDataB, c2_data), ioctl);
-			drive.detect_subchannel_timing_offset();
-			return drive;
-		} catch (const exceptions::AutoDetectFailureException& e) {}
+		for (auto pass_index = size_t(0); pass_index < MAX_AUTO_DETECT_SETTINGS_PASSES; pass_index += 1) {
+			try {
+				auto drive = Drive(handle, offsetof(cdb::ReadCDResponseDataA, sector_data), offsetof(cdb::ReadCDResponseDataA, subchannels_data), offsetof(cdb::ReadCDResponseDataA, c2_data), ioctl);
+				drive.detect_subchannel_timing_offset();
+				return drive;
+			} catch (const exceptions::AutoDetectFailureException& e) {}
+			try {
+				auto drive = Drive(handle, offsetof(cdb::ReadCDResponseDataB, sector_data), offsetof(cdb::ReadCDResponseDataB, subchannels_data), offsetof(cdb::ReadCDResponseDataB, c2_data), ioctl);
+				drive.detect_subchannel_timing_offset();
+				return drive;
+			} catch (const exceptions::AutoDetectFailureException& e) {}
+		}
 		return Drive(handle, std::optional<size_t>(0), std::optional<size_t>(), std::optional<size_t>(), ioctl);
 	}
 }

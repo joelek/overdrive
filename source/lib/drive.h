@@ -13,6 +13,8 @@ namespace overdrive {
 namespace drive {
 	using namespace shared;
 
+	const auto MAX_AUTO_DETECT_SETTINGS_PASSES = size_t(10);
+
 	class Drive {
 		public:
 
