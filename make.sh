@@ -36,6 +36,7 @@ SOURCES=(
 	"lib/copier"
 	"lib/disc"
 	"lib/drive"
+	"lib/endian"
 	"lib/enums"
 	"lib/exceptions"
 	"lib/idiv"

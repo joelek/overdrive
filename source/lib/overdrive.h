@@ -12,6 +12,7 @@
 #include "copier.h"
 #include "disc.h"
 #include "drive.h"
+#include "endian.h"
 #include "enums.h"
 #include "exceptions.h"
 #include "idiv.h"
