@@ -28,6 +28,7 @@ The [AccurateRip drive database](https://www.accuraterip.com/driveoffsets.htm) p
 * Add debug logging.
 * Organize main code into subcommands.
 * Add support for injecting files into ISO9660 file systems.
+	Requires software RSPC generation for raw image formats.
 * Add support for ODI format.
 * Reorganize exceptions so that enums and types can be re-used.
 
