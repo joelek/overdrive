@@ -141,6 +141,14 @@ namespace cd {
 
 	#pragma pack(pop)
 
+	auto get_absolute_sector_index(
+		si_t relative_sector_index
+	) -> ui_t;
+
+	auto get_relative_sector_index(
+		ui_t absolute_sector_index
+	) -> si_t;
+
 	auto get_sector_from_address(
 		const SectorAddress& address
 	) -> ui_t;

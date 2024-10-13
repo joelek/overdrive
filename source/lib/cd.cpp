@@ -4,6 +4,20 @@
 
 namespace overdrive {
 namespace cd {
+	auto get_absolute_sector_index(
+		si_t relative_sector_index
+	) -> ui_t {
+		auto absolute_sector_index = ui_t(relative_sector_index) + 150;
+		return absolute_sector_index;
+	}
+
+	auto get_relative_sector_index(
+		ui_t absolute_sector_index
+	) -> si_t {
+		auto relative_sector_index = si_t(absolute_sector_index) - 150;
+		return relative_sector_index;
+	}
+
 	auto get_sector_from_address(
 		const SectorAddress& address
 	) -> ui_t {
