@@ -223,6 +223,25 @@ namespace commands {
 			}
 		}
 
+		auto assert_image_compatibility(
+			const std::vector<disc::TrackInfo>& tracks
+		) -> void {
+			if (tracks.size() != 1) {
+				OVERDRIVE_THROW(exceptions::InvalidValueException("track count", tracks.size(), 1, 1));
+			}
+			for (auto track_index = size_t(0); track_index < tracks.size(); track_index += 1) {
+				auto& track = tracks.at(track_index);
+				if (disc::is_data_track(track.type)) {
+					auto user_data_length = disc::get_user_data_length(track.type);
+					if (user_data_length != iso9660::USER_DATA_SIZE) {
+						OVERDRIVE_THROW(exceptions::InvalidValueException("user data length", user_data_length, iso9660::USER_DATA_SIZE, iso9660::USER_DATA_SIZE));
+					}
+				} else {
+					// OVERDRIVE_THROW(exceptions::ExpectedDataTrackException(track.number));
+				}
+			}
+		}
+
 		auto get_absolute_path_with_extension(
 			const std::string& path,
 			const std::string& extension = ""
@@ -248,22 +267,11 @@ namespace commands {
 		auto disc_info = drive.read_disc_info();
 		disc_info.print();
 		auto read_correction = options.read_correction ? options.read_correction.value() : drive_info.read_offset_correction ? drive_info.read_offset_correction.value() : 0;
-		fprintf(stderr, "%s\n", std::format("Using read correction [samples]: {}", read_correction).c_str());
-		auto disc_tracks = disc::get_disc_tracks(disc_info, options.track_numbers);
-		if (disc_tracks.size() != 1) {
-			OVERDRIVE_THROW(exceptions::InvalidValueException("track count", disc_tracks.size(), 1, 1));
-		}
-		for (auto track_index = size_t(0); track_index < disc_tracks.size(); track_index += 1) {
-			auto& track = disc_tracks.at(track_index);
-			if (disc::is_data_track(track.type)) {
-				auto user_data_length = disc::get_user_data_length(track.type);
-				if (user_data_length != iso9660::USER_DATA_SIZE) {
-					OVERDRIVE_THROW(exceptions::InvalidValueException("user data length", user_data_length, iso9660::USER_DATA_SIZE, iso9660::USER_DATA_SIZE));
-				}
-			}
-		}
-		for (auto track_index = size_t(0); track_index < disc_tracks.size(); track_index += 1) {
-			auto& track = disc_tracks.at(track_index);
+		fprintf(stderr, "%s\n", std::format("Using read correction for audio tracks [samples]: {}", read_correction).c_str());
+		auto tracks = disc::get_disc_tracks(disc_info, options.track_numbers);
+		internal::assert_image_compatibility(tracks);
+		for (auto track_index = size_t(0); track_index < tracks.size(); track_index += 1) {
+			auto& track = tracks.at(track_index);
 			fprintf(stderr, "%s\n", std::format("Extracting track number {} containing {} sectors from {} to {}", track.number, track.length_sectors, track.first_sector_absolute, track.last_sector_absolute).c_str());
 			if (disc::is_data_track(track.type)) {
 				auto user_data_offset = disc::get_user_data_offset(track.type);
@@ -345,7 +353,6 @@ namespace commands {
 					std::fclose(bin_handle);
 					throw;
 				}
-				// OVERDRIVE_THROW(exceptions::ExpectedDataTrackException(track.number));
 			}
 		}
 	};
