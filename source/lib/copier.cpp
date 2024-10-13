@@ -62,6 +62,11 @@ namespace copier {
 			auto& extracted_sectors = extracted_sectors_vector.at(sector_index);
 			if (extracted_sectors.size() == 0) {
 				bad_sector_indices.push_back(sector_index);
+			} else {
+				auto& extracted_sector = extracted_sectors.at(0);
+				if (extracted_sector.counter == 0) {
+					bad_sector_indices.push_back(sector_index);
+				}
 			}
 		}
 		return bad_sector_indices;
@@ -116,24 +121,28 @@ namespace copier {
 		for (auto pass_index = size_t(0); pass_index < max_passes; pass_index += 1) {
 			fprintf(stderr, "%s\n", std::format("Running pass {}", pass_index).c_str());
 			for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
+				auto sector = ExtractedSector();
+				auto success = false;
 				try {
-					auto sector = ExtractedSector();
 					drive.read_sector(sector_index, &sector.sector_data, &sector.subchannels_data, &sector.c2_data);
-					auto& extracted_sectors = extracted_sectors_vector.at(sector_index - first_sector);
-					auto found = false;
-					for (auto& extracted_sector : extracted_sectors) {
-						if (extracted_sector.has_identical_sector_data(sector)) {
-							found = true;
-							extracted_sector.counter += 1;
-							break;
-						}
-					}
-					if (!found) {
-						sector.counter = 1;
-						extracted_sectors.push_back(std::move(sector));
-					}
+					success = true;
 				} catch (const exceptions::SCSIException& e) {
 					fprintf(stderr, "%s\n", std::format("Error reading sector {}!", sector_index).c_str());
+				}
+				auto& extracted_sectors = extracted_sectors_vector.at(sector_index - first_sector);
+				auto extracted_sector_with_matching_data = pointer<ExtractedSector>(nullptr);
+				for (auto& extracted_sector : extracted_sectors) {
+					if (extracted_sector.has_identical_sector_data(sector)) {
+						extracted_sector_with_matching_data = &extracted_sector;
+						break;
+					}
+				}
+				if (!extracted_sector_with_matching_data) {
+					extracted_sectors.push_back(std::move(sector));
+					extracted_sector_with_matching_data = &extracted_sectors.back();
+				}
+				if (success) {
+					extracted_sector_with_matching_data->counter += 1;
 				}
 			}
 			auto number_of_identical_copies = get_number_of_identical_copies(extracted_sectors_vector);

@@ -287,7 +287,6 @@ namespace commands {
 				} else {
 					fprintf(stderr, "%s\n", std::format("Track {} contains {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
 				}
-				// TODO: Fill gaps in extracted_sectors_vector.
 				auto iso_path = internal::get_absolute_path_with_extension(options.path.value_or(""), std::format("{:0>2}.iso", track_index));
 				fprintf(stderr, "%s\n", std::format("Saving track {} to: \"{}\"", track.number, iso_path).c_str());
 				auto iso_handle = std::fopen(iso_path.c_str(), "wb+");
@@ -331,7 +330,6 @@ namespace commands {
 				);
 				auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector);
 				fprintf(stderr, "%s\n", std::format("Track {} contains {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
-				// TODO: Fill gaps in extracted_sectors_vector.
 				if (read_correction_bytes != 0) {
 					auto sector_data_offset = read_correction_bytes - ((first_sector - track.first_sector_relative) * cd::SECTOR_LENGTH);
 					fprintf(stderr, "%s\n", std::format("The first {} bytes will be discarded", sector_data_offset).c_str());
