@@ -8,7 +8,7 @@ namespace cdb {
 	auto get_session_type(
 		const ReadTOCResponseFullTOC& toc
 	) -> SessionType {
-		auto toc_length = byteswap::byteswap16(toc.header.data_length_be);
+		auto toc_length = byteswap::byteswap16_on_little_endian_systems(toc.header.data_length_be);
 		auto track_count = (toc_length - sizeof(toc.header.data_length_be)) / sizeof(ReadTOCResponseFullTOCEntry);
 		for (auto track_index = size_t(0); track_index < track_count; track_index += 1) {
 			auto& track = toc.entries[track_index];
@@ -22,7 +22,7 @@ namespace cdb {
 	auto validate_session_info_toc(
 		const ReadTOCResponseSessionInfoTOC& toc
 	) -> size_t {
-		auto length = byteswap::byteswap16(toc.header.data_length_be);
+		auto length = byteswap::byteswap16_on_little_endian_systems(toc.header.data_length_be);
 		auto min_length = sizeof(toc.header) - sizeof(toc.header.data_length_be);
 		auto max_length = sizeof(toc) - sizeof(toc.header.data_length_be);
 		if (length < min_length || length > max_length) {
@@ -52,7 +52,7 @@ namespace cdb {
 	auto validate_normal_toc(
 		const ReadTOCResponseNormalTOC& toc
 	) -> size_t {
-		auto length = byteswap::byteswap16(toc.header.data_length_be);
+		auto length = byteswap::byteswap16_on_little_endian_systems(toc.header.data_length_be);
 		auto min_length = sizeof(toc.header) - sizeof(toc.header.data_length_be);
 		auto max_length = sizeof(toc) - sizeof(toc.header.data_length_be);
 		if (length < min_length || length > max_length) {
@@ -82,7 +82,7 @@ namespace cdb {
 	auto validate_full_toc(
 		const ReadTOCResponseFullTOC& toc
 	) -> size_t {
-		auto length = byteswap::byteswap16(toc.header.data_length_be);
+		auto length = byteswap::byteswap16_on_little_endian_systems(toc.header.data_length_be);
 		auto min_length = sizeof(toc.header) - sizeof(toc.header.data_length_be);
 		auto max_length = sizeof(toc) - sizeof(toc.header.data_length_be);
 		if (length < min_length || length > max_length) {
