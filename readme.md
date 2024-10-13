@@ -25,7 +25,6 @@ The [AccurateRip drive database](https://www.accuraterip.com/driveoffsets.htm) p
 	Read track in several passes and refine sector data using C2 information for all track types.
 	Apply software RSPC for data tracks.
 * Make utility platform-independent.
-* Prevent big endian values from being read as little endian on big endian systems.
 * Add debug logging.
 * Organize main code into subcommands.
 * Add support for injecting files into ISO9660 file systems.
