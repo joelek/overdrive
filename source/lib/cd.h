@@ -22,6 +22,12 @@ namespace cd {
 	const auto SUBCHANNEL_W_INDEX = size_t(7);
 	const auto SUBCHANNELS_LENGTH = size_t(SUBCHANNEL_COUNT * SUBCHANNEL_LENGTH);
 	const auto C2_LENGTH = size_t(SECTOR_LENGTH / 8);
+	const auto PACKET_DATA_LENGTH = size_t(24);
+	const auto PACKET_CIRC_LENGTH = size_t(8);
+	const auto PACKET_SUBCHANNELS_LENGTH = size_t(1);
+	const auto PACKET_LENGTH = size_t(PACKET_DATA_LENGTH + PACKET_CIRC_LENGTH + PACKET_SUBCHANNELS_LENGTH);
+	const auto PACKETS_PER_SECTOR = size_t(98);
+	const auto PHYSICAL_SECTOR_LENGTH = size_t(PACKET_LENGTH * PACKETS_PER_SECTOR);
 
 	#pragma pack(push, 1)
 
