@@ -287,7 +287,7 @@ namespace commands {
 					options.data_min_copies,
 					options.data_max_copies
 				);
-				auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector);
+				auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
 				auto bad_sector_indices_per_path = copier::get_bad_sector_indices_per_path(drive, user_data_offset, user_data_length, bad_sector_indices);
 				if (bad_sector_indices_per_path) {
 					for (auto& entry : bad_sector_indices_per_path.value()) {
@@ -337,8 +337,6 @@ namespace commands {
 					options.audio_min_copies,
 					options.audio_max_copies
 				);
-				auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector);
-				fprintf(stderr, "%s\n", std::format("Track {} contains {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
 				if (read_correction_bytes != 0) {
 					for (auto sector_index = track.first_sector_absolute; sector_index < track.last_sector_absolute; sector_index += 1) {
 						auto& extracted_sectors = extracted_sectors_vector.at(sector_index - track.first_sector_absolute);
@@ -350,6 +348,8 @@ namespace commands {
 					}
 					extracted_sectors_vector.resize(track.last_sector_absolute - track.first_sector_absolute);
 				}
+				auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
+				fprintf(stderr, "%s\n", std::format("Track {} contains {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
 				auto bin_path = internal::get_absolute_path_with_extension(options.path.value_or(""), std::format("{:0>2}.bin", track_index));
 				fprintf(stderr, "%s\n", std::format("Saving track {} to: \"{}\"", track.number, bin_path).c_str());
 				auto bin_handle = std::fopen(bin_path.c_str(), "wb+");

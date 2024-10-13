@@ -40,7 +40,8 @@ namespace copier {
 	) -> size_t;
 
 	auto get_bad_sector_indices(
-		const std::vector<std::vector<ExtractedSector>>& extracted_sectors_vector
+		const std::vector<std::vector<ExtractedSector>>& extracted_sectors_vector,
+		size_t first_sector
 	) -> std::vector<size_t>;
 
 	auto get_bad_sector_indices_per_path(

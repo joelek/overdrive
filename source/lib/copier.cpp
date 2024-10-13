@@ -55,17 +55,18 @@ namespace copier {
 	}
 
 	auto get_bad_sector_indices(
-		const std::vector<std::vector<ExtractedSector>>& extracted_sectors_vector
+		const std::vector<std::vector<ExtractedSector>>& extracted_sectors_vector,
+		size_t first_sector
 	) -> std::vector<size_t> {
 		auto bad_sector_indices = std::vector<size_t>();
 		for (auto sector_index = size_t(0); sector_index < extracted_sectors_vector.size(); sector_index += 1) {
 			auto& extracted_sectors = extracted_sectors_vector.at(sector_index);
 			if (extracted_sectors.size() == 0) {
-				bad_sector_indices.push_back(sector_index);
+				bad_sector_indices.push_back(first_sector + sector_index);
 			} else {
 				auto& extracted_sector = extracted_sectors.at(0);
 				if (extracted_sector.counter == 0) {
-					bad_sector_indices.push_back(sector_index);
+					bad_sector_indices.push_back(first_sector + sector_index);
 				}
 			}
 		}
@@ -82,7 +83,7 @@ namespace copier {
 			if (user_data_length == iso9660::USER_DATA_SIZE) {
 				auto sector = ExtractedSector();
 				auto fs = iso9660::FileSystem([&](size_t sector_index, void* user_data) -> void {
-					drive.read_absolute_sector(cd::get_absolute_sector_index(sector_index), &sector.sector_data, nullptr, nullptr);
+					drive.read_absolute_sector(sector_index, &sector.sector_data, nullptr, nullptr);
 					std::memcpy(user_data, sector.sector_data + user_data_offset, iso9660::USER_DATA_SIZE);
 				});
 				auto bad_sector_indices_per_path = std::map<std::string, std::vector<size_t>>();
