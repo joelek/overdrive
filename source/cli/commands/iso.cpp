@@ -264,14 +264,14 @@ namespace commands {
 		}
 		for (auto track_index = size_t(0); track_index < disc_tracks.size(); track_index += 1) {
 			auto& track = disc_tracks.at(track_index);
-			fprintf(stderr, "%s\n", std::format("Extracting track number {} containing {} sectors from {} to {}", track.number, track.length_sectors, track.first_sector_relative, track.last_sector_relative).c_str());
+			fprintf(stderr, "%s\n", std::format("Extracting track number {} containing {} sectors from {} to {}", track.number, track.length_sectors, track.first_sector_absolute, track.last_sector_absolute).c_str());
 			if (disc::is_data_track(track.type)) {
 				auto user_data_offset = disc::get_user_data_offset(track.type);
 				auto user_data_length = disc::get_user_data_length(track.type);
-				auto extracted_sectors_vector = copier::read_sector_range(
+				auto extracted_sectors_vector = copier::read_absolute_sector_range(
 					drive,
-					track.first_sector_relative,
-					track.last_sector_relative,
+					track.first_sector_absolute,
+					track.last_sector_absolute,
 					options.data_min_passes,
 					options.data_max_passes,
 					options.data_max_retries,
@@ -314,11 +314,11 @@ namespace commands {
 				}
 			} else {
 				auto read_correction_bytes = read_correction * si_t(cdda::STEREO_SAMPLE_LENGTH);
-				auto start_offset_bytes = si_t(track.first_sector_relative * cd::SECTOR_LENGTH) + read_correction_bytes;
-				auto end_offset_bytes = si_t(track.last_sector_relative * cd::SECTOR_LENGTH) + read_correction_bytes;
+				auto start_offset_bytes = si_t(track.first_sector_absolute * cd::SECTOR_LENGTH) + read_correction_bytes;
+				auto end_offset_bytes = si_t(track.last_sector_absolute * cd::SECTOR_LENGTH) + read_correction_bytes;
 				auto first_sector = idiv::floor(start_offset_bytes, cd::SECTOR_LENGTH);
 				auto last_sector = idiv::ceil(end_offset_bytes, cd::SECTOR_LENGTH);
-				auto extracted_sectors_vector = copier::read_sector_range(
+				auto extracted_sectors_vector = copier::read_absolute_sector_range(
 					drive,
 					first_sector,
 					last_sector,
@@ -331,9 +331,8 @@ namespace commands {
 				auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector);
 				fprintf(stderr, "%s\n", std::format("Track {} contains {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
 				if (read_correction_bytes != 0) {
-					auto sector_data_offset = read_correction_bytes - ((first_sector - track.first_sector_relative) * cd::SECTOR_LENGTH);
-					fprintf(stderr, "%s\n", std::format("The first {} bytes will be discarded", sector_data_offset).c_str());
-					// TODO: Shift back bytes to offset 0 and resize vector to final size.
+					auto sector_data_offset_bytes = read_correction_bytes - ((first_sector - track.first_sector_absolute) * cd::SECTOR_LENGTH);
+					fprintf(stderr, "%s\n", std::format("The first {} bytes will be discarded", sector_data_offset_bytes).c_str());
 				}
 				auto bin_path = internal::get_absolute_path_with_extension(options.path.value_or(""), std::format("{:0>2}.bin", track_index));
 				fprintf(stderr, "%s\n", std::format("Saving track {} to: \"{}\"", track.number, bin_path).c_str());

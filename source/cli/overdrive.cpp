@@ -1031,7 +1031,7 @@ auto save(
 					for (auto sector_index = adjusted_first_sector; sector_index < adjusted_last_sector; sector_index += 1) {
 						try {
 							auto c2_data = (UCHAR*)&cd_sector + c2_offset.value();
-							scsi_drive.read_sector(sector_index, &cd_sector.sector_data, &cd_sector.subchannels_data, &cd_sector.c2_data);
+							scsi_drive.read_absolute_sector(cd::get_absolute_sector_index(sector_index), &cd_sector.sector_data, &cd_sector.subchannels_data, &cd_sector.c2_data);
 							for (auto i = 0; i < (int)sizeof(cd_sector.c2_data); i++) {
 								if (c2_data[i] != 0) {
 									c2_errors = true;
@@ -1091,13 +1091,13 @@ auto save(
 			} else {
 				fprintf(stderr, "Current track contains data\n");
 				auto file_system = iso9660::FileSystem([&](size_t sector, void* user_data) -> void {
-					scsi_drive.read_sector(sector, &cd_sector.sector_data, &cd_sector.subchannels_data, &cd_sector.c2_data);
+					scsi_drive.read_absolute_sector(cd::get_absolute_sector_index(sector), &cd_sector.sector_data, &cd_sector.subchannels_data, &cd_sector.c2_data);
 					std::memcpy(user_data, cd_sector.sector_data + data_offset, cdrom::MODE1_DATA_LENGTH);
 				});
 				fprintf(stderr, "Extracting %u sectors from %u to %u\n", track_length_sectors, first_sector, last_sector - 1);
 				for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
 					try {
-						scsi_drive.read_sector(sector_index, &cd_sector.sector_data, &cd_sector.subchannels_data, &cd_sector.c2_data);
+						scsi_drive.read_absolute_sector(cd::get_absolute_sector_index(sector_index), &cd_sector.sector_data, &cd_sector.subchannels_data, &cd_sector.c2_data);
 						auto outcome = image_format->write_sector_data(current_track, cd_sector.sector_data + data_offset, data_length);
 						if (!outcome) {
 							fprintf(stderr, "Error writing sector data %u to file!\n", sector_index);

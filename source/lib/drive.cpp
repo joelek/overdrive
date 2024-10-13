@@ -36,7 +36,7 @@ namespace drive {
 		auto deltas = std::array<si_t, 10>();
 		auto deltas_index = size_t(0);
 		for (auto sector_index = size_t(0); sector_index < size_t(10); sector_index += 1) {
-			this->read_sector(sector_index, nullptr, &data.subchannels_data, nullptr);
+			this->read_absolute_sector(cd::get_absolute_sector_index(sector_index), nullptr, &data.subchannels_data, nullptr);
 			auto subchannels = cd::deinterleave_subchannel_data(data.subchannels_data);
 			auto& q = *reinterpret_cast<cd::SubchannelQ*>(subchannels.channels[cd::SUBCHANNEL_Q_INDEX]);
 			if (q.adr == 1) {
@@ -89,7 +89,7 @@ namespace drive {
 			auto session_type = cdb::get_session_type(toc);
 			if (session_type == cdb::SessionType::CDDA_OR_CDROM) {
 				auto data = cdb::ReadCDResponseDataA();
-				this->read_sector(iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR, &data.sector_data, nullptr, nullptr);
+				this->read_absolute_sector(cd::get_absolute_sector_index(iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR), &data.sector_data, nullptr, nullptr);
 				auto& sector = *reinterpret_cast<cdrom::Sector*>(&data.sector_data);
 				if (sector.base.header.mode == 0) {
 					return disc::TrackType::DATA_MODE0;
@@ -104,7 +104,7 @@ namespace drive {
 				OVERDRIVE_THROW(exceptions::UnsupportedValueException("session type CDI"));
 			} else if (session_type == cdb::SessionType::CDXA_OR_DDCD) {
 				auto data = cdb::ReadCDResponseDataA();
-				this->read_sector(iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR, &data.sector_data, nullptr, nullptr);
+				this->read_absolute_sector(cd::get_absolute_sector_index(iso9660::PRIMARY_VOLUME_DESCRIPTOR_SECTOR), &data.sector_data, nullptr, nullptr);
 				auto& sector = *reinterpret_cast<cdxa::Sector*>(&data.sector_data);
 				if (sector.base.header.mode == 2) {
 					if (sector.base.header_1.form_2 == 0) {
@@ -290,15 +290,15 @@ namespace drive {
 		return status == byte_t(scsi::StatusCode::GOOD);
 	}
 
-	auto Drive::read_sector(
-		size_t sector_index,
+	auto Drive::read_absolute_sector(
+		size_t absolute_index,
 		pointer<array<cd::SECTOR_LENGTH, byte_t>> sector_data,
 		pointer<array<cd::SUBCHANNELS_LENGTH, byte_t>> subchannels_data,
 		pointer<array<cd::C2_LENGTH, byte_t>> c2_data
 	) const -> void {
 		auto cdb = cdb::ReadCD12();
 		cdb.expected_sector_type = cdb::ReadCD12ExpectedSectorType::ANY;
-		cdb.lba_be = byteswap::byteswap32(sector_index);
+		cdb.lba_be = byteswap::byteswap32(cd::get_relative_sector_index(absolute_index));
 		cdb.transfer_length_be[2] = 1;
 		cdb.errors = cdb::ReadCD12Errors::C2_ERROR_BLOCK_DATA;
 		cdb.edc_and_ecc = 1;

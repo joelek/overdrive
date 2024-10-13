@@ -84,8 +84,8 @@ namespace drive {
 		auto test_unit_ready(
 		) const -> bool_t;
 
-		auto read_sector(
-			size_t sector_index,
+		auto read_absolute_sector(
+			size_t absolute_index,
 			pointer<array<cd::SECTOR_LENGTH, byte_t>> sector_data,
 			pointer<array<cd::SUBCHANNELS_LENGTH, byte_t>> subchannels_data,
 			pointer<array<cd::C2_LENGTH, byte_t>> c2_data

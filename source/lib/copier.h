@@ -50,7 +50,7 @@ namespace copier {
 		const std::vector<size_t>& bad_sector_indices
 	) -> std::optional<std::map<std::string, std::vector<size_t>>>;
 
-	auto read_sector_range(
+	auto read_absolute_sector_range(
 		const drive::Drive& drive,
 		size_t first_sector,
 		size_t last_sector,

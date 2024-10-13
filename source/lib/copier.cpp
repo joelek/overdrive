@@ -82,7 +82,7 @@ namespace copier {
 			if (user_data_length == iso9660::USER_DATA_SIZE) {
 				auto sector = ExtractedSector();
 				auto fs = iso9660::FileSystem([&](size_t sector_index, void* user_data) -> void {
-					drive.read_sector(sector_index, &sector.sector_data, nullptr, nullptr);
+					drive.read_absolute_sector(cd::get_absolute_sector_index(sector_index), &sector.sector_data, nullptr, nullptr);
 					std::memcpy(user_data, sector.sector_data + user_data_offset, iso9660::USER_DATA_SIZE);
 				});
 				auto bad_sector_indices_per_path = std::map<std::string, std::vector<size_t>>();
@@ -105,7 +105,7 @@ namespace copier {
 		return std::optional<std::map<std::string, std::vector<size_t>>>();
 	}
 
-	auto read_sector_range(
+	auto read_absolute_sector_range(
 		const drive::Drive& drive,
 		size_t first_sector,
 		size_t last_sector,
@@ -124,7 +124,7 @@ namespace copier {
 				auto sector = ExtractedSector();
 				auto success = false;
 				try {
-					drive.read_sector(sector_index, &sector.sector_data, &sector.subchannels_data, &sector.c2_data);
+					drive.read_absolute_sector(sector_index, &sector.sector_data, &sector.subchannels_data, &sector.c2_data);
 					success = true;
 				} catch (const exceptions::SCSIException& e) {
 					fprintf(stderr, "%s\n", std::format("Error reading sector {}!", sector_index).c_str());
