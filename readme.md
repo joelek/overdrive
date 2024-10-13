@@ -17,7 +17,7 @@ The [AccurateRip drive database](https://www.accuraterip.com/driveoffsets.htm) p
 ## Roadmap
 
 * Investigate possibility of disabling read cache.
-	Can be done by issuing normal READ SCSI command.
+	Can be done by issuing normal READ SCSI command but might not be respected by the drive.
 * Implement C2-based refinement.
 	Transfer block setting is controlled through ReadWriteErrorRecoveryModePage.
 	Disable RSPC for data tracks.
