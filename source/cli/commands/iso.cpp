@@ -294,18 +294,11 @@ namespace commands {
 					OVERDRIVE_THROW(exceptions::IOOpenException(iso_path));
 				}
 				try {
-					auto empty_sector = std::array<byte_t, iso9660::USER_DATA_SIZE>();
 					for (auto sector_index = size_t(0); sector_index < extracted_sectors_vector.size(); sector_index += 1) {
 						auto& extracted_sectors = extracted_sectors_vector.at(sector_index);
-						if (extracted_sectors.size() > 0) {
-							auto& extracted_sector = extracted_sectors.at(0);
-							if (std::fwrite(extracted_sector.sector_data + user_data_offset, user_data_length, 1, iso_handle) != 1) {
-								OVERDRIVE_THROW(exceptions::IOWriteException(iso_path));
-							}
-						} else {
-							if (std::fwrite(empty_sector.data(), sizeof(empty_sector), 1, iso_handle) != 1) {
-								OVERDRIVE_THROW(exceptions::IOWriteException(iso_path));
-							}
+						auto& extracted_sector = extracted_sectors.at(0);
+						if (std::fwrite(extracted_sector.sector_data + user_data_offset, user_data_length, 1, iso_handle) != 1) {
+							OVERDRIVE_THROW(exceptions::IOWriteException(iso_path));
 						}
 					}
 				} catch (...) {
@@ -341,18 +334,11 @@ namespace commands {
 					OVERDRIVE_THROW(exceptions::IOOpenException(bin_path));
 				}
 				try {
-					auto empty_sector = std::array<byte_t, cd::SECTOR_LENGTH>();
 					for (auto sector_index = size_t(0); sector_index < extracted_sectors_vector.size(); sector_index += 1) {
 						auto& extracted_sectors = extracted_sectors_vector.at(sector_index);
-						if (extracted_sectors.size() > 0) {
-							auto& extracted_sector = extracted_sectors.at(0);
-							if (std::fwrite(extracted_sector.sector_data, cd::SECTOR_LENGTH, 1, bin_handle) != 1) {
-								OVERDRIVE_THROW(exceptions::IOWriteException(bin_path));
-							}
-						} else {
-							if (std::fwrite(empty_sector.data(), sizeof(empty_sector), 1, bin_handle) != 1) {
-								OVERDRIVE_THROW(exceptions::IOWriteException(bin_path));
-							}
+						auto& extracted_sector = extracted_sectors.at(0);
+						if (std::fwrite(extracted_sector.sector_data, cd::SECTOR_LENGTH, 1, bin_handle) != 1) {
+							OVERDRIVE_THROW(exceptions::IOWriteException(bin_path));
 						}
 					}
 				} catch (...) {
