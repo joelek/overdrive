@@ -318,11 +318,11 @@ namespace commands {
 					drive,
 					track.first_sector_absolute,
 					track.last_sector_absolute,
-					options.data_min_passes,
-					options.data_max_passes,
-					options.data_max_retries,
-					options.data_min_copies,
-					options.data_max_copies,
+					options.audio_min_passes,
+					options.audio_max_passes,
+					options.audio_max_retries,
+					options.audio_min_copies,
+					options.audio_max_copies,
 					read_correction_bytes
 				);
 				auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
