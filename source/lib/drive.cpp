@@ -385,7 +385,6 @@ namespace drive {
 			track.number = entry.point;
 			track.type = this->determine_track_type(toc, toc_index);
 			track.first_sector_absolute = cd::get_sector_from_address(entry.paddress);
-			track.first_sector_relative = track.first_sector_absolute - 150;
 			track.length_sectors = 0;
 			session.tracks.push_back(track);
 		}
@@ -407,7 +406,6 @@ namespace drive {
 					track.length_sectors = lead_out_first_sector_absolute.value() - track.first_sector_absolute;
 				}
 				track.last_sector_absolute = track.first_sector_absolute + track.length_sectors;
-				track.last_sector_relative = track.first_sector_relative + track.length_sectors;
 				session.length_sectors += track.length_sectors;
 			}
 			disc.length_sectors += session.length_sectors;
