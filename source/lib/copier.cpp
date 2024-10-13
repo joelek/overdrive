@@ -84,12 +84,12 @@ namespace copier {
 			if (user_data_length == iso9660::USER_DATA_SIZE) {
 				auto sector = ExtractedSector();
 				auto fs = iso9660::FileSystem([&](size_t sector_index, void* user_data) -> void {
-					drive.read_absolute_sector(sector_index, &sector.sector_data, nullptr, nullptr);
+					drive.read_absolute_sector(cd::get_absolute_sector_index(sector_index), &sector.sector_data, nullptr, nullptr);
 					std::memcpy(user_data, sector.sector_data + user_data_offset, iso9660::USER_DATA_SIZE);
 				});
 				auto bad_sector_indices_per_path = std::map<std::string, std::vector<size_t>>();
 				for (auto bad_sector_index : bad_sector_indices) {
-					auto optional_path = fs.get_path(bad_sector_index);
+					auto optional_path = fs.get_path(cd::get_relative_sector_index(bad_sector_index));
 					if (optional_path) {
 						auto path = std::string("/") + string::join(optional_path.value(), "/");
 						auto& bad_sector_indices = bad_sector_indices_per_path[path];
