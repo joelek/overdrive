@@ -31,6 +31,8 @@ The [AccurateRip drive database](https://www.accuraterip.com/driveoffsets.htm) p
 	Requires software RSPC generation for raw image formats.
 * Add support for ODI format.
 * Reorganize exceptions so that enums and types can be re-used.
+* Improve copier to better extract subchannels.
+	Requires CRC16 computation.
 
 ## References
 
