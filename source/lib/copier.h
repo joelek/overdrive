@@ -57,9 +57,21 @@ namespace copier {
 		size_t last_sector,
 		size_t min_passes,
 		size_t max_passes,
-		size_t max_read_reties,
+		size_t max_retries,
 		size_t min_copies,
 		size_t max_copies
+	) -> std::vector<std::vector<ExtractedSector>>;
+
+	auto read_absolute_sector_range_with_correction(
+		const drive::Drive& drive,
+		size_t first_sector,
+		size_t last_sector,
+		size_t min_passes,
+		size_t max_passes,
+		size_t max_retries,
+		size_t min_copies,
+		size_t max_copies,
+		si_t read_correction_bytes
 	) -> std::vector<std::vector<ExtractedSector>>;
 }
 }

@@ -4,6 +4,7 @@
 #include <cstring>
 #include <format>
 #include "exceptions.h"
+#include "idiv.h"
 #include "iso9660.h"
 #include "string.h"
 
@@ -112,13 +113,13 @@ namespace copier {
 		size_t last_sector,
 		size_t min_passes,
 		size_t max_passes,
-		size_t max_read_reties,
+		size_t max_retries,
 		size_t min_copies,
 		size_t max_copies
 	) -> std::vector<std::vector<ExtractedSector>> {
 		auto length_sectors = last_sector - first_sector;
 		auto extracted_sectors_vector = std::vector<std::vector<ExtractedSector>>(length_sectors);
-		drive.set_read_retry_count(max_read_reties);
+		drive.set_read_retry_count(max_retries);
 		for (auto pass_index = size_t(0); pass_index < max_passes; pass_index += 1) {
 			fprintf(stderr, "%s\n", std::format("Running pass {}", pass_index).c_str());
 			for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
@@ -155,6 +156,52 @@ namespace copier {
 		auto number_of_identical_copies = get_number_of_identical_copies(extracted_sectors_vector);
 		if (number_of_identical_copies < min_copies) {
 			OVERDRIVE_THROW(exceptions::InvalidValueException("number of identical copies", number_of_identical_copies, min_copies, max_copies));
+		}
+		return extracted_sectors_vector;
+	}
+
+	auto read_absolute_sector_range_with_correction(
+		const drive::Drive& drive,
+		size_t first_sector,
+		size_t last_sector,
+		size_t min_passes,
+		size_t max_passes,
+		size_t max_retries,
+		size_t min_copies,
+		size_t max_copies,
+		si_t read_correction_bytes
+	) -> std::vector<std::vector<ExtractedSector>> {
+		auto start_offset_bytes = si_t(first_sector * cd::SECTOR_LENGTH) + read_correction_bytes;
+		auto end_offset_bytes = si_t(last_sector * cd::SECTOR_LENGTH) + read_correction_bytes;
+		auto adjusted_first_sector = idiv::floor(start_offset_bytes, cd::SECTOR_LENGTH);
+		auto adjusted_last_sector = idiv::ceil(end_offset_bytes, cd::SECTOR_LENGTH);
+		auto prefix_length = read_correction_bytes - ((adjusted_first_sector - first_sector) * cd::SECTOR_LENGTH);
+		auto suffix_length = cd::SECTOR_LENGTH - prefix_length;
+		if (read_correction_bytes != 0) {
+			fprintf(stderr, "%s\n", std::format("Adjusted sector range is from {} to {}", adjusted_first_sector, adjusted_last_sector).c_str());
+			fprintf(stderr, "%s\n", std::format("The first {} bytes of sector data will be discarded", prefix_length).c_str());
+			fprintf(stderr, "%s\n", std::format("The last {} bytes of sector data will be discarded", suffix_length).c_str());
+		}
+		auto extracted_sectors_vector = copier::read_absolute_sector_range(
+			drive,
+			adjusted_first_sector,
+			adjusted_last_sector,
+			min_passes,
+			max_passes,
+			max_retries,
+			min_copies,
+			max_copies
+		);
+		if (read_correction_bytes != 0) {
+			for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
+				auto& extracted_sectors = extracted_sectors_vector.at(sector_index - first_sector);
+				auto& extracted_sector = extracted_sectors.at(0);
+				std::memmove(&extracted_sector.sector_data[0], &extracted_sector.sector_data[prefix_length], suffix_length);
+				auto& next_extracted_sectors = extracted_sectors_vector.at(sector_index - first_sector + 1);
+				auto& next_extracted_sector = next_extracted_sectors.at(0);
+				std::memmove(&extracted_sector.sector_data[suffix_length], &next_extracted_sector.sector_data[0], prefix_length);
+			}
+			extracted_sectors_vector.resize(last_sector - first_sector);
 		}
 		return extracted_sectors_vector;
 	}
