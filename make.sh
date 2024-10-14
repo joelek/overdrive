@@ -34,6 +34,7 @@ SOURCES=(
 	"lib/cdrom"
 	"lib/cdxa"
 	"lib/copier"
+	"lib/crc"
 	"lib/disc"
 	"lib/drive"
 	"lib/endian"

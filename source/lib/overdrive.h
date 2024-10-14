@@ -10,6 +10,7 @@
 #include "cdrom.h"
 #include "cdxa.h"
 #include "copier.h"
+#include "crc.h"
 #include "disc.h"
 #include "drive.h"
 #include "endian.h"
