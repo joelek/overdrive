@@ -495,6 +495,10 @@ namespace drive {
 		void* handle,
 		const std::function<byte_t(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)>& ioctl
 	) -> Drive {
+		auto drive = Drive(handle, std::optional<size_t>(0), std::optional<size_t>(), std::optional<size_t>(), ioctl);
+		if (!drive.test_unit_ready()) {
+			OVERDRIVE_THROW(exceptions::ExpectedOpticalDiscException());
+		}
 		for (auto pass_index = size_t(0); pass_index < MAX_AUTO_DETECT_SETTINGS_PASSES; pass_index += 1) {
 			try {
 				auto drive = Drive(handle, offsetof(cdb::ReadCDResponseDataA, sector_data), offsetof(cdb::ReadCDResponseDataA, subchannels_data), offsetof(cdb::ReadCDResponseDataA, c2_data), ioctl);
@@ -507,7 +511,7 @@ namespace drive {
 				return drive;
 			} catch (const exceptions::AutoDetectFailureException& e) {}
 		}
-		return Drive(handle, std::optional<size_t>(0), std::optional<size_t>(), std::optional<size_t>(), ioctl);
+		return drive;
 	}
 }
 }
