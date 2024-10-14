@@ -32,18 +32,20 @@ namespace exceptions {
 		const std::string& message
 	): OverdriveException(message) {}
 
-	BadArgumentException::BadArgumentException(
+	BadArgumentFormatException::BadArgumentFormatException(
 		const std::string& name,
 		const std::string& format
 	): ArgumentException(std::format("Expected argument \"{}\" to have format {}!", name, format)) {}
 
-	MissingArgumentException::MissingArgumentException(
-		const std::string& name
-	): ArgumentException(std::format("Expected argument \"{}\" to be specified!", name)) {}
+	BadArgumentOccurencesException::BadArgumentOccurencesException(
+		const std::string& name,
+		size_t min_occurences,
+		size_t max_occurences
+	): ArgumentException(std::format("Expected argument \"{}\" to be specified between {} and {} times!", name, min_occurences, max_occurences)) {}
 
-	UnknownArgumentException::UnknownArgumentException(
+	UnrecognizedArgumentException::UnrecognizedArgumentException(
 		const std::string& name
-	): ArgumentException(std::format("Expected argument \"{}\" to be known!", name)) {}
+	): ArgumentException(std::format("Expected argument \"{}\" to be recognized!", name)) {}
 
 	ExpectedDataTrackException::ExpectedDataTrackException(
 		size_t track_number

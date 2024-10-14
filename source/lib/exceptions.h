@@ -101,10 +101,10 @@ namespace exceptions {
 		protected:
 	};
 
-	class BadArgumentException: public ArgumentException {
+	class BadArgumentFormatException: public ArgumentException {
 		public:
 
-		BadArgumentException(
+		BadArgumentFormatException(
 			const std::string& name,
 			const std::string& format
 		);
@@ -112,20 +112,22 @@ namespace exceptions {
 		protected:
 	};
 
-	class MissingArgumentException: public ArgumentException {
+	class BadArgumentOccurencesException: public ArgumentException {
 		public:
 
-		MissingArgumentException(
-			const std::string& name
+		BadArgumentOccurencesException(
+			const std::string& name,
+			size_t min_occurences,
+			size_t max_occurences
 		);
 
 		protected:
 	};
 
-	class UnknownArgumentException: public ArgumentException {
+	class UnrecognizedArgumentException: public ArgumentException {
 		public:
 
-		UnknownArgumentException(
+		UnrecognizedArgumentException(
 			const std::string& name
 		);
 

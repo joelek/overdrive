@@ -43,7 +43,8 @@ namespace commands {
 				"string",
 				true,
 				std::optional<std::string>(),
-				true,
+				1,
+				1,
 				[&](const std::vector<std::string>& matches) -> void {
 					options.drive = matches.at(0);
 				}
@@ -55,7 +56,8 @@ namespace commands {
 				"string",
 				true,
 				std::optional<std::string>(),
-				false,
+				0,
+				1,
 				[&](const std::vector<std::string>& matches) -> void {
 					options.path = matches.at(0);
 				}
@@ -67,7 +69,8 @@ namespace commands {
 				"integer",
 				false,
 				std::optional<std::string>(),
-				false,
+				0,
+				1,
 				[&](const std::vector<std::string>& matches) -> void {
 					options.read_correction = std::atoi(matches.at(0).c_str());
 				}
@@ -75,11 +78,12 @@ namespace commands {
 			parsers.push_back(arguments::Parser({
 				"track-numbers",
 				"Specify which track numbers to read.",
-				std::regex("^([1-9]|[1-9][0-9])(?:[,]([1-9]|[1-9][0-9]))*$"),
-				"list<integer>",
+				std::regex("^([1-9]|[1-9][0-9])$"),
+				"integer",
 				false,
 				std::optional<std::string>(),
-				false,
+				0,
+				99,
 				[&](const std::vector<std::string>& matches) -> void {
 					auto track_numbers = std::set<size_t>();
 					for (auto& match : matches) {
@@ -95,7 +99,8 @@ namespace commands {
 				"integer",
 				false,
 				std::optional<std::string>("1"),
-				false,
+				0,
+				1,
 				[&](const std::vector<std::string>& matches) -> void {
 					options.data_min_passes = std::atoi(matches.at(0).c_str());
 				}
@@ -107,7 +112,8 @@ namespace commands {
 				"integer",
 				false,
 				std::optional<std::string>("4"),
-				false,
+				0,
+				1,
 				[&](const std::vector<std::string>& matches) -> void {
 					options.data_max_passes = std::atoi(matches.at(0).c_str());
 				}
@@ -119,7 +125,8 @@ namespace commands {
 				"integer",
 				false,
 				std::optional<std::string>("16"),
-				false,
+				0,
+				1,
 				[&](const std::vector<std::string>& matches) -> void {
 					options.data_max_retries = std::atoi(matches.at(0).c_str());
 				}
@@ -131,7 +138,8 @@ namespace commands {
 				"integer",
 				false,
 				std::optional<std::string>("1"),
-				false,
+				0,
+				1,
 				[&](const std::vector<std::string>& matches) -> void {
 					options.data_min_copies = std::atoi(matches.at(0).c_str());
 				}
@@ -143,7 +151,8 @@ namespace commands {
 				"integer",
 				false,
 				std::optional<std::string>("1"),
-				false,
+				0,
+				1,
 				[&](const std::vector<std::string>& matches) -> void {
 					options.data_max_copies = std::atoi(matches.at(0).c_str());
 				}
@@ -155,7 +164,8 @@ namespace commands {
 				"integer",
 				false,
 				std::optional<std::string>("2"),
-				false,
+				0,
+				1,
 				[&](const std::vector<std::string>& matches) -> void {
 					options.audio_min_passes = std::atoi(matches.at(0).c_str());
 				}
@@ -167,7 +177,8 @@ namespace commands {
 				"integer",
 				false,
 				std::optional<std::string>("8"),
-				false,
+				0,
+				1,
 				[&](const std::vector<std::string>& matches) -> void {
 					options.audio_max_passes = std::atoi(matches.at(0).c_str());
 				}
@@ -179,7 +190,8 @@ namespace commands {
 				"integer",
 				false,
 				std::optional<std::string>("255"),
-				false,
+				0,
+				1,
 				[&](const std::vector<std::string>& matches) -> void {
 					options.audio_max_retries = std::atoi(matches.at(0).c_str());
 				}
@@ -191,7 +203,8 @@ namespace commands {
 				"integer",
 				false,
 				std::optional<std::string>("1"),
-				false,
+				0,
+				1,
 				[&](const std::vector<std::string>& matches) -> void {
 					options.audio_min_copies = std::atoi(matches.at(0).c_str());
 				}
@@ -203,7 +216,8 @@ namespace commands {
 				"integer",
 				false,
 				std::optional<std::string>("2"),
-				false,
+				0,
+				1,
 				[&](const std::vector<std::string>& matches) -> void {
 					options.audio_max_copies = std::atoi(matches.at(0).c_str());
 				}

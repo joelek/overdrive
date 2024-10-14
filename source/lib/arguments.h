@@ -20,19 +20,13 @@ namespace arguments {
 		std::string format;
 		bool_t positional;
 		std::optional<std::string> fallback;
-		bool_t required;
+		size_t min_occurences;
+		size_t max_occurences;
 		std::function<void(const std::vector<std::string>& matches)> parser;
 
-		auto parse_named(
-			const std::string& key,
+		auto get_matches(
 			const std::string& value
-		) const -> bool_t;
-
-		auto parse_positional(
-			size_t& positional_counter,
-			size_t& positional_index,
-			const std::string& argument
-		) const -> bool_t;
+		) const -> std::vector<std::string>;
 
 		protected:
 	};
