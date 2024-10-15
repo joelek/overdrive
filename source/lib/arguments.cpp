@@ -102,32 +102,13 @@ namespace arguments {
 			auto& parser = parsers.at(parser_index);
 			fprintf(stderr, "%s\n", std::format("--{}={}", parser.key, parser.format).c_str());
 			fprintf(stderr, "%s\n", std::format("\t{}", parser.description).c_str());
-			auto is_optional = parser.min_occurences == 0 || parser.fallback;
-			auto is_range = parser.min_occurences < parser.max_occurences;
-			auto is_repeated = parser.min_occurences > 1;
-			if (is_optional) {
-				if (is_range) {
-					fprintf(stderr, "%s\n", std::format("\tMay specify between {} and {} values using \",\" as delimiter.", parser.min_occurences, parser.max_occurences).c_str());
-				} else {
-					if (is_repeated) {
-						fprintf(stderr, "%s\n", std::format("\tMay specify {} values using \",\" as delimiter.", parser.min_occurences).c_str());
-					} else {
-						fprintf(stderr, "%s\n", std::format("\tMay specify {} value.", parser.min_occurences).c_str());
-					}
-				}
+			if (parser.min_occurences == 0 || parser.min_occurences == parser.max_occurences) {
+				fprintf(stderr, "%s\n", std::format("\tValue {} be specified {} time(s).", parser.min_occurences == 0 || parser.fallback ? "may" : "must", parser.max_occurences).c_str());
 			} else {
-				if (is_range) {
-					fprintf(stderr, "%s\n", std::format("\tMust specify between {} and {} values using \",\" as delimiter.", parser.min_occurences, parser.max_occurences).c_str());
-				} else {
-					if (is_repeated) {
-						fprintf(stderr, "%s\n", std::format("\tMust specify {} values using \",\" as delimiter.", parser.min_occurences).c_str());
-					} else {
-						fprintf(stderr, "%s\n", std::format("\tMust specify {} value.", parser.min_occurences).c_str());
-					}
-				}
+				fprintf(stderr, "%s\n", std::format("\tValue {} be specified between {} and {} time(s).", parser.min_occurences == 0 || parser.fallback ? "may" : "must", parser.min_occurences, parser.max_occurences).c_str());
 			}
 			if (parser.fallback) {
-				fprintf(stderr, "%s\n", std::format("\tArgument default value is \"{}\".", parser.fallback.value()).c_str());
+				fprintf(stderr, "%s\n", std::format("\tDefault value is \"{}\".", parser.fallback.value()).c_str());
 			}
 			if (parser.positional) {
 				fprintf(stderr, "%s\n", std::format("\tMay be specified as positional argument number {}.", positional_counter + 1).c_str());
