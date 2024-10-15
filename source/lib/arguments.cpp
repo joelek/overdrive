@@ -96,11 +96,23 @@ namespace arguments {
 	) -> void {
 		fprintf(stderr, "%s\n", std::format("Arguments:").c_str());
 		fprintf(stderr, "%s\n", std::format("").c_str());
+		auto positional_counter = size_t(0);
 		for (auto parser_index = size_t(0); parser_index < parsers.size(); parser_index += 1) {
 			auto& parser = parsers.at(parser_index);
 			fprintf(stderr, "%s\n", std::format("--{}={}", parser.key, parser.format).c_str());
 			fprintf(stderr, "%s\n", std::format("\t{}", parser.description).c_str());
-			fprintf(stderr, "%s\n", std::format("\t{}", parser.fallback ? std::format("Optional with \"{}\" as default.", parser.fallback.value()) : parser.min_occurences >= 1 ? "Required." : "Optional with dynamic default.").c_str());
+			if (parser.min_occurences == 0 || parser.fallback) {
+				fprintf(stderr, "%s\n", std::format("\tMay specify {} value(s) using \",\" as delimiter.", parser.min_occurences < parser.max_occurences ? std::format("between {} and {}", parser.min_occurences, parser.max_occurences) : std::format("{}", parser.min_occurences)).c_str());
+			} else {
+				fprintf(stderr, "%s\n", std::format("\tMust specify {} value(s) using \",\" as delimiter.", parser.min_occurences < parser.max_occurences ? std::format("between {} and {}", parser.min_occurences, parser.max_occurences) : std::format("{}", parser.min_occurences)).c_str());
+			}
+			if (parser.fallback) {
+				fprintf(stderr, "%s\n", std::format("\tArgument default value is \"{}\".", parser.fallback.value()).c_str());
+			}
+			if (parser.positional) {
+				fprintf(stderr, "%s\n", std::format("\tMay be specified as positional argument number {}.", positional_counter + 1).c_str());
+				positional_counter += 1;
+			}
 			fprintf(stderr, "%s\n", std::format("").c_str());
 		}
 	}

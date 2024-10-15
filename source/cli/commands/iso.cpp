@@ -99,7 +99,7 @@ namespace commands {
 				"integer",
 				false,
 				std::optional<std::string>("1"),
-				0,
+				1,
 				1,
 				[&](const std::vector<std::string>& matches) -> void {
 					options.data_min_passes = std::atoi(matches.at(0).c_str());
@@ -112,7 +112,7 @@ namespace commands {
 				"integer",
 				false,
 				std::optional<std::string>("4"),
-				0,
+				1,
 				1,
 				[&](const std::vector<std::string>& matches) -> void {
 					options.data_max_passes = std::atoi(matches.at(0).c_str());
@@ -125,7 +125,7 @@ namespace commands {
 				"integer",
 				false,
 				std::optional<std::string>("16"),
-				0,
+				1,
 				1,
 				[&](const std::vector<std::string>& matches) -> void {
 					options.data_max_retries = std::atoi(matches.at(0).c_str());
@@ -138,7 +138,7 @@ namespace commands {
 				"integer",
 				false,
 				std::optional<std::string>("1"),
-				0,
+				1,
 				1,
 				[&](const std::vector<std::string>& matches) -> void {
 					options.data_min_copies = std::atoi(matches.at(0).c_str());
@@ -151,7 +151,7 @@ namespace commands {
 				"integer",
 				false,
 				std::optional<std::string>("1"),
-				0,
+				1,
 				1,
 				[&](const std::vector<std::string>& matches) -> void {
 					options.data_max_copies = std::atoi(matches.at(0).c_str());
@@ -164,7 +164,7 @@ namespace commands {
 				"integer",
 				false,
 				std::optional<std::string>("2"),
-				0,
+				1,
 				1,
 				[&](const std::vector<std::string>& matches) -> void {
 					options.audio_min_passes = std::atoi(matches.at(0).c_str());
@@ -177,7 +177,7 @@ namespace commands {
 				"integer",
 				false,
 				std::optional<std::string>("8"),
-				0,
+				1,
 				1,
 				[&](const std::vector<std::string>& matches) -> void {
 					options.audio_max_passes = std::atoi(matches.at(0).c_str());
@@ -190,7 +190,7 @@ namespace commands {
 				"integer",
 				false,
 				std::optional<std::string>("255"),
-				0,
+				1,
 				1,
 				[&](const std::vector<std::string>& matches) -> void {
 					options.audio_max_retries = std::atoi(matches.at(0).c_str());
@@ -203,7 +203,7 @@ namespace commands {
 				"integer",
 				false,
 				std::optional<std::string>("1"),
-				0,
+				1,
 				1,
 				[&](const std::vector<std::string>& matches) -> void {
 					options.audio_min_copies = std::atoi(matches.at(0).c_str());
@@ -216,14 +216,23 @@ namespace commands {
 				"integer",
 				false,
 				std::optional<std::string>("2"),
-				0,
+				1,
 				1,
 				[&](const std::vector<std::string>& matches) -> void {
 					options.audio_max_copies = std::atoi(matches.at(0).c_str());
 				}
 			}));
-			// Sort in increasing order.
+			// Sort in increasing order with positional arguments last.
 			std::sort(parsers.begin(), parsers.end(), [](const arguments::Parser& one, const arguments::Parser& two) -> bool_t {
+				if (one.positional && !two.positional) {
+					return -1;
+				}
+				if (!one.positional && two.positional) {
+					return 1;
+				}
+				if (one.positional && two.positional) {
+					return 0;
+				}
 				return one.key < two.key;
 			});
 			try {
