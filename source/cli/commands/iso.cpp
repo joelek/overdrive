@@ -222,19 +222,7 @@ namespace commands {
 					options.audio_max_copies = std::atoi(matches.at(0).c_str());
 				}
 			}));
-			// Sort in increasing order with positional arguments last.
-			std::sort(parsers.begin(), parsers.end(), [](const arguments::Parser& one, const arguments::Parser& two) -> bool_t {
-				if (one.positional && !two.positional) {
-					return -1;
-				}
-				if (!one.positional && two.positional) {
-					return 1;
-				}
-				if (one.positional && two.positional) {
-					return 0;
-				}
-				return one.key < two.key;
-			});
+			arguments::sort(parsers);
 			try {
 				arguments::parse(arguments, parsers);
 				return options;

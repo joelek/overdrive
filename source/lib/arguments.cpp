@@ -1,5 +1,6 @@
 #include "arguments.h"
 
+#include <algorithm>
 #include <format>
 #include "exceptions.h"
 #include "string.h"
@@ -116,5 +117,23 @@ namespace arguments {
 			fprintf(stderr, "%s\n", std::format("").c_str());
 		}
 	}
+
+	auto sort(
+		std::vector<Parser>& parsers
+	) -> void {
+		// Sort in increasing key order with positional arguments last.
+		std::sort(parsers.begin(), parsers.end(), [](const arguments::Parser& one, const arguments::Parser& two) -> bool_t {
+			if (one.positional && !two.positional) {
+				return -1;
+			}
+			if (!one.positional && two.positional) {
+				return 1;
+			}
+			if (one.positional && two.positional) {
+				return 0;
+			}
+			return one.key < two.key;
+		});
+	};
 }
 }

@@ -39,5 +39,9 @@ namespace arguments {
 	auto print(
 		const std::vector<Parser>& parsers
 	) -> void;
+
+	auto sort(
+		std::vector<Parser>& parsers
+	) -> void;
 }
 }
