@@ -15,16 +15,16 @@ namespace commands {
 		std::optional<si_t> read_correction;
 		std::optional<std::set<size_t>> track_numbers;
 		std::optional<std::string> path;
-		size_t data_min_passes;
-		size_t data_max_passes;
-		size_t data_max_retries;
-		size_t data_min_copies;
-		size_t data_max_copies;
-		size_t audio_min_passes;
-		size_t audio_max_passes;
-		size_t audio_max_retries;
-		size_t audio_min_copies;
-		size_t audio_max_copies;
+		size_t min_data_passes;
+		size_t max_data_passes;
+		size_t max_data_retries;
+		size_t min_data_copies;
+		size_t max_data_copies;
+		size_t min_audio_passes;
+		size_t max_audio_passes;
+		size_t max_audio_retries;
+		size_t min_audio_copies;
+		size_t max_audio_copies;
 
 		protected:
 	};
@@ -92,7 +92,7 @@ namespace commands {
 				}
 			}));
 			parsers.push_back(arguments::Parser({
-				"data-min-passes",
+				"min-data-passes",
 				"Specify the minimum number of read passes for data tracks.",
 				std::regex("^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 				"integer",
@@ -101,11 +101,11 @@ namespace commands {
 				1,
 				1,
 				[&](const std::vector<std::string>& matches) -> void {
-					options.data_min_passes = std::atoi(matches.at(0).c_str());
+					options.min_data_passes = std::atoi(matches.at(0).c_str());
 				}
 			}));
 			parsers.push_back(arguments::Parser({
-				"data-max-passes",
+				"max-data-passes",
 				"Specify the maximum number of read passes for data tracks.",
 				std::regex("^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 				"integer",
@@ -114,11 +114,11 @@ namespace commands {
 				1,
 				1,
 				[&](const std::vector<std::string>& matches) -> void {
-					options.data_max_passes = std::atoi(matches.at(0).c_str());
+					options.max_data_passes = std::atoi(matches.at(0).c_str());
 				}
 			}));
 			parsers.push_back(arguments::Parser({
-				"data-max-retries",
+				"max-data-retries",
 				"Specify the maximum number of read retires for data tracks.",
 				std::regex("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 				"integer",
@@ -127,11 +127,11 @@ namespace commands {
 				1,
 				1,
 				[&](const std::vector<std::string>& matches) -> void {
-					options.data_max_retries = std::atoi(matches.at(0).c_str());
+					options.max_data_retries = std::atoi(matches.at(0).c_str());
 				}
 			}));
 			parsers.push_back(arguments::Parser({
-				"data-min-copies",
+				"min-data-copies",
 				"Specify the minimum acceptable number of identical copies for data tracks.",
 				std::regex("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 				"integer",
@@ -140,11 +140,11 @@ namespace commands {
 				1,
 				1,
 				[&](const std::vector<std::string>& matches) -> void {
-					options.data_min_copies = std::atoi(matches.at(0).c_str());
+					options.min_data_copies = std::atoi(matches.at(0).c_str());
 				}
 			}));
 			parsers.push_back(arguments::Parser({
-				"data-max-copies",
+				"max-data-copies",
 				"Specify the maximum acceptable number of identical copies for data tracks.",
 				std::regex("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 				"integer",
@@ -153,11 +153,11 @@ namespace commands {
 				1,
 				1,
 				[&](const std::vector<std::string>& matches) -> void {
-					options.data_max_copies = std::atoi(matches.at(0).c_str());
+					options.max_data_copies = std::atoi(matches.at(0).c_str());
 				}
 			}));
 			parsers.push_back(arguments::Parser({
-				"audio-min-passes",
+				"min-audio-passes",
 				"Specify the minimum number of read passes for audio tracks.",
 				std::regex("^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 				"integer",
@@ -166,11 +166,11 @@ namespace commands {
 				1,
 				1,
 				[&](const std::vector<std::string>& matches) -> void {
-					options.audio_min_passes = std::atoi(matches.at(0).c_str());
+					options.min_audio_passes = std::atoi(matches.at(0).c_str());
 				}
 			}));
 			parsers.push_back(arguments::Parser({
-				"audio-max-passes",
+				"max-audio-passes",
 				"Specify the maximum number of read passes for audio tracks.",
 				std::regex("^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 				"integer",
@@ -179,11 +179,11 @@ namespace commands {
 				1,
 				1,
 				[&](const std::vector<std::string>& matches) -> void {
-					options.audio_max_passes = std::atoi(matches.at(0).c_str());
+					options.max_audio_passes = std::atoi(matches.at(0).c_str());
 				}
 			}));
 			parsers.push_back(arguments::Parser({
-				"audio-max-retries",
+				"max-audio-retries",
 				"Specify the maximum number of read retires for audio tracks.",
 				std::regex("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 				"integer",
@@ -192,11 +192,11 @@ namespace commands {
 				1,
 				1,
 				[&](const std::vector<std::string>& matches) -> void {
-					options.audio_max_retries = std::atoi(matches.at(0).c_str());
+					options.max_audio_retries = std::atoi(matches.at(0).c_str());
 				}
 			}));
 			parsers.push_back(arguments::Parser({
-				"audio-min-copies",
+				"min-audio-copies",
 				"Specify the minimum acceptable number of identical copies for audio tracks.",
 				std::regex("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 				"integer",
@@ -205,11 +205,11 @@ namespace commands {
 				1,
 				1,
 				[&](const std::vector<std::string>& matches) -> void {
-					options.audio_min_copies = std::atoi(matches.at(0).c_str());
+					options.min_audio_copies = std::atoi(matches.at(0).c_str());
 				}
 			}));
 			parsers.push_back(arguments::Parser({
-				"audio-max-copies",
+				"max-audio-copies",
 				"Specify the maximum acceptable number of identical copies for audio tracks.",
 				std::regex("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 				"integer",
@@ -218,7 +218,7 @@ namespace commands {
 				1,
 				1,
 				[&](const std::vector<std::string>& matches) -> void {
-					options.audio_max_copies = std::atoi(matches.at(0).c_str());
+					options.max_audio_copies = std::atoi(matches.at(0).c_str());
 				}
 			}));
 			arguments::sort(parsers);
@@ -285,11 +285,11 @@ namespace commands {
 					drive,
 					track.first_sector_absolute,
 					track.last_sector_absolute,
-					options.data_min_passes,
-					options.data_max_passes,
-					options.data_max_retries,
-					options.data_min_copies,
-					options.data_max_copies
+					options.min_data_passes,
+					options.max_data_passes,
+					options.max_data_retries,
+					options.min_data_copies,
+					options.max_data_copies
 				);
 				auto user_data_offset = disc::get_user_data_offset(track.type);
 				auto user_data_length = disc::get_user_data_length(track.type);
@@ -309,11 +309,11 @@ namespace commands {
 					drive,
 					track.first_sector_absolute,
 					track.last_sector_absolute,
-					options.audio_min_passes,
-					options.audio_max_passes,
-					options.audio_max_retries,
-					options.audio_min_copies,
-					options.audio_max_copies,
+					options.min_audio_passes,
+					options.max_audio_passes,
+					options.max_audio_retries,
+					options.min_audio_copies,
+					options.max_audio_copies,
 					read_correction_bytes
 				);
 				auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
