@@ -72,7 +72,7 @@ namespace copier {
 		size_t max_retries,
 		size_t min_copies,
 		size_t max_copies,
-		si_t read_correction_bytes
+		si_t read_correction_samples
 	) -> std::vector<std::vector<ExtractedSector>>;
 
 	auto write_sector_data_to_file(

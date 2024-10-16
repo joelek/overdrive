@@ -5,6 +5,7 @@
 #include <cstring>
 #include <filesystem>
 #include <format>
+#include "cdda.h"
 #include "exceptions.h"
 #include "idiv.h"
 #include "iso9660.h"
@@ -171,8 +172,11 @@ namespace copier {
 		size_t max_retries,
 		size_t min_copies,
 		size_t max_copies,
-		si_t read_correction_bytes
+		si_t read_correction_samples
 	) -> std::vector<std::vector<ExtractedSector>> {
+		fprintf(stderr, "%s\n", std::format("Using read correction [samples]: {}", read_correction_samples).c_str());
+		auto read_correction_bytes = read_correction_samples * si_t(cdda::STEREO_SAMPLE_LENGTH);
+		fprintf(stderr, "%s\n", std::format("Using read correction [bytes]: {}", read_correction_bytes).c_str());
 		auto start_offset_bytes = si_t(first_sector * cd::SECTOR_LENGTH) + read_correction_bytes;
 		auto end_offset_bytes = si_t(last_sector * cd::SECTOR_LENGTH) + read_correction_bytes;
 		auto adjusted_first_sector = idiv::floor(start_offset_bytes, cd::SECTOR_LENGTH);

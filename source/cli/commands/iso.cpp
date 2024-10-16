@@ -272,9 +272,6 @@ namespace commands {
 		auto disc_info = drive.read_disc_info();
 		disc_info.print();
 		auto read_correction_samples = options.read_correction ? options.read_correction.value() : drive_info.read_offset_correction ? drive_info.read_offset_correction.value() : 0;
-		fprintf(stderr, "%s\n", std::format("Using read correction for audio tracks [samples]: {}", read_correction_samples).c_str());
-		auto read_correction_bytes = read_correction_samples * si_t(cdda::STEREO_SAMPLE_LENGTH);
-		fprintf(stderr, "%s\n", std::format("Using read correction for audio tracks [bytes]: {}", read_correction_bytes).c_str());
 		auto tracks = disc::get_disc_tracks(disc_info, options.track_numbers);
 		internal::assert_image_compatibility(tracks);
 		for (auto track_index = size_t(0); track_index < tracks.size(); track_index += 1) {
@@ -307,7 +304,7 @@ namespace commands {
 					options.max_audio_retries,
 					options.min_audio_copies,
 					options.max_audio_copies,
-					read_correction_bytes
+					read_correction_samples
 				);
 				auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
 				copier::log_bad_sector_indices(drive, track, bad_sector_indices);
