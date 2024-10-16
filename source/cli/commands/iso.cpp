@@ -1,6 +1,5 @@
 #include "iso.h"
 
-#include <cstdio>
 #include <filesystem>
 #include <format>
 #include <optional>
@@ -304,23 +303,7 @@ namespace commands {
 					fprintf(stderr, "%s\n", std::format("Track {} contains {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
 				}
 				auto iso_path = internal::get_absolute_path_with_extension(options.path.value_or(""), std::format("{:0>2}.iso", track_index));
-				fprintf(stderr, "%s\n", std::format("Saving track {} to: \"{}\"", track.number, iso_path).c_str());
-				auto iso_handle = std::fopen(iso_path.c_str(), "wb+");
-				if (iso_handle == nullptr) {
-					OVERDRIVE_THROW(exceptions::IOOpenException(iso_path));
-				}
-				try {
-					for (auto sector_index = size_t(0); sector_index < extracted_sectors_vector.size(); sector_index += 1) {
-						auto& extracted_sectors = extracted_sectors_vector.at(sector_index);
-						auto& extracted_sector = extracted_sectors.at(0);
-						if (std::fwrite(extracted_sector.sector_data + user_data_offset, user_data_length, 1, iso_handle) != 1) {
-							OVERDRIVE_THROW(exceptions::IOWriteException(iso_path));
-						}
-					}
-				} catch (...) {
-					std::fclose(iso_handle);
-					throw;
-				}
+				copier::write_sector_data_to_file(extracted_sectors_vector, iso_path, user_data_offset, user_data_length);
 			} else {
 				auto extracted_sectors_vector = copier::read_absolute_sector_range_with_correction(
 					drive,
@@ -336,23 +319,7 @@ namespace commands {
 				auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
 				fprintf(stderr, "%s\n", std::format("Track {} contains {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
 				auto bin_path = internal::get_absolute_path_with_extension(options.path.value_or(""), std::format("{:0>2}.bin", track_index));
-				fprintf(stderr, "%s\n", std::format("Saving track {} to: \"{}\"", track.number, bin_path).c_str());
-				auto bin_handle = std::fopen(bin_path.c_str(), "wb+");
-				if (bin_handle == nullptr) {
-					OVERDRIVE_THROW(exceptions::IOOpenException(bin_path));
-				}
-				try {
-					for (auto sector_index = size_t(0); sector_index < extracted_sectors_vector.size(); sector_index += 1) {
-						auto& extracted_sectors = extracted_sectors_vector.at(sector_index);
-						auto& extracted_sector = extracted_sectors.at(0);
-						if (std::fwrite(extracted_sector.sector_data, cd::SECTOR_LENGTH, 1, bin_handle) != 1) {
-							OVERDRIVE_THROW(exceptions::IOWriteException(bin_path));
-						}
-					}
-				} catch (...) {
-					std::fclose(bin_handle);
-					throw;
-				}
+				copier::write_sector_data_to_file(extracted_sectors_vector, bin_path, 0, cd::SECTOR_LENGTH);
 			}
 		}
 	};

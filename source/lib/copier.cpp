@@ -1,6 +1,7 @@
 #include "copier.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <cstring>
 #include <format>
 #include "exceptions.h"
@@ -204,6 +205,31 @@ namespace copier {
 			extracted_sectors_vector.resize(last_sector - first_sector);
 		}
 		return extracted_sectors_vector;
+	}
+
+	auto write_sector_data_to_file(
+		const std::vector<std::vector<ExtractedSector>>& extracted_sectors_vector,
+		const std::string& path,
+		size_t sector_data_offset,
+		size_t sector_data_length
+	) -> void {
+		auto handle = std::fopen(path.c_str(), "wb+");
+		if (handle == nullptr) {
+			OVERDRIVE_THROW(exceptions::IOOpenException(path));
+		}
+		try {
+			fprintf(stderr, "%s\n", std::format("Saving track sector data to \"{}\"", path).c_str());
+			for (auto sector_index = size_t(0); sector_index < extracted_sectors_vector.size(); sector_index += 1) {
+				auto& extracted_sectors = extracted_sectors_vector.at(sector_index);
+				auto& extracted_sector = extracted_sectors.at(0);
+				if (std::fwrite(extracted_sector.sector_data + sector_data_offset, sector_data_length, 1, handle) != 1) {
+					OVERDRIVE_THROW(exceptions::IOWriteException(path));
+				}
+			}
+		} catch (...) {
+			std::fclose(handle);
+			throw;
+		}
 	}
 }
 }

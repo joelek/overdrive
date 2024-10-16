@@ -73,5 +73,12 @@ namespace copier {
 		size_t max_copies,
 		si_t read_correction_bytes
 	) -> std::vector<std::vector<ExtractedSector>>;
+
+	auto write_sector_data_to_file(
+		const std::vector<std::vector<ExtractedSector>>& extracted_sectors_vector,
+		const std::string& path,
+		size_t sector_data_offset,
+		size_t sector_data_length
+	) -> void;
 }
 }
