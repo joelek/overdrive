@@ -14,6 +14,7 @@
 namespace overdrive {
 namespace copier {
 	namespace internal {
+	namespace {
 		auto read_audio_track(
 			const drive::Drive& drive,
 			const disc::TrackInfo& track,
@@ -74,6 +75,7 @@ namespace copier {
 				options.max_data_copies
 			);
 		}
+	}
 	}
 
 	auto ExtractedSector::has_identical_sector_data(

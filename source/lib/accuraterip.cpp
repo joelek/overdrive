@@ -4522,6 +4522,7 @@ auto CSV() -> const std::string& {
 namespace overdrive {
 namespace accuraterip {
 	namespace internal {
+	namespace {
 		auto create_key(
 			const std::string& vendor,
 			const std::string& product
@@ -4545,6 +4546,7 @@ namespace accuraterip {
 			}
 			return read_offset_correction_values;
 		}
+	}
 	}
 
 	Database::Database(

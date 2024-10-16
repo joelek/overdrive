@@ -9,6 +9,7 @@
 namespace overdrive {
 namespace iso9660 {
 	namespace internal {
+	namespace {
 		auto read_file_system_entry(
 			const std::function<void(size_t sector, void* user_data)>& read_user_data,
 			const FileSystemEntry& fse
@@ -114,6 +115,7 @@ namespace iso9660 {
 			}
 			return std::optional<FileSystemEntry>();
 		}
+	}
 	}
 
 	FileSystem::FileSystem(

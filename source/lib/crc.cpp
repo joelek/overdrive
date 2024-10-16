@@ -6,6 +6,7 @@ namespace crc {
 	const auto TRUNCATED_16BIT_POLYNOMIAL = ui16_t(0x1021);
 
 	namespace internal {
+	namespace {
 		auto CRC16_TABLE() -> constant<array<256, ui16_t>>& {
 			static auto initialized = false;
 			static ui16_t table[256];
@@ -26,6 +27,7 @@ namespace crc {
 			}
 			return table;
 		}
+	}
 	}
 
 	auto compute_crc16(

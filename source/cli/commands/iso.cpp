@@ -10,6 +10,7 @@ namespace commands {
 	};
 
 	namespace internal {
+	namespace {
 		auto parse_options(
 			const std::vector<std::string>& arguments
 		) -> ISOOptions {
@@ -36,10 +37,11 @@ namespace commands {
 						OVERDRIVE_THROW(exceptions::InvalidValueException("user data length", user_data_length, iso9660::USER_DATA_SIZE, iso9660::USER_DATA_SIZE));
 					}
 				} else {
-					// OVERDRIVE_THROW(exceptions::ExpectedDataTrackException(track.number));
+					OVERDRIVE_THROW(exceptions::ExpectedDataTrackException(track.number));
 				}
 			}
 		}
+	}
 	}
 
 	auto iso(
@@ -69,8 +71,7 @@ namespace commands {
 				auto iso_path = copier::get_absolute_path_with_extension(options.path.value_or(""), std::format("{:0>2}.iso", track.number));
 				copier::write_sector_data_to_file(extracted_sectors_vector, iso_path, user_data_offset, user_data_length);
 			} else {
-				auto bin_path = copier::get_absolute_path_with_extension(options.path.value_or(""), std::format("{:0>2}.bin", track.number));
-				copier::write_sector_data_to_file(extracted_sectors_vector, bin_path, 0, cd::SECTOR_LENGTH);
+				OVERDRIVE_THROW(exceptions::ExpectedDataTrackException(track.number));
 			}
 		}
 	};
