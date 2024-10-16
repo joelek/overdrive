@@ -207,7 +207,7 @@ namespace copier {
 				auto& next_extracted_sector = next_extracted_sectors.at(0);
 				std::memmove(&extracted_sector.sector_data[suffix_length], &next_extracted_sector.sector_data[0], prefix_length);
 			}
-			extracted_sectors_vector.resize(last_sector - first_sector);
+			extracted_sectors_vector.resize(last_sector - first_sector); // This hides read errors in last sector.
 		}
 		return extracted_sectors_vector;
 	}
