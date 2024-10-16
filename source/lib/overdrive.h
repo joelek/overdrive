@@ -1,7 +1,6 @@
 #pragma once
 
 #include "accuraterip.h"
-#include "arguments.h"
 #include "bcd.h"
 #include "byteswap.h"
 #include "cd.h"
@@ -19,6 +18,7 @@
 #include "idiv.h"
 #include "iso9660.h"
 #include "memory.h"
+#include "parser.h"
 #include "scsi.h"
 #include "sense.h"
 #include "shared.h"

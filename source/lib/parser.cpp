@@ -1,4 +1,4 @@
-#include "arguments.h"
+#include "parser.h"
 
 #include <algorithm>
 #include <format>
@@ -6,7 +6,7 @@
 #include "string.h"
 
 namespace overdrive {
-namespace arguments {
+namespace parser {
 	auto Parser::get_matches(
 		const std::string& value
 	) const -> std::vector<std::string> {
@@ -123,7 +123,7 @@ namespace arguments {
 		std::vector<Parser>& parsers
 	) -> void {
 		// Sort in increasing key order with positional arguments last.
-		std::sort(parsers.begin(), parsers.end(), [](const arguments::Parser& one, const arguments::Parser& two) -> bool_t {
+		std::sort(parsers.begin(), parsers.end(), [](const parser::Parser& one, const parser::Parser& two) -> bool_t {
 			if (one.positional && !two.positional) {
 				return -1;
 			}

@@ -8,7 +8,7 @@
 #include "shared.h"
 
 namespace overdrive {
-namespace arguments {
+namespace parser {
 	using namespace shared;
 
 	class Parser {
