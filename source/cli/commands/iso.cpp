@@ -294,14 +294,7 @@ namespace commands {
 				auto user_data_offset = disc::get_user_data_offset(track.type);
 				auto user_data_length = disc::get_user_data_length(track.type);
 				auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
-				auto bad_sector_indices_per_path = copier::get_bad_sector_indices_per_path(drive, user_data_offset, user_data_length, bad_sector_indices);
-				if (bad_sector_indices_per_path) {
-					for (auto& entry : bad_sector_indices_per_path.value()) {
-						fprintf(stderr, "%s\n", std::format("File at path \"{}\" contains {} bad sectors!", std::filesystem::path(entry.first).string(), entry.second.size()).c_str());
-					}
-				} else {
-					fprintf(stderr, "%s\n", std::format("Track {} contains {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
-				}
+				copier::log_bad_sector_indices(drive, track, bad_sector_indices);
 				auto iso_path = internal::get_absolute_path_with_extension(options.path.value_or(""), std::format("{:0>2}.iso", track_index));
 				copier::write_sector_data_to_file(extracted_sectors_vector, iso_path, user_data_offset, user_data_length);
 			} else {
@@ -317,7 +310,7 @@ namespace commands {
 					read_correction_bytes
 				);
 				auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
-				fprintf(stderr, "%s\n", std::format("Track {} contains {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
+				copier::log_bad_sector_indices(drive, track, bad_sector_indices);
 				auto bin_path = internal::get_absolute_path_with_extension(options.path.value_or(""), std::format("{:0>2}.bin", track_index));
 				copier::write_sector_data_to_file(extracted_sectors_vector, bin_path, 0, cd::SECTOR_LENGTH);
 			}

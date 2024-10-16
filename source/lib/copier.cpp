@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
+#include <filesystem>
 #include <format>
 #include "exceptions.h"
 #include "idiv.h"
@@ -229,6 +230,27 @@ namespace copier {
 		} catch (...) {
 			std::fclose(handle);
 			throw;
+		}
+	}
+
+	auto log_bad_sector_indices(
+		const drive::Drive& drive,
+		const disc::TrackInfo& track,
+		const std::vector<size_t>& bad_sector_indices
+	) -> void {
+		if (disc::is_data_track(track.type)) {
+			auto user_data_offset = disc::get_user_data_offset(track.type);
+			auto user_data_length = disc::get_user_data_length(track.type);
+			auto bad_sector_indices_per_path = copier::get_bad_sector_indices_per_path(drive, user_data_offset, user_data_length, bad_sector_indices);
+			if (bad_sector_indices_per_path) {
+				for (auto& entry : bad_sector_indices_per_path.value()) {
+					fprintf(stderr, "%s\n", std::format("File at path \"{}\" contains {} bad sectors!", std::filesystem::path(entry.first).string(), entry.second.size()).c_str());
+				}
+			} else {
+				fprintf(stderr, "%s\n", std::format("Track number {} containing data has {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
+			}
+		} else {
+			fprintf(stderr, "%s\n", std::format("Track number {} containing audio has {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
 		}
 	}
 }

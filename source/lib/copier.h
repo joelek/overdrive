@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include "cd.h"
+#include "disc.h"
 #include "drive.h"
 #include "shared.h"
 
@@ -79,6 +80,12 @@ namespace copier {
 		const std::string& path,
 		size_t sector_data_offset,
 		size_t sector_data_length
+	) -> void;
+
+	auto log_bad_sector_indices(
+		const drive::Drive& drive,
+		const disc::TrackInfo& track,
+		const std::vector<size_t>& bad_sector_indices
 	) -> void;
 }
 }
