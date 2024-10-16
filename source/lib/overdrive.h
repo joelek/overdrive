@@ -18,6 +18,7 @@
 #include "idiv.h"
 #include "iso9660.h"
 #include "memory.h"
+#include "options.h"
 #include "parser.h"
 #include "scsi.h"
 #include "sense.h"

@@ -42,6 +42,7 @@ SOURCES=(
 	"lib/idiv"
 	"lib/iso9660"
 	"lib/memory"
+	"lib/options"
 	"lib/parser"
 	"lib/scsi"
 	"lib/sense"
