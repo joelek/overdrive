@@ -102,10 +102,11 @@ namespace arguments {
 			auto& parser = parsers.at(parser_index);
 			fprintf(stderr, "%s\n", std::format("--{}={}", parser.key, parser.format).c_str());
 			fprintf(stderr, "%s\n", std::format("\t{}", parser.description).c_str());
-			if (parser.min_occurences == 0 || parser.min_occurences == parser.max_occurences) {
-				fprintf(stderr, "%s\n", std::format("\tValue {} be specified {} time(s).", parser.min_occurences == 0 || parser.fallback ? "may" : "must", parser.max_occurences).c_str());
+			auto is_optional = parser.min_occurences == 0 || parser.fallback;
+			if (parser.max_occurences == 1) {
+				fprintf(stderr, "%s\n", std::format("\tValue {} be specified once.", is_optional ? "may" : "must").c_str());
 			} else {
-				fprintf(stderr, "%s\n", std::format("\tValue {} be specified between {} and {} time(s).", parser.min_occurences == 0 || parser.fallback ? "may" : "must", parser.min_occurences, parser.max_occurences).c_str());
+				fprintf(stderr, "%s\n", std::format("\tValue {} be specified between {} and {} times using \",\" as delimiter.", is_optional ? "may" : "must", parser.min_occurences, parser.max_occurences).c_str());
 			}
 			if (parser.fallback) {
 				fprintf(stderr, "%s\n", std::format("\tDefault value is \"{}\".", parser.fallback.value()).c_str());
