@@ -279,7 +279,7 @@ namespace commands {
 				copier::log_bad_sector_indices(drive, track, bad_sector_indices);
 				auto user_data_offset = disc::get_user_data_offset(track.type);
 				auto user_data_length = disc::get_user_data_length(track.type);
-				auto iso_path = copier::get_absolute_path_with_extension(options.path.value_or(""), std::format("{:0>2}.iso", track_index));
+				auto iso_path = copier::get_absolute_path_with_extension(options.path.value_or(""), std::format("{:0>2}.iso", track.number));
 				copier::write_sector_data_to_file(extracted_sectors_vector, iso_path, user_data_offset, user_data_length);
 			} else {
 				auto extracted_sectors_vector = copier::read_absolute_sector_range_with_correction(
@@ -295,7 +295,7 @@ namespace commands {
 				);
 				auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
 				copier::log_bad_sector_indices(drive, track, bad_sector_indices);
-				auto bin_path = copier::get_absolute_path_with_extension(options.path.value_or(""), std::format("{:0>2}.bin", track_index));
+				auto bin_path = copier::get_absolute_path_with_extension(options.path.value_or(""), std::format("{:0>2}.bin", track.number));
 				copier::write_sector_data_to_file(extracted_sectors_vector, bin_path, 0, cd::SECTOR_LENGTH);
 			}
 		}
