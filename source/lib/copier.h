@@ -7,6 +7,7 @@
 #include "cd.h"
 #include "disc.h"
 #include "drive.h"
+#include "options.h"
 #include "shared.h"
 
 namespace overdrive {
@@ -63,16 +64,10 @@ namespace copier {
 		size_t max_copies
 	) -> std::vector<std::vector<ExtractedSector>>;
 
-	auto read_absolute_sector_range_with_correction(
+	auto read_track(
 		const drive::Drive& drive,
-		size_t first_sector,
-		size_t last_sector,
-		size_t min_passes,
-		size_t max_passes,
-		size_t max_retries,
-		size_t min_copies,
-		size_t max_copies,
-		si_t read_correction_samples
+		const disc::TrackInfo& track,
+		const options::Options& options
 	) -> std::vector<std::vector<ExtractedSector>>;
 
 	auto write_sector_data_to_file(
