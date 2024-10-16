@@ -32,6 +32,7 @@ SOURCES=(
 	"lib/cdda"
 	"lib/cdrom"
 	"lib/cdxa"
+	"lib/command"
 	"lib/copier"
 	"lib/crc"
 	"lib/disc"

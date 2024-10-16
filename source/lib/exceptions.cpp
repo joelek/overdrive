@@ -98,5 +98,16 @@ namespace exceptions {
 
 	MemoryReadException::MemoryReadException(
 	): MemoryException(std::format("Expected memory read operation to be within bounds!")) {}
+
+	CommandException::CommandException(
+		const std::string& message
+	): OverdriveException(message) {}
+
+	MissingCommandException::MissingCommandException(
+	): CommandException(std::format("Expected command to be specified!")) {}
+
+	UnrecognizedCommandException::UnrecognizedCommandException(
+		const std::string& key
+	): CommandException(std::format("Expected command \"{}\" to be recognized!", key)) {}
 }
 }

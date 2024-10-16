@@ -265,5 +265,34 @@ namespace exceptions {
 
 		protected:
 	};
+
+	class CommandException: public OverdriveException {
+		public:
+
+		CommandException(
+			const std::string& message
+		);
+
+		protected:
+	};
+
+	class MissingCommandException: public CommandException {
+		public:
+
+		MissingCommandException(
+		);
+
+		protected:
+	};
+
+	class UnrecognizedCommandException: public CommandException {
+		public:
+
+		UnrecognizedCommandException(
+			const std::string& key
+		);
+
+		protected:
+	};
 }
 }

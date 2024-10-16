@@ -8,6 +8,7 @@
 #include "cdda.h"
 #include "cdrom.h"
 #include "cdxa.h"
+#include "command.h"
 #include "copier.h"
 #include "crc.h"
 #include "disc.h"

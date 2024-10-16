@@ -1166,37 +1166,50 @@ auto save(
 
 
 
-
-
-
 auto main(
 	si_t argc,
 	ch08_t** argv
 ) -> si_t {
 	try {
 		auto arguments = std::vector<std::string>(argv + std::min<size_t>(2, argc), argv + argc);
-		auto command = argc >= 2 ? std::string(argv[1]) : "";
-		if (false) {
-		} else if (command == "cue") {
-			commands::cue(arguments);
-		} else if (command == "iso") {
-			commands::iso(arguments, {
+		auto command = argc < 2 ? std::optional<std::string>() : std::string(argv[1]);
+		auto commands = std::vector<command::Command>();
+		commands.push_back(command::Command({
+			"cue",
+			"Backup discs using the BIN/CUE image format.",
+			commands::cue
+		}));
+		commands.push_back(command::Command({
+			"iso",
+			"Backup discs using the ISO image format.",
+			commands::iso
+		}));
+		commands.push_back(command::Command({
+			"mds",
+			"Backup discs using the MDF/MDS image format.",
+			commands::mds
+		}));
+		commands.push_back(command::Command({
+			"odi",
+			"Backup discs using the ODI image format.",
+			commands::odi
+		}));
+		command::sort(commands);
+		try {
+			command::run(command, arguments, commands, {
 				get_handle,
 				pass_through_direct
 			});
-		} else if (command == "mds") {
-			commands::mds(arguments);
-		} else if (command == "odi") {
-			commands::odi(arguments);
-		} else {
-			fprintf(stderr, "%s\n", "Expected a valid command!");
+		} catch (const exceptions::CommandException& e) {
+			command::print(commands);
+			throw;
 		}
-		fprintf(stderr, "%s\n", "Program completed successfully.");
+		fprintf(stderr, "%s\n", std::format("Program completed successfully.").c_str());
 		return EXIT_SUCCESS;
 	} catch (const std::exception& e) {
 		fprintf(stderr, "%s\n", e.what());
 	} catch (...) {}
-	fprintf(stderr, "%s\n", "Program did not complete successfully!");
+	fprintf(stderr, "%s\n", std::format("Program did not complete successfully!").c_str());
 	return EXIT_FAILURE;
 
 

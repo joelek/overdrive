@@ -44,7 +44,7 @@ namespace commands {
 
 	auto iso(
 		const std::vector<std::string>& arguments,
-		const Detail& detail
+		const command::Detail& detail
 	) -> void {
 		auto options = internal::parse_options(arguments);
 		auto handle = detail.get_handle(options.drive);
