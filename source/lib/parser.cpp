@@ -123,7 +123,7 @@ namespace parser {
 		std::vector<Parser>& parsers
 	) -> void {
 		// Sort in increasing key order with positional arguments last.
-		std::sort(parsers.begin(), parsers.end(), [](const parser::Parser& one, const parser::Parser& two) -> bool_t {
+		std::sort(parsers.begin(), parsers.end(), [](const Parser& one, const Parser& two) -> bool_t {
 			if (one.positional && !two.positional) {
 				return -1;
 			}
