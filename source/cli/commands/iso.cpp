@@ -235,9 +235,6 @@ namespace commands {
 		auto assert_image_compatibility(
 			const std::vector<disc::TrackInfo>& tracks
 		) -> void {
-			if (tracks.size() != 1) {
-				OVERDRIVE_THROW(exceptions::InvalidValueException("track count", tracks.size(), 1, 1));
-			}
 			for (auto track_index = size_t(0); track_index < tracks.size(); track_index += 1) {
 				auto& track = tracks.at(track_index);
 				if (disc::is_data_track(track.type)) {
