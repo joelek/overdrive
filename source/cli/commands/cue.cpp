@@ -27,7 +27,7 @@ namespace commands {
 				std::regex("^(true|false)$"),
 				"boolean",
 				false,
-				std::optional<std::string>("true"),
+				std::optional<std::string>("false"),
 				1,
 				1,
 				[&](const std::vector<std::string>& matches) -> void {
@@ -48,7 +48,7 @@ namespace commands {
 				}
 			}));
 			parsers.push_back(parser::Parser({
-				"audio-file-format",
+				"audio-format",
 				"Specify file format for audio tracks.",
 				std::regex("^(bin|wav)$"),
 				"bin|wav",
@@ -60,7 +60,7 @@ namespace commands {
 					options.audio_format = matches.at(0);
 				}
 			}));
-			parser::sort(parsers);
+			parsers = parser::sort(parsers);
 			try {
 				parser::parse(arguments, parsers);
 				return options;

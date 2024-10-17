@@ -16,7 +16,7 @@ namespace commands {
 		) -> ISOOptions {
 			auto options = ISOOptions();
 			auto parsers = options::get_default_parsers(options);
-			parser::sort(parsers);
+			parsers = parser::sort(parsers);
 			try {
 				parser::parse(arguments, parsers);
 				return options;
