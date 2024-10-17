@@ -264,6 +264,7 @@ namespace copier {
 			std::fclose(handle);
 			throw;
 		}
+		std::fclose(handle);
 	}
 
 	auto log_bad_sector_indices(
