@@ -241,16 +241,13 @@ namespace copier {
 		}
 	}
 
-	auto write_sector_data_to_file(
+	auto append_sector_data(
 		const std::vector<std::vector<ExtractedSector>>& extracted_sectors_vector,
 		const std::string& path,
 		size_t sector_data_offset,
-		size_t sector_data_length
+		size_t sector_data_length,
+		std::FILE* handle
 	) -> void {
-		auto handle = std::fopen(path.c_str(), "wb+");
-		if (handle == nullptr) {
-			OVERDRIVE_THROW(exceptions::IOOpenException(path));
-		}
 		try {
 			fprintf(stderr, "%s\n", std::format("Saving track sector data to \"{}\"", path).c_str());
 			for (auto sector_index = size_t(0); sector_index < extracted_sectors_vector.size(); sector_index += 1) {
@@ -264,7 +261,33 @@ namespace copier {
 			std::fclose(handle);
 			throw;
 		}
+	}
+
+	auto open_handle(
+		const std::string& path
+	) -> std::FILE* {
+		auto handle = std::fopen(path.c_str(), "wb+");
+		if (handle == nullptr) {
+			OVERDRIVE_THROW(exceptions::IOOpenException(path));
+		}
+		return handle;
+	}
+
+	auto close_handle(
+		std::FILE* handle
+	) -> void {
 		std::fclose(handle);
+	}
+
+	auto write_sector_data_to_file(
+		const std::vector<std::vector<ExtractedSector>>& extracted_sectors_vector,
+		const std::string& path,
+		size_t sector_data_offset,
+		size_t sector_data_length
+	) -> void {
+		auto handle = open_handle(path);
+		append_sector_data(extracted_sectors_vector, path, sector_data_offset, sector_data_length, handle);
+		close_handle(handle);
 	}
 
 	auto log_bad_sector_indices(

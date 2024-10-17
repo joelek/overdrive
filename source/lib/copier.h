@@ -70,6 +70,22 @@ namespace copier {
 		const options::Options& options
 	) -> std::vector<std::vector<ExtractedSector>>;
 
+	auto append_sector_data(
+		const std::vector<std::vector<ExtractedSector>>& extracted_sectors_vector,
+		const std::string& path,
+		size_t sector_data_offset,
+		size_t sector_data_length,
+		std::FILE* handle
+	) -> void;
+
+	auto open_handle(
+		const std::string& path
+	) -> std::FILE*;
+
+	auto close_handle(
+		std::FILE* handle
+	) -> void;
+
 	auto write_sector_data_to_file(
 		const std::vector<std::vector<ExtractedSector>>& extracted_sectors_vector,
 		const std::string& path,
