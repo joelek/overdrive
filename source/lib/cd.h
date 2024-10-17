@@ -168,5 +168,9 @@ namespace cd {
 	auto is_audio_category(
 		TrackCategory category
 	) -> bool_t;
+
+	auto is_data_category(
+		TrackCategory category
+	) -> bool_t;
 }
 }

@@ -104,5 +104,23 @@ namespace cd {
 		}
 		OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
 	}
+
+	auto is_data_category(
+		TrackCategory category
+	) -> bool_t {
+		if (category == TrackCategory::AUDIO_2_CHANNELS) {
+			return false;
+		}
+		if (category == TrackCategory::DATA) {
+			return true;
+		}
+		if (category == TrackCategory::AUDIO_4_CHANNELS) {
+			return false;
+		}
+		if (category == TrackCategory::RESERVED) {
+			return false;
+		}
+		OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
+	}
 }
 }
