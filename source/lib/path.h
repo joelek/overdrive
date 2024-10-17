@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <optional>
 #include <string>
 #include "shared.h"
@@ -13,18 +14,23 @@ namespace path {
 	class Path {
 		public:
 
-		std::string directory;
-		std::string stem;
-		std::string extension;
+		std::filesystem::path fspath;
 
 		operator std::string();
 
-		auto with_stem(
-			const std::string& stem
-		) const -> Path;
+		auto create_directories(
+		) const -> void;
 
 		auto with_extension(
 			const std::string& extension
+		) const -> Path;
+
+		auto with_filename(
+			const std::string& filename
+		) const -> Path;
+
+		auto with_stem(
+			const std::string& stem
 		) const -> Path;
 
 		protected:

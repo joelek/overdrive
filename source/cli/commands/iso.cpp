@@ -69,6 +69,7 @@ namespace commands {
 				auto user_data_offset = disc::get_user_data_offset(track.type);
 				auto user_data_length = disc::get_user_data_length(track.type);
 				auto path = path::create_path(options.path).with_extension(std::format(".{:0>2}.iso", track.number));
+				path.create_directories();
 				copier::write_sector_data_to_file(extracted_sectors_vector, path, user_data_offset, user_data_length);
 			} else {
 				OVERDRIVE_THROW(exceptions::ExpectedDataTrackException(track.number));

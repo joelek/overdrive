@@ -1,32 +1,45 @@
 #include "path.h"
 
-#include <filesystem>
 #include <format>
 
 namespace overdrive {
 namespace path {
 	Path::operator std::string() {
-		auto fspath = std::filesystem::path(this->directory) / std::format("{}{}", this->stem, this->extension);
-		return fspath.string();
+		return this->fspath.string();
 	}
 
-	auto Path::with_stem(
-		const std::string& stem
-	) const -> Path {
-		return {
-			this->directory,
-			stem,
-			this->extension
-		};
+	auto Path::create_directories(
+	) const -> void {
+		std::filesystem::create_directories(this->fspath);
 	}
 
 	auto Path::with_extension(
 		const std::string& extension
 	) const -> Path {
+		auto fspath = this->fspath;
+		fspath.replace_extension(extension);
 		return {
-			this->directory,
-			this->stem,
-			extension
+			fspath
+		};
+	}
+
+	auto Path::with_filename(
+		const std::string& filename
+	) const -> Path {
+		auto fspath = this->fspath;
+		fspath.replace_filename(filename);
+		return {
+			fspath
+		};
+	}
+
+	auto Path::with_stem(
+		const std::string& stem
+	) const -> Path {
+		auto fspath = this->fspath;
+		fspath.replace_filename(std::format("{}{}", stem, this->fspath.extension().string()));
+		return {
+			fspath
 		};
 	}
 
@@ -39,9 +52,7 @@ namespace path {
 		}
 		fspath = std::filesystem::weakly_canonical(std::filesystem::current_path() / fspath);
 		return {
-			fspath.parent_path().string(),
-			fspath.stem().string(),
-			fspath.extension().string()
+			fspath
 		};
 	}
 }
