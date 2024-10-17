@@ -87,6 +87,10 @@ namespace parser {
 				OVERDRIVE_THROW(exceptions::BadArgumentOccurencesException(parser.key, parser.min_occurences, parser.max_occurences));
 			}
 			if (parser_matches.size() > 0) {
+				fprintf(stderr, "%s\n", std::format("Argument \"{}\" got values:", parser.key, parser_matches.size()).c_str());
+				for (auto& match : parser_matches) {
+					fprintf(stderr, "%s\n", std::format("\t\"{}\"", match).c_str());
+				}
 				parser.parser(parser_matches);
 			}
 		}
