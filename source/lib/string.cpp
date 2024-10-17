@@ -1,5 +1,8 @@
 #include "string.h"
 
+#include <algorithm>
+#include <cctype>
+
 namespace overdrive {
 namespace string {
 	auto join(
@@ -14,6 +17,15 @@ namespace string {
 			}
 			string += part;
 		}
+		return string;
+	}
+
+	auto lower(
+		std::string string
+	) -> std::string {
+		std::transform(string.begin(), string.end(), string.begin(), [](ch08_t character) -> ch08_t {
+			return std::tolower(character);
+		});
 		return string;
 	}
 
@@ -62,6 +74,15 @@ namespace string {
 		}
 		auto end = string.find_last_not_of(characters);
 		return string.substr(start, end - start + 1);
+	}
+
+	auto upper(
+		std::string string
+	) -> std::string {
+		std::transform(string.begin(), string.end(), string.begin(), [](ch08_t character) -> ch08_t {
+			return std::toupper(character);
+		});
+		return string;
 	}
 }
 }

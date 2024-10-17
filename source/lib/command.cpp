@@ -4,6 +4,7 @@
 #include <format>
 #include "app.h"
 #include "exceptions.h"
+#include "string.h"
 
 namespace overdrive {
 namespace command {
@@ -33,7 +34,7 @@ namespace command {
 		fprintf(stderr, "%s\n", std::format("").c_str());
 		for (auto command_index = size_t(0); command_index < commands.size(); command_index += 1) {
 			auto& command = commands.at(command_index);
-			fprintf(stderr, "%s\n", std::format("{} {}", app::NAME, command.key).c_str());
+			fprintf(stderr, "%s\n", std::format("{} {}", string::lower(app::NAME), command.key).c_str());
 			fprintf(stderr, "%s\n", std::format("\t{}", command.description).c_str());
 			fprintf(stderr, "%s\n", std::format("").c_str());
 		}

@@ -14,6 +14,10 @@ namespace string {
 		const std::string& glue = ""
 	) -> std::string;
 
+	auto lower(
+		std::string string
+	) -> std::string;
+
 	auto match(
 		const std::string& string,
 		std::vector<std::string>& matches,
@@ -28,6 +32,10 @@ namespace string {
 	auto trim(
 		const std::string& string,
 		const std::string& characters = " \n\r\t"
+	) -> std::string;
+
+	auto upper(
+		std::string string
 	) -> std::string;
 }
 }
