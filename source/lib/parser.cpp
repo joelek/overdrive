@@ -4,6 +4,7 @@
 #include <format>
 #include "exceptions.h"
 #include "string.h"
+#include "vector.h"
 
 namespace overdrive {
 namespace parser {
@@ -124,21 +125,22 @@ namespace parser {
 	}
 
 	auto sort(
-		std::vector<Parser>& parsers
-	) -> void {
-		// Sort in increasing key order with positional arguments last.
-		std::sort(parsers.begin(), parsers.end(), [](const Parser& one, const Parser& two) -> bool_t {
-			if (one.positional && !two.positional) {
-				return -1;
-			}
-			if (!one.positional && two.positional) {
-				return 1;
-			}
-			if (one.positional && two.positional) {
-				return 0;
-			}
+		const std::vector<Parser>& parsers
+	) -> std::vector<Parser> {
+		auto positional_parsers = vector::filter<Parser>(parsers, [](const Parser& parser, size_t) -> bool_t {
+			return parser.positional;
+		});
+		auto result = vector::filter<Parser>(parsers, [](const Parser& parser, size_t) -> bool_t {
+			return !parser.positional;
+		});
+		// Sort in increasing key order.
+		std::sort(result.begin(), result.end(), [](const Parser& one, const Parser& two) -> bool_t {
 			return one.key < two.key;
 		});
+		for (auto& positional_parser : positional_parsers) {
+			result.push_back(positional_parser);
+		}
+		return result;
 	};
 }
 }

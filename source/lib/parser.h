@@ -41,7 +41,7 @@ namespace parser {
 	) -> void;
 
 	auto sort(
-		std::vector<Parser>& parsers
-	) -> void;
+		const std::vector<Parser>& parsers
+	) -> std::vector<Parser>;
 }
 }
