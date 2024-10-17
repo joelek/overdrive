@@ -198,7 +198,7 @@ namespace commands {
 					if (options.audio_format == "wav") {
 						auto header = wav::Header();
 						header.data_length = cd::SECTOR_LENGTH * track.length_sectors;
-						header.riff_length = header.data_length - offsetof(wav::Header, wave_identifier);
+						header.riff_length = header.data_length + sizeof(wav::Header) - offsetof(wav::Header, wave_identifier);
 						if (std::fwrite(&header, sizeof(wav::Header), 1, handle) != 1) {
 							OVERDRIVE_THROW(exceptions::IOWriteException(path));
 						}
