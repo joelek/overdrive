@@ -68,8 +68,8 @@ namespace commands {
 			if (disc::is_data_track(track.type)) {
 				auto user_data_offset = disc::get_user_data_offset(track.type);
 				auto user_data_length = disc::get_user_data_length(track.type);
-				auto iso_path = copier::get_absolute_path_with_extension(options.path.value_or(""), std::format("{:0>2}.iso", track.number));
-				copier::write_sector_data_to_file(extracted_sectors_vector, iso_path, user_data_offset, user_data_length);
+				auto path = copier::get_absolute_path_with_extension(options.path.value_or(""), std::format("{:0>2}.iso", track.number));
+				copier::write_sector_data_to_file(extracted_sectors_vector, path, user_data_offset, user_data_length);
 			} else {
 				OVERDRIVE_THROW(exceptions::ExpectedDataTrackException(track.number));
 			}

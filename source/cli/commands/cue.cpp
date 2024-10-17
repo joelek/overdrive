@@ -8,7 +8,7 @@ namespace commands {
 		public:
 
 		bool_t merge_tracks;
-		bool_t store_raw_tracks;
+		bool_t store_raw_data_tracks;
 		std::string audio_format;
 
 		protected:
@@ -35,7 +35,7 @@ namespace commands {
 				}
 			}));
 			parsers.push_back(parser::Parser({
-				"store-raw-tracks",
+				"store-raw-data-tracks",
 				"Specify whether to store raw sector data for data tracks.",
 				std::regex("^(true|false)$"),
 				"boolean",
@@ -44,7 +44,7 @@ namespace commands {
 				1,
 				1,
 				[&](const std::vector<std::string>& matches) -> void {
-					options.store_raw_tracks = matches.at(0) == "true";
+					options.store_raw_data_tracks = matches.at(0) == "true";
 				}
 			}));
 			parsers.push_back(parser::Parser({
@@ -73,7 +73,15 @@ namespace commands {
 		auto assert_image_compatibility(
 			const std::vector<disc::TrackInfo>& tracks
 		) -> void {
-			(void)tracks;
+			for (auto track_index = size_t(0); track_index < tracks.size(); track_index += 1) {
+				auto& track = tracks.at(track_index);
+				if (track.type == disc::TrackType::AUDIO_4_CHANNELS) {
+					OVERDRIVE_THROW(exceptions::UnsupportedValueException("track type AUDIO_4_CHANNELS"));
+				}
+				if (track.type == disc::TrackType::DATA_MODE0) {
+					OVERDRIVE_THROW(exceptions::UnsupportedValueException("track type DATA_MODE0"));
+				}
+			}
 		}
 
 		auto get_track_tag(
@@ -84,10 +92,10 @@ namespace commands {
 				return "AUDIO";
 			}
 			if (type == disc::TrackType::AUDIO_4_CHANNELS) {
-				return "AUDIO";
+				OVERDRIVE_THROW(exceptions::UnsupportedValueException("track type AUDIO_4_CHANNELS"));
 			}
 			if (type == disc::TrackType::DATA_MODE0) {
-				return store_raw_tracks ? "MODE1/2352" : "MODE1/2352";
+				OVERDRIVE_THROW(exceptions::UnsupportedValueException("track type DATA_MODE0"));
 			}
 			if (type == disc::TrackType::DATA_MODE1) {
 				return store_raw_tracks ? "MODE1/2352" : "MODE1/2048";
@@ -122,55 +130,120 @@ namespace commands {
 		}
 		auto tracks = disc::get_disc_tracks(disc_info, options.track_numbers);
 		internal::assert_image_compatibility(tracks);
-		// TODO: Handle merge_tracks and audio_format option.
-		for (auto track_index = size_t(0); track_index < tracks.size(); track_index += 1) {
-			auto& track = tracks.at(track_index);
-			auto extracted_sectors_vector = copier::read_track(drive, track, options);
-			auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
-			copier::log_bad_sector_indices(drive, track, bad_sector_indices);
-			if (disc::is_data_track(track.type)) {
-				auto bin_path = copier::get_absolute_path_with_extension(options.path.value_or(""), std::format("{:0>2}.bin", track.number));
-				auto sector_data_offset = options.store_raw_tracks ? 0 : disc::get_user_data_offset(track.type);
-				auto sector_data_length = options.store_raw_tracks ? cd::SECTOR_LENGTH : disc::get_user_data_length(track.type);
-				copier::write_sector_data_to_file(extracted_sectors_vector, bin_path, sector_data_offset, sector_data_length);
-			} else {
-				auto extension = options.audio_format == "wav" ? "wav" : "bin";
-				auto bin_path = copier::get_absolute_path_with_extension(options.path.value_or(""), std::format("{:0>2}.{}", track.number, extension));
-				copier::write_sector_data_to_file(extracted_sectors_vector, bin_path, 0, cd::SECTOR_LENGTH);
+		if (options.merge_tracks) {
+			{
+				auto path = copier::get_absolute_path_with_extension(options.path.value_or(""), std::format(".bin"));
+				auto handle = copier::open_handle(path);
+				try {
+					for (auto track_index = size_t(0); track_index < tracks.size(); track_index += 1) {
+						auto& track = tracks.at(track_index);
+						auto extracted_sectors_vector = copier::read_track(drive, track, options);
+						auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
+						copier::log_bad_sector_indices(drive, track, bad_sector_indices);
+						if (disc::is_data_track(track.type)) {
+							auto sector_data_offset = options.store_raw_data_tracks ? 0 : disc::get_user_data_offset(track.type);
+							auto sector_data_length = options.store_raw_data_tracks ? cd::SECTOR_LENGTH : disc::get_user_data_length(track.type);
+							copier::append_sector_data(extracted_sectors_vector, path, sector_data_offset, sector_data_length, handle);
+						} else {
+							copier::append_sector_data(extracted_sectors_vector, path, 0, cd::SECTOR_LENGTH, handle);
+						}
+					}
+				}  catch (...) {
+					copier::close_handle(handle);
+					throw;
+				}
+				copier::close_handle(handle);
+			}
+			{
+				auto path = copier::get_absolute_path_with_extension(options.path.value_or(""), std::format(".cue"));
+				auto handle = copier::open_handle(path);
+				try {
+					// TODO: Use correct stem.
+					if (std::fprintf(handle, "%s\n", std::format("FILE \"{}\" {}", std::format("image.bin"), "BINARY").c_str()) < 0) {
+						OVERDRIVE_THROW(exceptions::IOWriteException(path));
+					}
+					auto offset = size_t(0);
+					for (auto track_index = size_t(0); track_index < tracks.size(); track_index += 1) {
+						auto& track = tracks.at(track_index);
+						auto track_tag = internal::get_track_tag(track.type, options.store_raw_data_tracks);
+						if (std::fprintf(handle, "%s\n", std::format("\tTRACK {:0>2} {}", track_index + 1, track_tag).c_str()) < 0) {
+							OVERDRIVE_THROW(exceptions::IOWriteException(path));
+						}
+						if (std::fprintf(handle, "%s\n", std::format("\t\tPREGAP {:0>2}:{:0>2}:{:0>2}", 0, 0, 0).c_str()) < 0) {
+							OVERDRIVE_THROW(exceptions::IOWriteException(path));
+						}
+						auto address = cd::get_address_from_sector(offset);
+						if (std::fprintf(handle, "%s\n", std::format("\t\tINDEX {:0>2} {:0>2}:{:0>2}:{:0>2}", 1, address.m, address.s, address.f).c_str()) < 0) {
+							OVERDRIVE_THROW(exceptions::IOWriteException(path));
+						}
+						offset += track.length_sectors;
+					}
+				} catch (...) {
+					copier::close_handle(handle);
+					throw;
+				}
+				copier::close_handle(handle);
+			}
+		} else {
+			{
+				for (auto track_index = size_t(0); track_index < tracks.size(); track_index += 1) {
+					auto& track = tracks.at(track_index);
+					auto extracted_sectors_vector = copier::read_track(drive, track, options);
+					auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
+					copier::log_bad_sector_indices(drive, track, bad_sector_indices);
+					if (disc::is_data_track(track.type)) {
+						auto sector_data_offset = options.store_raw_data_tracks ? 0 : disc::get_user_data_offset(track.type);
+						auto sector_data_length = options.store_raw_data_tracks ? cd::SECTOR_LENGTH : disc::get_user_data_length(track.type);
+						auto path = copier::get_absolute_path_with_extension(options.path.value_or(""), std::format("{:0>2}.bin", track.number));
+						auto handle = copier::open_handle(path);
+						copier::append_sector_data(extracted_sectors_vector, path, sector_data_offset, sector_data_length, handle);
+						copier::close_handle(handle);
+					} else {
+						auto extension = options.audio_format == "wav" ? "wav" : "bin";
+						auto path = copier::get_absolute_path_with_extension(options.path.value_or(""), std::format("{:0>2}.{}", track.number, extension));
+						auto handle = copier::open_handle(path);
+						if (options.audio_format == "wav") {
+							auto header = wav::Header();
+							header.data_length = cd::SECTOR_LENGTH * track.length_sectors;
+							header.riff_length = header.data_length - (sizeof(wav::Header) - offsetof(wav::Header, wave_identifier));
+							if (std::fwrite(&header, sizeof(wav::Header), 1, handle) != 1) {
+								OVERDRIVE_THROW(exceptions::IOWriteException(path));
+							}
+						}
+						copier::append_sector_data(extracted_sectors_vector, path, 0, cd::SECTOR_LENGTH, handle);
+						copier::close_handle(handle);
+					}
+				}
+			}
+			{
+				auto path = copier::get_absolute_path_with_extension(options.path.value_or(""), std::format(".cue"));
+				auto handle = copier::open_handle(path);
+				try {
+					for (auto track_index = size_t(0); track_index < tracks.size(); track_index += 1) {
+						auto& track = tracks.at(track_index);
+						auto file_tag = disc::is_data_track(track.type) ? "BINARY" : options.audio_format == "wav" ? "WAVE" : "BINARY";
+						auto track_tag = internal::get_track_tag(track.type, options.store_raw_data_tracks);
+						auto extension = options.audio_format == "wav" ? "wav" : "bin";
+						// TODO: Use correct stem.
+						if (std::fprintf(handle, "%s\n", std::format("FILE \"{}\" {}", std::format("image.{:0>2}.{}", track.number, extension), file_tag).c_str()) < 0) {
+							OVERDRIVE_THROW(exceptions::IOWriteException(path));
+						}
+						if (std::fprintf(handle, "%s\n", std::format("\tTRACK {:0>2} {}", track_index + 1, track_tag).c_str()) < 0) {
+							OVERDRIVE_THROW(exceptions::IOWriteException(path));
+						}
+						if (std::fprintf(handle, "%s\n", std::format("\t\tPREGAP {:0>2}:{:0>2}:{:0>2}", 0, 0, 0).c_str()) < 0) {
+							OVERDRIVE_THROW(exceptions::IOWriteException(path));
+						}
+						if (std::fprintf(handle, "%s\n", std::format("\t\tINDEX {:0>2} {:0>2}:{:0>2}:{:0>2}", 1, 0, 0, 0).c_str()) < 0) {
+							OVERDRIVE_THROW(exceptions::IOWriteException(path));
+						}
+					}
+				} catch (...) {
+					copier::close_handle(handle);
+					throw;
+				}
+				copier::close_handle(handle);
 			}
 		}
-		auto cue_path = copier::get_absolute_path_with_extension(options.path.value_or(""), std::format(".cue"));
-		auto cue_handle = std::fopen(cue_path.c_str(), "wb+");
-		if (cue_handle == nullptr) {
-			OVERDRIVE_THROW(exceptions::IOOpenException(cue_path));
-		}
-		try {
-			auto offset = size_t(0);
-			for (auto track_index = size_t(0); track_index < tracks.size(); track_index += 1) {
-				auto& track = tracks.at(track_index);
-				auto is_audio_track = disc::is_audio_track(track.type);
-				auto extension = is_audio_track && options.audio_format == "wav" ? "wav" : "bin";
-				auto file_tag = is_audio_track && options.audio_format == "wav" ? "WAVE" : "BINARY";
-				auto track_tag = internal::get_track_tag(track.type, options.store_raw_tracks);
-				if (std::fprintf(cue_handle, "%s\n", std::format("FILE {}.{:0>2}.{} {}", "image", track.number, extension, file_tag).c_str()) < 0) {
-					OVERDRIVE_THROW(exceptions::IOWriteException(cue_path));
-				}
-				if (std::fprintf(cue_handle, "%s\n", std::format("\tTRACK {:0>2} {}", track_index + 1, track_tag).c_str()) < 0) {
-					OVERDRIVE_THROW(exceptions::IOWriteException(cue_path));
-				}
-				// TODO: Get pregap.
-				if (std::fprintf(cue_handle, "%s\n", std::format("\t\tPREGAP {:0>2}:{:0>2}:{:0>2}", 0, 0, 0).c_str()) < 0) {
-					OVERDRIVE_THROW(exceptions::IOWriteException(cue_path));
-				}
-				if (std::fprintf(cue_handle, "%s\n", std::format("\t\tINDEX {:0>2} {:0>2}:{:0>2}:{:0>2}", 1, 0, 0, 0).c_str()) < 0) {
-					OVERDRIVE_THROW(exceptions::IOWriteException(cue_path));
-				}
-				// TODO: Increase offset if merge-tracks is true.
-			}
-		} catch (...) {
-			std::fclose(cue_handle);
-			throw;
-		}
-		std::fclose(cue_handle);
 	};
 }
