@@ -21,6 +21,7 @@
 #include "iso9660.h"
 #include "memory.h"
 #include "options.h"
+#include "path.h"
 #include "parser.h"
 #include "scsi.h"
 #include "sense.h"

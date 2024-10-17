@@ -117,7 +117,7 @@ namespace commands {
 			const std::vector<disc::TrackInfo>& tracks,
 			const CUEOptions& options
 		) -> void {
-			auto path = copier::get_absolute_path_with_extension(options.path.value_or(""), std::format(".bin"));
+			auto path = path::create_path(options.path).with_extension(".bin");
 			auto handle = copier::open_handle(path);
 			try {
 				for (auto track_index = size_t(0); track_index < tracks.size(); track_index += 1) {
@@ -144,11 +144,10 @@ namespace commands {
 			const std::vector<disc::TrackInfo>& tracks,
 			const CUEOptions& options
 		) -> void {
-			auto path = copier::get_absolute_path_with_extension(options.path.value_or(""), std::format(".cue"));
+			auto path = path::create_path(options.path).with_extension(".cue");
 			auto handle = copier::open_handle(path);
 			try {
-				// TODO: Use correct stem.
-				if (std::fprintf(handle, "%s\n", std::format("FILE \"{}\" {}", std::format("image.bin"), "BINARY").c_str()) < 0) {
+				if (std::fprintf(handle, "%s\n", std::format("FILE \"{}\" {}", std::format("{}.bin", path.stem), "BINARY").c_str()) < 0) {
 					OVERDRIVE_THROW(exceptions::IOWriteException(path));
 				}
 				auto offset = size_t(0);
@@ -187,13 +186,13 @@ namespace commands {
 				if (disc::is_data_track(track.type)) {
 					auto sector_data_offset = options.store_raw_data_tracks ? 0 : disc::get_user_data_offset(track.type);
 					auto sector_data_length = options.store_raw_data_tracks ? cd::SECTOR_LENGTH : disc::get_user_data_length(track.type);
-					auto path = copier::get_absolute_path_with_extension(options.path.value_or(""), std::format("{:0>2}.bin", track.number));
+					auto path = path::create_path(options.path).with_extension(std::format(".{:0>2}.bin", track.number));
 					auto handle = copier::open_handle(path);
 					copier::append_sector_data(extracted_sectors_vector, path, sector_data_offset, sector_data_length, handle);
 					copier::close_handle(handle);
 				} else {
 					auto extension = options.audio_format == "wav" ? "wav" : "bin";
-					auto path = copier::get_absolute_path_with_extension(options.path.value_or(""), std::format("{:0>2}.{}", track.number, extension));
+					auto path = path::create_path(options.path).with_extension(std::format(".{:0>2}.{}", track.number, extension));
 					auto handle = copier::open_handle(path);
 					if (options.audio_format == "wav") {
 						auto header = wav::Header();
@@ -213,7 +212,7 @@ namespace commands {
 			const std::vector<disc::TrackInfo>& tracks,
 			const CUEOptions& options
 		) -> void {
-			auto path = copier::get_absolute_path_with_extension(options.path.value_or(""), std::format(".cue"));
+			auto path = path::create_path(options.path).with_extension(".cue");
 			auto handle = copier::open_handle(path);
 			try {
 				for (auto track_index = size_t(0); track_index < tracks.size(); track_index += 1) {
@@ -221,8 +220,7 @@ namespace commands {
 					auto file_tag = disc::is_data_track(track.type) ? "BINARY" : options.audio_format == "wav" ? "WAVE" : "BINARY";
 					auto track_tag = internal::get_track_tag(track.type, options.store_raw_data_tracks);
 					auto extension = options.audio_format == "wav" ? "wav" : "bin";
-					// TODO: Use correct stem.
-					if (std::fprintf(handle, "%s\n", std::format("FILE \"{}\" {}", std::format("image.{:0>2}.{}", track.number, extension), file_tag).c_str()) < 0) {
+					if (std::fprintf(handle, "%s\n", std::format("FILE \"{}\" {}", std::format("{}.{:0>2}.{}", path.stem, track.number, extension), file_tag).c_str()) < 0) {
 						OVERDRIVE_THROW(exceptions::IOWriteException(path));
 					}
 					if (std::fprintf(handle, "%s\n", std::format("\tTRACK {:0>2} {}", track_index + 1, track_tag).c_str()) < 0) {

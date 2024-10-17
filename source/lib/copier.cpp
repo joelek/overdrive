@@ -310,17 +310,5 @@ namespace copier {
 			fprintf(stderr, "%s\n", std::format("Track number {} containing audio has {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
 		}
 	}
-
-	auto get_absolute_path_with_extension(
-		const std::string& path,
-		const std::string& extension
-	) -> std::string {
-		auto fspath = std::filesystem::path(path);
-		if (!fspath.has_stem() || fspath.stem().string().starts_with(".")) {
-			fspath.replace_filename("image");
-		}
-		fspath.replace_extension(extension);
-		return std::filesystem::weakly_canonical(std::filesystem::current_path() / fspath).string();
-	}
 }
 }

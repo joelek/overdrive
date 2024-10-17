@@ -98,10 +98,5 @@ namespace copier {
 		const disc::TrackInfo& track,
 		const std::vector<size_t>& bad_sector_indices
 	) -> void;
-
-	auto get_absolute_path_with_extension(
-		const std::string& path,
-		const std::string& extension
-	) -> std::string;
 }
 }

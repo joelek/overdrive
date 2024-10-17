@@ -45,6 +45,7 @@ SOURCES=(
 	"lib/iso9660"
 	"lib/memory"
 	"lib/options"
+	"lib/path"
 	"lib/parser"
 	"lib/scsi"
 	"lib/sense"
