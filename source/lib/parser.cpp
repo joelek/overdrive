@@ -17,7 +17,7 @@ namespace parser {
 			auto& part = parts.at(part_index);
 			auto part_matches = std::vector<std::string>();
 			if (string::match(part, part_matches, this->regex)) {
-				matches.insert(matches.end(), part_matches.begin(), part_matches.end());
+				vector::append(matches, part_matches);
 			} else {
 				OVERDRIVE_THROW(exceptions::BadArgumentFormatException(this->key, this->format));
 			}
@@ -45,7 +45,7 @@ namespace parser {
 					}
 					auto matches = parser.get_matches(value);
 					auto& parser_matches = parser_matches_vector.at(parser_index);
-					parser_matches.insert(parser_matches.end(), matches.begin(), matches.end());
+					vector::append(parser_matches, matches);
 					parsed = true;
 					break;
 				}
@@ -62,7 +62,7 @@ namespace parser {
 					}
 					auto matches = parser.get_matches(argument);
 					auto& parser_matches = parser_matches_vector.at(parser_index);
-					parser_matches.insert(parser_matches.end(), matches.begin(), matches.end());
+					vector::append(parser_matches, matches);
 					positional_index += 1;
 					parsed = true;
 					break;
@@ -78,7 +78,7 @@ namespace parser {
 			if (parser_matches.size() == 0) {
 				if (parser.fallback) {
 					auto matches = parser.get_matches(parser.fallback.value());
-					parser_matches.insert(parser_matches.end(), matches.begin(), matches.end());
+					vector::append(parser_matches, matches);
 				}
 			}
 			if (parser_matches.size() < parser.min_occurences) {
