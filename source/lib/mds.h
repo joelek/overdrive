@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cd.h"
 #include "cdb.h"
 #include "disc.h"
 #include "shared.h"
@@ -74,7 +75,7 @@ namespace mds {
 	static_assert(sizeof(FormatHeader) == 88);
 
 	struct DiscHeader {
-		int32_t pregap_correction = -150;
+		si32_t pregap_correction = 0 - cd::PHYSICAL_SECTOR_OFFSET;
 		ui32_t sectors_on_disc = 0;
 		ui08_t unknown_a = 1;
 		ui08_t unknown_b = 0;

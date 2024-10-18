@@ -7,14 +7,14 @@ namespace cd {
 	auto get_absolute_sector_index(
 		si_t relative_sector_index
 	) -> ui_t {
-		auto absolute_sector_index = ui_t(relative_sector_index) + 150;
+		auto absolute_sector_index = ui_t(relative_sector_index) + si_t(PHYSICAL_SECTOR_OFFSET);
 		return absolute_sector_index;
 	}
 
 	auto get_relative_sector_index(
 		ui_t absolute_sector_index
 	) -> si_t {
-		auto relative_sector_index = si_t(absolute_sector_index) - 150;
+		auto relative_sector_index = si_t(absolute_sector_index) - si_t(PHYSICAL_SECTOR_OFFSET);
 		return relative_sector_index;
 	}
 

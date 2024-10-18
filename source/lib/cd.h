@@ -27,7 +27,8 @@ namespace cd {
 	const auto PACKET_SUBCHANNELS_LENGTH = size_t(1);
 	const auto PACKET_LENGTH = size_t(PACKET_DATA_LENGTH + PACKET_CIRC_LENGTH + PACKET_SUBCHANNELS_LENGTH);
 	const auto PACKETS_PER_SECTOR = size_t(98);
-	const auto PHYSICAL_SECTOR_LENGTH = size_t(PACKET_LENGTH * PACKETS_PER_SECTOR);
+	const auto PACKETIZED_SECTOR_LENGTH = size_t(PACKET_LENGTH * PACKETS_PER_SECTOR);
+	const auto PHYSICAL_SECTOR_OFFSET = size_t(150);
 
 	#pragma pack(push, 1)
 
