@@ -9,6 +9,7 @@ namespace commands {
 	class MDSOptions: public options::Options {
 		public:
 
+		bool_t save_audio_subchannels;
 		bool_t save_data_subchannels;
 
 		protected:
@@ -21,6 +22,19 @@ namespace commands {
 		) -> MDSOptions {
 			auto options = MDSOptions();
 			auto parsers = options::get_default_parsers(options);
+			parsers.push_back(parser::Parser({
+				"save-audio-subchannels",
+				"Specify whether to save subchannel data for audio tracks.",
+				std::regex("^(true|false)$"),
+				"boolean",
+				false,
+				std::optional<std::string>("false"),
+				1,
+				1,
+				[&](const std::vector<std::string>& matches) -> void {
+					options.save_audio_subchannels = matches.at(0) == "true";
+				}
+			}));
 			parsers.push_back(parser::Parser({
 				"save-data-subchannels",
 				"Specify whether to save subchannel data for data tracks.",
@@ -66,8 +80,12 @@ namespace commands {
 					auto extracted_sectors_vector = copier::read_track(drive, track, options);
 					auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
 					copier::log_bad_sector_indices(drive, track, bad_sector_indices);
-					copier::append_sector_data(extracted_sectors_vector, path, 0, cd::SECTOR_LENGTH, handle, options.save_data_subchannels);
 					vector::append<size_t>(result, bad_sector_indices);
+					if (disc::is_data_track(track.type)) {
+						copier::append_sector_data(extracted_sectors_vector, path, 0, cd::SECTOR_LENGTH, handle, options.save_data_subchannels);
+					} else {
+						copier::append_sector_data(extracted_sectors_vector, path, 0, cd::SECTOR_LENGTH, handle, options.save_audio_subchannels);
+					}
 				}
 			}  catch (...) {
 				copier::close_handle(handle);
@@ -130,14 +148,15 @@ namespace commands {
 							OVERDRIVE_THROW(exceptions::MissingValueException("track index"));
 						}
 						auto& track = session.tracks.at(track_index.value());
+						auto save_subchannels = disc::is_data_track(track.type) ? options.save_data_subchannels : options.save_audio_subchannels;
 						auto entry = mds::EntryTypeB();
 						entry.track_mode = mds::get_track_mode(track.type);
 						entry.track_mode_flags = entry.track_mode == mds::TrackMode::MODE2_FORM1 || entry.track_mode == mds::TrackMode::MODE2_FORM2 ? mds::TrackModeFlags::UNKNOWN_E : mds::TrackModeFlags::UNKNOWN_A;
 						entry.entry = point.entry;
 						// Must be written after entry since the two fields overlap.
-						entry.subchannel_mode = options.save_data_subchannels ? mds::SubchannelMode::INTERLEAVED_96 : mds::SubchannelMode::NONE;
+						entry.subchannel_mode = save_subchannels ? mds::SubchannelMode::INTERLEAVED_96 : mds::SubchannelMode::NONE;
 						entry.absolute_offset_to_track_table_entry = absolute_offset_to_track_table_entry + track_counter * sizeof(mds::TrackTableEntry);
-						entry.sector_length = options.save_data_subchannels ? cd::SECTOR_LENGTH + cd::SUBCHANNELS_LENGTH : cd::SECTOR_LENGTH;
+						entry.sector_length = save_subchannels ? cd::SECTOR_LENGTH + cd::SUBCHANNELS_LENGTH : cd::SECTOR_LENGTH;
 						entry.unknown_a = 2;
 						entry.first_sector_on_disc = first_sector_on_disc;
 						entry.mdf_byte_offset = mdf_byte_offset;
