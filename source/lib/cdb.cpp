@@ -12,7 +12,7 @@ namespace cdb {
 		auto track_count = (toc_length - sizeof(toc.header.data_length_be)) / sizeof(ReadTOCResponseFullTOCEntry);
 		for (auto track_index = size_t(0); track_index < track_count; track_index += 1) {
 			auto& track = toc.entries[track_index];
-			if (track.point == size_t(ReadTOCResponseFullTOCPoint::FIRST_TRACK)) {
+			if (track.adr == 1 && track.point == size_t(ReadTOCResponseFullTOCPoint::FIRST_TRACK_IN_SESSION)) {
 				return static_cast<SessionType>(track.paddress.s);
 			}
 		}
