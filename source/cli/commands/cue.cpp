@@ -2,6 +2,8 @@
 
 #include <cstdio>
 #include <format>
+#include <optional>
+#include <regex>
 
 namespace commands {
 	class CUEOptions: public options::Options {

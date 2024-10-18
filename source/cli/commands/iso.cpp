@@ -1,6 +1,8 @@
 #include "iso.h"
 
 #include <format>
+#include <optional>
+#include <regex>
 
 namespace commands {
 	class ISOOptions: public options::Options {
