@@ -49,6 +49,9 @@ namespace disc {
 		size_t last_sector_absolute;
 		size_t length_sectors;
 
+		auto print(
+		) const -> void;
+
 		protected:
 	};
 
@@ -59,6 +62,9 @@ namespace disc {
 		cdb::SessionType type;
 		std::vector<TrackInfo> tracks;
 		size_t length_sectors;
+
+		auto print(
+		) const -> void;
 
 		protected:
 	};

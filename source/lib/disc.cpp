@@ -23,24 +23,34 @@ namespace disc {
 		fprintf(stderr, "%s\n", std::format("Drive read offset correction [samples]: {}", this->read_offset_correction ? std::format("{}", this->read_offset_correction.value()) : "unknown").c_str());
 	}
 
+	auto TrackInfo::print(
+	) const -> void {
+		fprintf(stderr, "%s\n", std::format("\t\tTrack number: {}", this->number).c_str());
+		fprintf(stderr, "%s\n", std::format("\t\tTrack type: {}", enums::TrackType(this->type)).c_str());
+		fprintf(stderr, "%s\n", std::format("\t\tTrack first sector: {}", this->first_sector_absolute).c_str());
+		fprintf(stderr, "%s\n", std::format("\t\tTrack last sector: {}", this->last_sector_absolute).c_str());
+		fprintf(stderr, "%s\n", std::format("\t\tTrack length [sectors]: {}", this->length_sectors).c_str());
+	}
+
+	auto SessionInfo::print(
+	) const -> void {
+		fprintf(stderr, "%s\n", std::format("\tSession number: {}", this->number).c_str());
+		fprintf(stderr, "%s\n", std::format("\tSession type: {}", enums::SessionType(this->type)).c_str());
+		fprintf(stderr, "%s\n", std::format("\tSession tracks: {}", this->tracks.size()).c_str());
+		fprintf(stderr, "%s\n", std::format("\tSession length [sectors]: {}", this->length_sectors).c_str());
+		for (auto track_index = size_t(0); track_index < this->tracks.size(); track_index += 1) {
+			auto& track = this->tracks.at(track_index);
+			track.print();
+		}
+	}
+
 	auto DiscInfo::print(
 	) const -> void {
 		fprintf(stderr, "%s\n", std::format("Disc sessions: {}", this->sessions.size()).c_str());
 		fprintf(stderr, "%s\n", std::format("Disc length [sectors]: {}", this->length_sectors).c_str());
 		for (auto session_index = size_t(0); session_index < this->sessions.size(); session_index += 1) {
 			auto& session = this->sessions.at(session_index);
-			fprintf(stderr, "%s\n", std::format("\tSession number: {}", session.number).c_str());
-			fprintf(stderr, "%s\n", std::format("\tSession type: {}", enums::SessionType(session.type)).c_str());
-			fprintf(stderr, "%s\n", std::format("\tSession tracks: {}", session.tracks.size()).c_str());
-			fprintf(stderr, "%s\n", std::format("\tSession length [sectors]: {}", session.length_sectors).c_str());
-			for (auto track_index = size_t(0); track_index < session.tracks.size(); track_index += 1) {
-				auto& track = session.tracks.at(track_index);
-				fprintf(stderr, "%s\n", std::format("\t\tTrack number: {}", track.number).c_str());
-				fprintf(stderr, "%s\n", std::format("\t\tTrack type: {}", enums::TrackType(track.type)).c_str());
-				fprintf(stderr, "%s\n", std::format("\t\tTrack first sector: {}", track.first_sector_absolute).c_str());
-				fprintf(stderr, "%s\n", std::format("\t\tTrack last sector: {}", track.last_sector_absolute).c_str());
-				fprintf(stderr, "%s\n", std::format("\t\tTrack length [sectors]: {}", track.length_sectors).c_str());
-			}
+			session.print();
 		}
 	}
 
