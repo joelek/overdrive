@@ -8,8 +8,8 @@ namespace commands {
 		public:
 
 		bool_t merge_tracks;
-		bool_t store_raw_data_tracks;
-		std::string audio_format;
+		bool_t trim_data_tracks;
+		std::string audio_file_format;
 
 		protected:
 	};
@@ -35,20 +35,20 @@ namespace commands {
 				}
 			}));
 			parsers.push_back(parser::Parser({
-				"store-raw-data-tracks",
-				"Specify whether to store raw sector data for data tracks.",
+				"trim-data-tracks",
+				"Specify whether to trim sector data other than user data from data tracks.",
 				std::regex("^(true|false)$"),
 				"boolean",
 				false,
-				std::optional<std::string>("false"),
+				std::optional<std::string>("true"),
 				1,
 				1,
 				[&](const std::vector<std::string>& matches) -> void {
-					options.store_raw_data_tracks = matches.at(0) == "true";
+					options.trim_data_tracks = matches.at(0) == "true";
 				}
 			}));
 			parsers.push_back(parser::Parser({
-				"audio-format",
+				"audio-file-format",
 				"Specify file format for audio tracks.",
 				std::regex("^(bin|wav)$"),
 				"bin|wav",
@@ -57,7 +57,7 @@ namespace commands {
 				1,
 				1,
 				[&](const std::vector<std::string>& matches) -> void {
-					options.audio_format = matches.at(0);
+					options.audio_file_format = matches.at(0);
 				}
 			}));
 			parsers = parser::sort(parsers);
@@ -86,7 +86,7 @@ namespace commands {
 
 		auto get_track_tag(
 			disc::TrackType type,
-			bool_t store_raw_tracks
+			bool_t trim_data_tracks
 		) -> std::string {
 			if (type == disc::TrackType::AUDIO_2_CHANNELS) {
 				return "AUDIO";
@@ -98,16 +98,16 @@ namespace commands {
 				OVERDRIVE_THROW(exceptions::UnsupportedValueException("track type DATA_MODE0"));
 			}
 			if (type == disc::TrackType::DATA_MODE1) {
-				return store_raw_tracks ? "MODE1/2352" : "MODE1/2048";
+				return trim_data_tracks ? "MODE1/2048" : "MODE1/2352";
 			}
 			if (type == disc::TrackType::DATA_MODE2) {
-				return store_raw_tracks ? "MODE2/2352" : "MODE2/2336";
+				return trim_data_tracks ? "MODE2/2336" : "MODE2/2352";
 			}
 			if (type == disc::TrackType::DATA_MODE2_FORM1) {
-				return store_raw_tracks ? "MODE2/2352" : "MODE2/2048";
+				return trim_data_tracks ? "MODE2/2048" : "MODE2/2352";
 			}
 			if (type == disc::TrackType::DATA_MODE2_FORM2) {
-				return store_raw_tracks ? "MODE2/2352" : "MODE2/2324";
+				return trim_data_tracks ? "MODE2/2324" : "MODE2/2352";
 			}
 			OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
 		}
@@ -127,8 +127,8 @@ namespace commands {
 					auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
 					copier::log_bad_sector_indices(drive, track, bad_sector_indices);
 					if (disc::is_data_track(track.type)) {
-						auto sector_data_offset = options.store_raw_data_tracks ? 0 : disc::get_user_data_offset(track.type);
-						auto sector_data_length = options.store_raw_data_tracks ? cd::SECTOR_LENGTH : disc::get_user_data_length(track.type);
+						auto sector_data_offset = options.trim_data_tracks ? disc::get_user_data_offset(track.type) : 0;
+						auto sector_data_length = options.trim_data_tracks ? disc::get_user_data_length(track.type) : cd::SECTOR_LENGTH;
 						copier::append_sector_data(extracted_sectors_vector, path, sector_data_offset, sector_data_length, handle);
 					} else {
 						copier::append_sector_data(extracted_sectors_vector, path, 0, cd::SECTOR_LENGTH, handle);
@@ -155,7 +155,7 @@ namespace commands {
 				auto offset = size_t(0);
 				for (auto track_index = size_t(0); track_index < tracks.size(); track_index += 1) {
 					auto& track = tracks.at(track_index);
-					auto track_tag = internal::get_track_tag(track.type, options.store_raw_data_tracks);
+					auto track_tag = internal::get_track_tag(track.type, options.trim_data_tracks);
 					if (std::fprintf(handle, "%s\n", std::format("\tTRACK {:0>2} {}", track_index + 1, track_tag).c_str()) < 0) {
 						OVERDRIVE_THROW(exceptions::IOWriteException(path));
 					}
@@ -186,19 +186,19 @@ namespace commands {
 				auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
 				copier::log_bad_sector_indices(drive, track, bad_sector_indices);
 				if (disc::is_data_track(track.type)) {
-					auto sector_data_offset = options.store_raw_data_tracks ? 0 : disc::get_user_data_offset(track.type);
-					auto sector_data_length = options.store_raw_data_tracks ? cd::SECTOR_LENGTH : disc::get_user_data_length(track.type);
+					auto sector_data_offset = options.trim_data_tracks ? disc::get_user_data_offset(track.type) : 0;
+					auto sector_data_length = options.trim_data_tracks ? disc::get_user_data_length(track.type) : cd::SECTOR_LENGTH;
 					auto path = path::create_path(options.path).with_extension(std::format(".{:0>2}.bin", track.number));
 					path.create_directories();
 					auto handle = copier::open_handle(path);
 					copier::append_sector_data(extracted_sectors_vector, path, sector_data_offset, sector_data_length, handle);
 					copier::close_handle(handle);
 				} else {
-					auto extension = options.audio_format == "wav" ? "wav" : "bin";
+					auto extension = options.audio_file_format == "wav" ? "wav" : "bin";
 					auto path = path::create_path(options.path).with_extension(std::format(".{:0>2}.{}", track.number, extension));
 					path.create_directories();
 					auto handle = copier::open_handle(path);
-					if (options.audio_format == "wav") {
+					if (options.audio_file_format == "wav") {
 						auto header = wav::Header();
 						header.data_length = cd::SECTOR_LENGTH * track.length_sectors;
 						header.riff_length = header.data_length + sizeof(wav::Header) - offsetof(wav::Header, wave_identifier);
@@ -222,9 +222,9 @@ namespace commands {
 			try {
 				for (auto track_index = size_t(0); track_index < tracks.size(); track_index += 1) {
 					auto& track = tracks.at(track_index);
-					auto file_tag = disc::is_data_track(track.type) ? "BINARY" : options.audio_format == "wav" ? "WAVE" : "BINARY";
-					auto track_tag = internal::get_track_tag(track.type, options.store_raw_data_tracks);
-					auto extension = options.audio_format == "wav" ? "wav" : "bin";
+					auto file_tag = disc::is_data_track(track.type) ? "BINARY" : options.audio_file_format == "wav" ? "WAVE" : "BINARY";
+					auto track_tag = internal::get_track_tag(track.type, options.trim_data_tracks);
+					auto extension = options.audio_file_format == "wav" ? "wav" : "bin";
 					if (std::fprintf(handle, "%s\n", std::format("FILE \"{}\" {}", std::format("{}.{:0>2}.{}", path.fspath.stem().string(), track.number, extension), file_tag).c_str()) < 0) {
 						OVERDRIVE_THROW(exceptions::IOWriteException(path));
 					}
