@@ -9,6 +9,14 @@ namespace vector {
 	using namespace shared;
 
 	template <typename A>
+	auto append(
+		std::vector<A>& head,
+		const std::vector<A>& tail
+	) -> void {
+		head.insert(head.end(), tail.begin(), tail.end());
+	}
+
+	template <typename A>
 	auto filter(
 		const std::vector<A>& vector,
 		const std::function<bool_t(const A& value, size_t index)> predicate
