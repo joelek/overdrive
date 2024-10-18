@@ -34,6 +34,7 @@ The [AccurateRip drive database](https://www.accuraterip.com/driveoffsets.htm) p
 * Detect indices in audio tracks including index 00 in pregap (previous track sector range).
 * Add module with os dependencies.
 * Investigate possibility of reading lead-in and lead-out when cdrom error correction is turned off.
+* Investigate multi-session cdrom with several data tracks.
 
 ## References
 
