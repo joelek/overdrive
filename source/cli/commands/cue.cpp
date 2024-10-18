@@ -252,8 +252,8 @@ namespace commands {
 		const command::Detail& detail
 	) -> void {
 		auto options = internal::parse_options(arguments);
-		auto handle = detail.get_handle(options.drive);
-		auto drive = drive::create_drive(handle, detail.ioctl);
+		auto drive_handle = detail.get_handle(options.drive);
+		auto drive = drive::create_drive(drive_handle, detail.ioctl);
 		auto drive_info = drive.read_drive_info();
 		drive_info.print();
 		auto disc_info = drive.read_disc_info();
