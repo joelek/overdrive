@@ -170,7 +170,7 @@ class MDSImageFormat {
 		auto &lead_out_track = toc.entries[toc.header.last_track_or_session_number + 1 - 1];
 		auto track_count = toc.header.last_track_or_session_number - toc.header.first_track_or_session_number + 1;
 		auto sector_count = cd::get_sector_from_address(lead_out_track.track_start_address) - cd::get_sector_from_address(first_track.track_start_address);
-		auto absolute_offset_to_track_table_entry = sizeof(mds::FormatHeader) + sizeof(mds::DiscHeader) + 3 * sizeof(mds::EntryTypeA) + track_count * sizeof(mds::EntryTypeB) + sizeof(mds::TrackTableHeader);
+		auto absolute_offset_to_track_table_entry = sizeof(mds::FormatHeader) + sizeof(mds::SessionHeader) + 3 * sizeof(mds::EntryTypeA) + track_count * sizeof(mds::EntryTypeB) + sizeof(mds::TrackTableHeader);
 		auto absolute_offset_to_file_table_header = absolute_offset_to_track_table_entry + track_count * sizeof(mds::TrackTableEntry);
 		auto absolute_offset_to_file_table_entry = absolute_offset_to_file_table_header + sizeof(mds::FileTableHeader);
 		auto absolute_offset_to_footer = absolute_offset_to_file_table_entry + sizeof(mds::FileTableEntry);
@@ -181,12 +181,12 @@ class MDSImageFormat {
 			fprintf(stderr, "Error writing format header!\n");
 			throw EXIT_FAILURE;
 		}
-		auto disc_header = mds::DiscHeader();
-		disc_header.sectors_on_disc = sector_count;
-		disc_header.entry_count = track_count + 3;
-		disc_header.entry_count_type_a = 3;
-		disc_header.track_count = track_count;
-		if (fwrite(&disc_header, sizeof(disc_header), 1, target_handle_mds) != 1) {
+		auto session_header = mds::SessionHeader();
+		session_header.sectors_on_disc = sector_count;
+		session_header.entry_count = track_count + 3;
+		session_header.entry_count_type_a = 3;
+		session_header.last_track = track_count;
+		if (fwrite(&session_header, sizeof(session_header), 1, target_handle_mds) != 1) {
 			fprintf(stderr, "Error writing disc header!\n");
 			throw EXIT_FAILURE;
 		}
@@ -271,7 +271,7 @@ class MDSImageFormat {
 			}
 			for (auto bad_sector_number : bad_sector_numbers) {
 				auto bad_sector_table_entry = mds::BadSectorTableEntry();
-				bad_sector_table_entry.bad_sector_number = bad_sector_number;
+				bad_sector_table_entry.bad_sector_index = bad_sector_number;
 				if (fwrite(&bad_sector_table_entry, sizeof(bad_sector_table_entry), 1, target_handle_mds) != 1) {
 					fprintf(stderr, "Error writing bad sector table entry!\n");
 					throw EXIT_FAILURE;

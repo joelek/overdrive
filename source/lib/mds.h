@@ -1,6 +1,5 @@
 #pragma once
 
-#include "cd.h"
 #include "cdb.h"
 #include "disc.h"
 #include "shared.h"
@@ -61,49 +60,41 @@ namespace mds {
 	static_assert(sizeof(SubchannelMode) == 1);
 
 	struct FormatHeader {
-		ui08_t identifier[16] = { 'M','E','D','I','A',' ','D','E','S','C','R','I','P','T','O','R' };
+		ch08_t identifier[16] = { 'M','E','D','I','A',' ','D','E','S','C','R','I','P','T','O','R' };
 		ui08_t major_version = 1;
 		ui08_t minor_version = 3;
-		ui16_t unknown_a = 0;
-		ui16_t unknown_b = 1;
-		ui16_t unknown_c = 2;
-		ui08_t unknown_d[56];
-		ui32_t absolute_offset_to_disc_header = 88;
+		ui16_t medium_type = 0;
+		ui16_t session_count = 1;
+		ui16_t unknown_a = 2;
+		ui08_t unknown_b[56];
+		ui32_t absolute_offset_to_session_headers = 88;
 		ui32_t absolute_offset_to_footer = 0;
 	};
 
 	static_assert(sizeof(FormatHeader) == 88);
 
-	struct DiscHeader {
-		si32_t pregap_correction = 0 - static_cast<si32_t>(cd::PHYSICAL_SECTOR_OFFSET);
-		ui32_t sectors_on_disc = 0;
-		ui08_t unknown_a = 1;
-		ui08_t unknown_b = 0;
+	struct SessionHeader {
+		si32_t pregap_correction;
+		ui32_t sectors_on_disc;
+		ui16_t session_number;
 		ui08_t entry_count;
 		ui08_t entry_count_type_a;
-		ui08_t unknown_c = 1;
-		ui08_t unknown_d = 0;
-		ui08_t track_count;
-		ui08_t unknown_e = 0;
-		ui08_t unknown_f[4];
-		ui32_t absolute_offset_to_entry_table = 112;
+		ui16_t first_track;
+		ui16_t last_track;
+		ui08_t unknown_a[4];
+		ui32_t absolute_offset_to_entry_table;
 	};
 
-	static_assert(sizeof(DiscHeader) == 24);
+	static_assert(sizeof(SessionHeader) == 24);
 
 	struct EntryTypeA {
 		TrackMode track_mode : 4;
 		TrackModeFlags track_mode_flags: 4;
-		SubchannelMode subchannel_mode;
-		ui08_t flags;
-		ui08_t unknown_a[1];
-		cdb::ReadTOCResponseFullTOCPoint track_number;
-		ui08_t unknown_b[3];
-		ui08_t address_p = 0;
-		ui08_t address_m = 0;
-		ui08_t address_s = 0;
-		ui08_t address_f = 0;
-		ui08_t unknown_c[68];
+		union {
+			cdb::ReadTOCResponseFullTOCEntry entry;
+			SubchannelMode subchannel_mode;
+		};
+		ui08_t unknown_a[68];
 	};
 
 	static_assert(sizeof(EntryTypeA) == 80);
@@ -111,28 +102,30 @@ namespace mds {
 	struct EntryTypeB {
 		TrackMode track_mode : 4;
 		TrackModeFlags track_mode_flags: 4;
-		SubchannelMode subchannel_mode;
-		ui08_t flags;
-		ui08_t unknown_a[1];
-		ui08_t track_number;
-		ui08_t unknown_b[3];
-		ui08_t address_p = 0;
-		ui08_t address_m = 0;
-		ui08_t address_s = 0;
-		ui08_t address_f = 0;
+		union {
+			cdb::ReadTOCResponseFullTOCEntry entry;
+			SubchannelMode subchannel_mode;
+		};
 		ui32_t absolute_offset_to_track_table_entry;
-		ui16_t sector_length = 2352;
-		ui16_t unknown_c = 2;
-		ui08_t unknown_d[16];
+		ui16_t sector_length;
+		ui16_t unknown_a;
+		ui08_t unknown_b[16];
 		ui32_t first_sector_on_disc;
 		ui32_t mdf_byte_offset;
-		ui08_t unknown_e[4];
-		ui32_t unknown_f = 1;
+		ui08_t unknown_c[4];
+		ui32_t unknown_d;
 		ui32_t absolute_offset_to_file_table_header;
-		ui08_t unknown_g[24];
+		ui08_t unknown_e[24];
 	};
 
 	static_assert(sizeof(EntryTypeB) == 80);
+
+	union Entry {
+		EntryTypeA type_a;
+		EntryTypeB type_b;
+	};
+
+	static_assert(sizeof(Entry) == 80);
 
 	struct TrackTableHeader {
 		ui08_t unknown_a[24];
@@ -177,7 +170,7 @@ namespace mds {
 	static_assert(sizeof(BadSectorTableHeader) == 16);
 
 	struct BadSectorTableEntry {
-		ui32_t bad_sector_number;
+		ui32_t bad_sector_index;
 	};
 
 	static_assert(sizeof(BadSectorTableEntry) == 4);
