@@ -25,9 +25,6 @@
 using namespace overdrive;
 using namespace shared;
 
-#define APP_NAME "Overdrive"
-#define APP_VERSION "0.0.0"
-
 #ifdef DEBUG
 	#define WINAPI_CHECK_STATUS() \
 		{ \
@@ -93,11 +90,6 @@ auto pass_through_direct(
 	return sptd_sense.sptd.ScsiStatus;
 }
 
-typedef struct {
-	unsigned char data[cd::SECTOR_LENGTH];
-	unsigned int counter;
-} ExtractedCDDASector;
-
 auto get_timestamp_ms()
 -> uint64_t {
 	auto current_time_filetime = FILETIME();
@@ -137,12 +129,17 @@ auto get_handle(
 	return handle;
 }
 
-enum class FileFormat {
-	MDF_MDS,
-	BIN_CUE
-};
 
-namespace mds {
+
+
+
+
+
+
+
+
+
+namespace mdslegacy {
 	#pragma pack(push, 1)
 
 	enum class TrackMode: uint8_t {
@@ -298,48 +295,36 @@ namespace mds {
 	#pragma pack(pop)
 }
 
-class ImageFormat {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MDSImageFormat {
 	public:
 
-	virtual ~ImageFormat() {}
-
-	virtual auto write_sector_data(const cdb::ReadTOCResponseNormalTOCEntry& track, const uint8_t* data, size_t size) -> bool = 0;
-	virtual auto write_subchannel_data(const cdb::ReadTOCResponseNormalTOCEntry& track, const uint8_t* data) -> bool = 0;
-	virtual auto write_index(const drive::Drive& drive, const cdb::ReadTOCResponseNormalTOC& toc, const cdb::ReadTOCResponseFullTOC& toc_ex, bool subchannels, const std::vector<int>& bad_sector_numbers, const std::vector<unsigned int>& track_pregap_sectors_list, const std::vector<unsigned int>& track_length_sectors_list) -> void = 0;
-
-	protected:
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class MDSImageFormat: ImageFormat {
-	public:
-
-	MDSImageFormat(const std::string& directory, const std::string& filename): ImageFormat() {
+	MDSImageFormat(const std::string& directory, const std::string& filename) {
 		auto target_path_mds = directory + filename + ".mds";
 		auto target_handle_mds = fopen(target_path_mds.c_str(), "wb+");
 		if (target_handle_mds == nullptr) {
@@ -380,18 +365,18 @@ class MDSImageFormat: ImageFormat {
 		auto &lead_out_track = toc.entries[toc.header.last_track_or_session_number + 1 - 1];
 		auto track_count = toc.header.last_track_or_session_number - toc.header.first_track_or_session_number + 1;
 		auto sector_count = cd::get_sector_from_address(lead_out_track.track_start_address) - cd::get_sector_from_address(first_track.track_start_address);
-		auto absolute_offset_to_track_table_entry = sizeof(mds::FormatHeader) + sizeof(mds::DiscHeader) + 3 * sizeof(mds::EntryTypeA) + track_count * sizeof(mds::EntryTypeB) + sizeof(mds::TrackTableHeader);
-		auto absolute_offset_to_file_table_header = absolute_offset_to_track_table_entry + track_count * sizeof(mds::TrackTableEntry);
-		auto absolute_offset_to_file_table_entry = absolute_offset_to_file_table_header + sizeof(mds::FileTableHeader);
-		auto absolute_offset_to_footer = absolute_offset_to_file_table_entry + sizeof(mds::FileTableEntry);
-		auto absolute_offset_to_bad_sectors_table_header = absolute_offset_to_footer + sizeof(mds::Footer);
-		auto format_header = mds::FormatHeader();
+		auto absolute_offset_to_track_table_entry = sizeof(mdslegacy::FormatHeader) + sizeof(mdslegacy::DiscHeader) + 3 * sizeof(mdslegacy::EntryTypeA) + track_count * sizeof(mdslegacy::EntryTypeB) + sizeof(mdslegacy::TrackTableHeader);
+		auto absolute_offset_to_file_table_header = absolute_offset_to_track_table_entry + track_count * sizeof(mdslegacy::TrackTableEntry);
+		auto absolute_offset_to_file_table_entry = absolute_offset_to_file_table_header + sizeof(mdslegacy::FileTableHeader);
+		auto absolute_offset_to_footer = absolute_offset_to_file_table_entry + sizeof(mdslegacy::FileTableEntry);
+		auto absolute_offset_to_bad_sectors_table_header = absolute_offset_to_footer + sizeof(mdslegacy::Footer);
+		auto format_header = mdslegacy::FormatHeader();
 		format_header.absolute_offset_to_footer = bad_sector_numbers.size() == 0 ? 0 : absolute_offset_to_footer;
 		if (fwrite(&format_header, sizeof(format_header), 1, target_handle_mds) != 1) {
 			fprintf(stderr, "Error writing format header!\n");
 			throw EXIT_FAILURE;
 		}
-		auto disc_header = mds::DiscHeader();
+		auto disc_header = mdslegacy::DiscHeader();
 		disc_header.sectors_on_disc = sector_count;
 		disc_header.entry_count = track_count + 3;
 		disc_header.entry_count_type_a = 3;
@@ -408,27 +393,27 @@ class MDSImageFormat: ImageFormat {
 		for (auto toc_ex_track_index = 0u; toc_ex_track_index < toc_ex_tracks; toc_ex_track_index += 1) {
 			auto &current_track = toc_ex.entries[toc_ex_track_index];
 			if (current_track.point >= 0xA0) {
-				auto current_track_entry = mds::EntryTypeA();
-				current_track_entry.track_mode = mds::TrackMode::NONE;
-				current_track_entry.track_mode_flags = mds::TrackModeFlags::UNKNOWN_0;
-				std::memcpy((UCHAR*)&current_track_entry + offsetof(mds::EntryTypeA, subchannel_mode), &current_track, sizeof(current_track));
-				current_track_entry.subchannel_mode = subchannels ? mds::SubchannelMode::INTERLEAVED_96 : mds::SubchannelMode::NONE;
+				auto current_track_entry = mdslegacy::EntryTypeA();
+				current_track_entry.track_mode = mdslegacy::TrackMode::NONE;
+				current_track_entry.track_mode_flags = mdslegacy::TrackModeFlags::UNKNOWN_0;
+				std::memcpy((UCHAR*)&current_track_entry + offsetof(mdslegacy::EntryTypeA, subchannel_mode), &current_track, sizeof(current_track));
+				current_track_entry.subchannel_mode = subchannels ? mdslegacy::SubchannelMode::INTERLEAVED_96 : mdslegacy::SubchannelMode::NONE;
 				if (fwrite(&current_track_entry, sizeof(current_track_entry), 1, target_handle_mds) != 1) {
 					fprintf(stderr, "Error writing current track entry!\n");
 					throw EXIT_FAILURE;
 				}
 			} else {
-				auto current_track_entry = mds::EntryTypeB();
+				auto current_track_entry = mdslegacy::EntryTypeB();
 				auto current_track_type = drive.determine_track_type(toc_ex, toc_ex_track_index);
 				auto current_track_mode = this->get_track_mode(current_track_type);
 				current_track_entry.track_mode = current_track_mode;
-				current_track_entry.track_mode_flags = current_track_mode == mds::TrackMode::MODE2_FORM1 || current_track_mode == mds::TrackMode::MODE2_FORM2 ? mds::TrackModeFlags::UNKNOWN_E : mds::TrackModeFlags::UNKNOWN_A;
-				std::memcpy((UCHAR*)&current_track_entry + offsetof(mds::EntryTypeA, subchannel_mode), &current_track, sizeof(current_track));
-				current_track_entry.subchannel_mode = subchannels ? mds::SubchannelMode::INTERLEAVED_96 : mds::SubchannelMode::NONE;
+				current_track_entry.track_mode_flags = current_track_mode == mdslegacy::TrackMode::MODE2_FORM1 || current_track_mode == mdslegacy::TrackMode::MODE2_FORM2 ? mdslegacy::TrackModeFlags::UNKNOWN_E : mdslegacy::TrackModeFlags::UNKNOWN_A;
+				std::memcpy((UCHAR*)&current_track_entry + offsetof(mdslegacy::EntryTypeA, subchannel_mode), &current_track, sizeof(current_track));
+				current_track_entry.subchannel_mode = subchannels ? mdslegacy::SubchannelMode::INTERLEAVED_96 : mdslegacy::SubchannelMode::NONE;
 				current_track_entry.sector_length = subchannels ? cd::SECTOR_LENGTH + cd::SUBCHANNELS_LENGTH : cd::SECTOR_LENGTH;
 				current_track_entry.first_sector_on_disc = first_sector_on_disc;
 				current_track_entry.mdf_byte_offset = mdf_byte_offset;
-				current_track_entry.absolute_offset_to_track_table_entry = absolute_offset_to_track_table_entry + (track_number - toc.header.first_track_or_session_number) * sizeof(mds::TrackTableEntry);
+				current_track_entry.absolute_offset_to_track_table_entry = absolute_offset_to_track_table_entry + (track_number - toc.header.first_track_or_session_number) * sizeof(mdslegacy::TrackTableEntry);
 				current_track_entry.absolute_offset_to_file_table_header = absolute_offset_to_file_table_header;
 				if (fwrite(&current_track_entry, sizeof(current_track_entry), 1, target_handle_mds) != 1) {
 					fprintf(stderr, "Error writing current track entry!\n");
@@ -441,13 +426,13 @@ class MDSImageFormat: ImageFormat {
 				track_number += 1;
 			}
 		}
-		auto track_table_header = mds::TrackTableHeader();
+		auto track_table_header = mdslegacy::TrackTableHeader();
 		if (fwrite(&track_table_header, sizeof(track_table_header), 1, target_handle_mds) != 1) {
 			fprintf(stderr, "Error writing track table header!\n");
 			throw EXIT_FAILURE;
 		}
 		for (auto i = toc.header.first_track_or_session_number; i <= toc.header.last_track_or_session_number; i += 1) {
-			auto track_table_entry = mds::TrackTableEntry();
+			auto track_table_entry = mdslegacy::TrackTableEntry();
 			track_table_entry.pregap_sectors = track_pregap_sectors_list.at(i - toc.header.first_track_or_session_number);
 			track_table_entry.length_sectors = track_length_sectors_list.at(i - toc.header.first_track_or_session_number);
 			if (fwrite(&track_table_entry, sizeof(track_table_entry), 1, target_handle_mds) != 1) {
@@ -455,32 +440,32 @@ class MDSImageFormat: ImageFormat {
 				throw EXIT_FAILURE;
 			}
 		}
-		auto file_table_header = mds::FileTableHeader();
+		auto file_table_header = mdslegacy::FileTableHeader();
 		file_table_header.absolute_offset_to_file_table_entry = absolute_offset_to_file_table_entry;
 		if (fwrite(&file_table_header, sizeof(file_table_header), 1, target_handle_mds) != 1) {
 			fprintf(stderr, "Error writing file table header!\n");
 			throw EXIT_FAILURE;
 		}
-		auto file_table_entry = mds::FileTableEntry();
+		auto file_table_entry = mdslegacy::FileTableEntry();
 		if (fwrite(&file_table_entry, sizeof(file_table_entry), 1, target_handle_mds) != 1) {
 			fprintf(stderr, "Error writing file table entry!\n");
 			throw EXIT_FAILURE;
 		}
 		if (bad_sector_numbers.size() > 0) {
-			auto footer = mds::Footer();
+			auto footer = mdslegacy::Footer();
 			footer.absolute_offset_to_bad_sectors_table_header = absolute_offset_to_bad_sectors_table_header;
 			if (fwrite(&footer, sizeof(footer), 1, target_handle_mds) != 1) {
 				fprintf(stderr, "Error writing footer!\n");
 				throw EXIT_FAILURE;
 			}
-			auto bad_sector_table_header = mds::BadSectorTableHeader();
+			auto bad_sector_table_header = mdslegacy::BadSectorTableHeader();
 			bad_sector_table_header.bad_sector_count = bad_sector_numbers.size();
 			if (fwrite(&bad_sector_table_header, sizeof(bad_sector_table_header), 1, target_handle_mds) != 1) {
 				fprintf(stderr, "Error writing bad sector table header!\n");
 				throw EXIT_FAILURE;
 			}
 			for (auto bad_sector_number : bad_sector_numbers) {
-				auto bad_sector_table_entry = mds::BadSectorTableEntry();
+				auto bad_sector_table_entry = mdslegacy::BadSectorTableEntry();
 				bad_sector_table_entry.bad_sector_number = bad_sector_number;
 				if (fwrite(&bad_sector_table_entry, sizeof(bad_sector_table_entry), 1, target_handle_mds) != 1) {
 					fprintf(stderr, "Error writing bad sector table entry!\n");
@@ -492,27 +477,27 @@ class MDSImageFormat: ImageFormat {
 
 	protected:
 
-	auto get_track_mode(disc::TrackType track_type) -> mds::TrackMode {
+	auto get_track_mode(disc::TrackType track_type) -> mdslegacy::TrackMode {
 		if (track_type == disc::TrackType::AUDIO_2_CHANNELS) {
-			return mds::TrackMode::AUDIO;
+			return mdslegacy::TrackMode::AUDIO;
 		}
 		if (track_type == disc::TrackType::AUDIO_4_CHANNELS) {
-			return mds::TrackMode::AUDIO;
+			return mdslegacy::TrackMode::AUDIO;
 		}
 		if (track_type == disc::TrackType::DATA_MODE0) {
-			return mds::TrackMode::NONE;
+			return mdslegacy::TrackMode::NONE;
 		}
 		if (track_type == disc::TrackType::DATA_MODE1) {
-			return mds::TrackMode::MODE1;
+			return mdslegacy::TrackMode::MODE1;
 		}
 		if (track_type == disc::TrackType::DATA_MODE2) {
-			return mds::TrackMode::MODE2;
+			return mdslegacy::TrackMode::MODE2;
 		}
 		if (track_type == disc::TrackType::DATA_MODE2_FORM1) {
-			return mds::TrackMode::MODE2_FORM1;
+			return mdslegacy::TrackMode::MODE2_FORM1;
 		}
 		if (track_type == disc::TrackType::DATA_MODE2_FORM2) {
-			return mds::TrackMode::MODE2_FORM2;
+			return mdslegacy::TrackMode::MODE2_FORM2;
 		}
 		throw EXIT_FAILURE;
 	}
