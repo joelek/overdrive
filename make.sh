@@ -52,6 +52,7 @@ SOURCES=(
 	"lib/sense"
 	"lib/shared"
 	"lib/string"
+	"lib/time"
 	"lib/vector"
 	"lib/wav"
 	"lib/overdrive"

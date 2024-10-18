@@ -203,10 +203,13 @@ auto main(
 		}));
 		command::sort(commands);
 		try {
+			auto start_ms = time::get_time_ms();
 			command::run(command, arguments, commands, {
 				get_handle,
 				pass_through_direct
 			});
+			auto duration_ms = time::get_duration_ms(start_ms);
+			fprintf(stderr, "%s\n", std::format("Command execution took {} ms.", duration_ms).c_str());
 		} catch (const exceptions::CommandException& e) {
 			command::print(commands);
 			throw;
