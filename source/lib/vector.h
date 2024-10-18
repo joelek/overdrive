@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <optional>
 #include <vector>
 #include "shared.h"
 
@@ -29,6 +30,20 @@ namespace vector {
 			}
 		}
 		return result;
+	}
+
+	template <typename A>
+	auto first_index_of(
+		const std::vector<A>& vector,
+		const std::function<bool_t(const A& value, size_t index)> predicate
+	) -> std::optional<size_t> {
+		for (auto index = size_t(0); index < vector.size(); index += 1) {
+			auto& value = vector.at(index);
+			if (predicate(value, index)) {
+				return index;
+			}
+		}
+		return std::nullopt;
 	}
 
 	template <typename A, typename B>
