@@ -82,11 +82,13 @@ auto pass_through_direct(
 	WINAPI_CHECK_STATUS();
 	if (!outcome) {
 		throw EXIT_FAILURE;
-	}/*
+	}
+	/*
 	if (sptd_sense.sense[0] == (byte_t)sense::ResponseCodes::FIXED_CURRENT) {
 		auto& sense = *reinterpret_cast<sense::FixedFormat*>(sptd_sense.sense);
 		fprintf(stderr, "[WARNING] Sense info 0x%.1X 0x%.2X 0x%.2X!\n", (unsigned)sense.sense_key, sense.additional_sense_code, sense.additional_sense_code_qualifier);
-	} */
+	}
+	*/
 	return sptd_sense.sptd.ScsiStatus;
 }
 
@@ -122,7 +124,7 @@ auto get_timestamp_ms()
 auto get_handle(
 	const std::string& drive
 ) -> void* {
-	auto filename = std::string("\\\\.\\") + drive + ":";
+	auto filename = std::format("\\\\.\\{}:", drive);
 	SetLastError(ERROR_SUCCESS);
 	auto handle = CreateFileA(filename.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, 0, nullptr);
 	WINAPI_CHECK_STATUS();
@@ -159,132 +161,6 @@ auto get_handle(
 
 
 
-
-
-
-class MDSImageFormat {
-	public:
-
-	auto write_index(const drive::Drive& drive, const cdb::ReadTOCResponseNormalTOC& toc, const cdb::ReadTOCResponseFullTOC& toc_ex, bool subchannels, const std::vector<int>& bad_sector_numbers, const std::vector<unsigned int>& track_pregap_sectors_list, const std::vector<unsigned int>& track_length_sectors_list) -> void {
-		auto &first_track = toc.entries[toc.header.first_track_or_session_number - 1];
-		auto &lead_out_track = toc.entries[toc.header.last_track_or_session_number + 1 - 1];
-		auto track_count = toc.header.last_track_or_session_number - toc.header.first_track_or_session_number + 1;
-		auto sector_count = cd::get_sector_from_address(lead_out_track.track_start_address) - cd::get_sector_from_address(first_track.track_start_address);
-		auto absolute_offset_to_track_table_entry = sizeof(mds::FormatHeader) + sizeof(mds::SessionHeader) + 3 * sizeof(mds::EntryTypeA) + track_count * sizeof(mds::EntryTypeB) + sizeof(mds::TrackTableHeader);
-		auto absolute_offset_to_file_table_header = absolute_offset_to_track_table_entry + track_count * sizeof(mds::TrackTableEntry);
-		auto absolute_offset_to_file_table_entry = absolute_offset_to_file_table_header + sizeof(mds::FileTableHeader);
-		auto absolute_offset_to_footer = absolute_offset_to_file_table_entry + sizeof(mds::FileTableEntry);
-		auto absolute_offset_to_bad_sectors_table_header = absolute_offset_to_footer + sizeof(mds::Footer);
-		auto format_header = mds::FormatHeader();
-		format_header.absolute_offset_to_footer = bad_sector_numbers.size() == 0 ? 0 : absolute_offset_to_footer;
-		if (fwrite(&format_header, sizeof(format_header), 1, target_handle_mds) != 1) {
-			fprintf(stderr, "Error writing format header!\n");
-			throw EXIT_FAILURE;
-		}
-		auto session_header = mds::SessionHeader();
-		session_header.sectors_on_disc = sector_count;
-		session_header.entry_count = track_count + 3;
-		session_header.entry_count_type_a = 3;
-		session_header.last_track = track_count;
-		if (fwrite(&session_header, sizeof(session_header), 1, target_handle_mds) != 1) {
-			fprintf(stderr, "Error writing disc header!\n");
-			throw EXIT_FAILURE;
-		}
-		auto toc_ex_length = byteswap::byteswap16(toc_ex.header.data_length_be);
-		auto toc_ex_tracks = (toc_ex_length - sizeof(toc_ex.header.data_length_be)) / sizeof(cdb::ReadTOCResponseFullTOCEntry);
-		auto first_sector_on_disc = 0;
-		auto mdf_byte_offset = 0;
-		auto track_number = toc.header.first_track_or_session_number;
-		for (auto toc_ex_track_index = 0u; toc_ex_track_index < toc_ex_tracks; toc_ex_track_index += 1) {
-			auto &current_track = toc_ex.entries[toc_ex_track_index];
-			if (current_track.point >= 0xA0) {
-				auto current_track_entry = mds::EntryTypeA();
-				current_track_entry.track_mode = mds::TrackMode::NONE;
-				current_track_entry.track_mode_flags = mds::TrackModeFlags::UNKNOWN_0;
-				std::memcpy((UCHAR*)&current_track_entry + offsetof(mds::EntryTypeA, subchannel_mode), &current_track, sizeof(current_track));
-				current_track_entry.subchannel_mode = subchannels ? mds::SubchannelMode::INTERLEAVED_96 : mds::SubchannelMode::NONE;
-				if (fwrite(&current_track_entry, sizeof(current_track_entry), 1, target_handle_mds) != 1) {
-					fprintf(stderr, "Error writing current track entry!\n");
-					throw EXIT_FAILURE;
-				}
-			} else {
-				auto current_track_entry = mds::EntryTypeB();
-				auto current_track_type = drive.determine_track_type(toc_ex, toc_ex_track_index);
-				auto current_track_mode = mds::get_track_mode(current_track_type);
-				current_track_entry.track_mode = current_track_mode;
-				current_track_entry.track_mode_flags = current_track_mode == mds::TrackMode::MODE2_FORM1 || current_track_mode == mds::TrackMode::MODE2_FORM2 ? mds::TrackModeFlags::UNKNOWN_E : mds::TrackModeFlags::UNKNOWN_A;
-				std::memcpy((UCHAR*)&current_track_entry + offsetof(mds::EntryTypeA, subchannel_mode), &current_track, sizeof(current_track));
-				current_track_entry.subchannel_mode = subchannels ? mds::SubchannelMode::INTERLEAVED_96 : mds::SubchannelMode::NONE;
-				current_track_entry.sector_length = subchannels ? cd::SECTOR_LENGTH + cd::SUBCHANNELS_LENGTH : cd::SECTOR_LENGTH;
-				current_track_entry.first_sector_on_disc = first_sector_on_disc;
-				current_track_entry.mdf_byte_offset = mdf_byte_offset;
-				current_track_entry.absolute_offset_to_track_table_entry = absolute_offset_to_track_table_entry + (track_number - toc.header.first_track_or_session_number) * sizeof(mds::TrackTableEntry);
-				current_track_entry.absolute_offset_to_file_table_header = absolute_offset_to_file_table_header;
-				if (fwrite(&current_track_entry, sizeof(current_track_entry), 1, target_handle_mds) != 1) {
-					fprintf(stderr, "Error writing current track entry!\n");
-					throw EXIT_FAILURE;
-				}
-				auto current_track_length_sectors = track_length_sectors_list.at(track_number - toc.header.first_track_or_session_number);
-				auto next_track_pregap_sectors = track_number == toc.header.last_track_or_session_number ? 0 : track_pregap_sectors_list.at(track_number + 1 - toc.header.first_track_or_session_number);
-				first_sector_on_disc += current_track_length_sectors + next_track_pregap_sectors;
-				mdf_byte_offset += current_track_length_sectors * current_track_entry.sector_length;
-				track_number += 1;
-			}
-		}
-		auto track_table_header = mds::TrackTableHeader();
-		if (fwrite(&track_table_header, sizeof(track_table_header), 1, target_handle_mds) != 1) {
-			fprintf(stderr, "Error writing track table header!\n");
-			throw EXIT_FAILURE;
-		}
-		for (auto i = toc.header.first_track_or_session_number; i <= toc.header.last_track_or_session_number; i += 1) {
-			auto track_table_entry = mds::TrackTableEntry();
-			track_table_entry.pregap_sectors = track_pregap_sectors_list.at(i - toc.header.first_track_or_session_number);
-			track_table_entry.length_sectors = track_length_sectors_list.at(i - toc.header.first_track_or_session_number);
-			if (fwrite(&track_table_entry, sizeof(track_table_entry), 1, target_handle_mds) != 1) {
-				fprintf(stderr, "Error writing track table entry!\n");
-				throw EXIT_FAILURE;
-			}
-		}
-		auto file_table_header = mds::FileTableHeader();
-		file_table_header.absolute_offset_to_file_table_entry = absolute_offset_to_file_table_entry;
-		if (fwrite(&file_table_header, sizeof(file_table_header), 1, target_handle_mds) != 1) {
-			fprintf(stderr, "Error writing file table header!\n");
-			throw EXIT_FAILURE;
-		}
-		auto file_table_entry = mds::FileTableEntry();
-		if (fwrite(&file_table_entry, sizeof(file_table_entry), 1, target_handle_mds) != 1) {
-			fprintf(stderr, "Error writing file table entry!\n");
-			throw EXIT_FAILURE;
-		}
-		if (bad_sector_numbers.size() > 0) {
-			auto footer = mds::Footer();
-			footer.absolute_offset_to_bad_sectors_table_header = absolute_offset_to_bad_sectors_table_header;
-			if (fwrite(&footer, sizeof(footer), 1, target_handle_mds) != 1) {
-				fprintf(stderr, "Error writing footer!\n");
-				throw EXIT_FAILURE;
-			}
-			auto bad_sector_table_header = mds::BadSectorTableHeader();
-			bad_sector_table_header.bad_sector_count = bad_sector_numbers.size();
-			if (fwrite(&bad_sector_table_header, sizeof(bad_sector_table_header), 1, target_handle_mds) != 1) {
-				fprintf(stderr, "Error writing bad sector table header!\n");
-				throw EXIT_FAILURE;
-			}
-			for (auto bad_sector_number : bad_sector_numbers) {
-				auto bad_sector_table_entry = mds::BadSectorTableEntry();
-				bad_sector_table_entry.bad_sector_index = bad_sector_number;
-				if (fwrite(&bad_sector_table_entry, sizeof(bad_sector_table_entry), 1, target_handle_mds) != 1) {
-					fprintf(stderr, "Error writing bad sector table entry!\n");
-					throw EXIT_FAILURE;
-				}
-			}
-		}
-	}
-
-	protected:
-
-	FILE* target_handle_mds;
-	FILE* target_handle_mdf;
-};
 
 
 
