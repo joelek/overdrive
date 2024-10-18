@@ -92,35 +92,6 @@ auto pass_through_direct(
 	return sptd_sense.sptd.ScsiStatus;
 }
 
-auto get_timestamp_ms()
--> uint64_t {
-	auto current_time_filetime = FILETIME();
-	SetLastError(ERROR_SUCCESS);
-	GetSystemTimeAsFileTime(&current_time_filetime);
-	WINAPI_CHECK_STATUS();
-	auto current_time_integer = ULARGE_INTEGER();
-	current_time_integer.HighPart = current_time_filetime.dwHighDateTime;
-	current_time_integer.LowPart = current_time_filetime.dwLowDateTime;
-	auto epoch_start = SYSTEMTIME();
-	epoch_start.wYear = 1970;
-	epoch_start.wMonth = 1;
-	epoch_start.wDay = 1;
-	epoch_start.wDayOfWeek = 4;
-	epoch_start.wHour = 0;
-	epoch_start.wMinute = 0;
-	epoch_start.wSecond = 0;
-	epoch_start.wMilliseconds = 0;
-	auto epoch_start_filetime = FILETIME();
-	SetLastError(ERROR_SUCCESS);
-	SystemTimeToFileTime(&epoch_start, &epoch_start_filetime);
-	WINAPI_CHECK_STATUS();
-	auto epoch_start_integer = ULARGE_INTEGER();
-	epoch_start_integer.HighPart = epoch_start_filetime.dwHighDateTime;
-	epoch_start_integer.LowPart = epoch_start_filetime.dwLowDateTime;
-	auto current_time_ms = (current_time_integer.QuadPart - epoch_start_integer.QuadPart) / 10000;
-	return current_time_ms;
-}
-
 auto get_handle(
 	const std::string& drive
 ) -> void* {
