@@ -101,7 +101,7 @@ namespace commands {
 			auto absolute_offset_to_entry_table = sizeof(mds::FormatHeader);
 			auto first_sector_on_disc = 0;
 			auto mdf_byte_offset = 0;
-			auto track_index = 0;
+			auto track_counter = 0;
 			for (auto session_index = size_t(0); session_index < disc.sessions.size(); session_index += 1) {
 				absolute_offset_to_entry_table += sizeof(mds::SessionHeader);
 				auto& session = disc.sessions.at(session_index);
@@ -120,14 +120,21 @@ namespace commands {
 				absolute_offset_to_entry_table += session.points.size() * sizeof(mds::Entry);
 				for (auto point_index = size_t(0); point_index < session.points.size(); point_index += 1) {
 					auto& point = session.points.at(point_index);
-					if (point.entry.adr == 1 && point.entry.point >= 1 && point.entry.point <= 99) {
+					if (cdb::is_track_reference(point.entry)) {
+						auto track_index = vector::first_index_of<disc::TrackInfo>(session.tracks, [&](const disc::TrackInfo& track, size_t) -> bool_t {
+							return track.number == point.entry.point;
+						});
+						if (!track_index) {
+							OVERDRIVE_THROW(exceptions::MissingValueException("track index"));
+						}
+						auto& track = session.tracks.at(track_index.value());
 						auto entry = mds::EntryTypeB();
 						entry.track_mode = mds::get_track_mode(track.type);
 						entry.track_mode_flags = entry.track_mode == mds::TrackMode::MODE2_FORM1 || entry.track_mode == mds::TrackMode::MODE2_FORM2 ? mds::TrackModeFlags::UNKNOWN_E : mds::TrackModeFlags::UNKNOWN_A;
 						entry.entry = point.entry;
 						// Must be written after entry since the two fields overlap.
 						entry.subchannel_mode = options.save_data_subchannels ? mds::SubchannelMode::INTERLEAVED_96 : mds::SubchannelMode::NONE;
-						entry.absolute_offset_to_track_table_entry = absolute_offset_to_track_table_entry + track_index * sizeof(mds::TrackTableEntry);
+						entry.absolute_offset_to_track_table_entry = absolute_offset_to_track_table_entry + track_counter * sizeof(mds::TrackTableEntry);
 						entry.sector_length = options.save_data_subchannels ? cd::SECTOR_LENGTH + cd::SUBCHANNELS_LENGTH : cd::SECTOR_LENGTH;
 						entry.unknown_a = 2;
 						entry.first_sector_on_disc = first_sector_on_disc;
@@ -139,7 +146,7 @@ namespace commands {
 						}
 						first_sector_on_disc += track.length_sectors;
 						mdf_byte_offset += track.length_sectors * entry.sector_length;
-						track_index += 1;
+						track_counter += 1;
 					} else {
 						auto entry = mds::EntryTypeA();
 						entry.track_mode = mds::TrackMode::NONE;
