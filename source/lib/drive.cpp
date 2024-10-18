@@ -347,6 +347,12 @@ namespace drive {
 		auto supports_accurate_stream = capabilites_and_mechanical_status_page.cdda_stream_is_accurate == 1;
 		auto supports_c2_error_reporting = capabilites_and_mechanical_status_page.c2_pointers_supported == 1;
 		auto read_offset_correction = accuraterip::DATABASE().get_read_offset_correction_value(standard_inquiry.vendor_identification, standard_inquiry.product_identification);
+		if (!supports_accurate_stream) {
+			OVERDRIVE_THROW(exceptions::ExpectedAccurateStreamSupportException());
+		}
+		if (!supports_c2_error_reporting) {
+			OVERDRIVE_THROW(exceptions::ExpectedC2ErrorReportingSupportException());
+		}
 		return {
 			vendor,
 			product,

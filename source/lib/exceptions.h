@@ -40,6 +40,24 @@ namespace exceptions {
 		protected:
 	};
 
+	class ExpectedAccurateStreamSupportException: public OverdriveException {
+		public:
+
+		ExpectedAccurateStreamSupportException(
+		);
+
+		protected:
+	};
+
+	class ExpectedC2ErrorReportingSupportException: public OverdriveException {
+		public:
+
+		ExpectedC2ErrorReportingSupportException(
+		);
+
+		protected:
+	};
+
 	class UnsupportedValueException: public OverdriveException {
 		public:
 

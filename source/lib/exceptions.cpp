@@ -6,6 +6,12 @@ namespace exceptions {
 		const std::string& message
 	): std::runtime_error(message) {}
 
+	ExpectedAccurateStreamSupportException::ExpectedAccurateStreamSupportException(
+	): OverdriveException(std::format("Expected drive to support accurate stream!")) {}
+
+	ExpectedC2ErrorReportingSupportException::ExpectedC2ErrorReportingSupportException(
+	): OverdriveException(std::format("Expected drive to support C2 error reporting!")) {}
+
 	UnsupportedValueException::UnsupportedValueException(
 		const std::string& name
 	): OverdriveException(std::format("Expected \"{}\" to not be supported!", name)) {}
