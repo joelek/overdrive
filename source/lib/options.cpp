@@ -178,6 +178,76 @@ namespace options {
 				options.max_audio_copies = std::atoi(matches.at(0).c_str());
 			}
 		}));
+		parsers.push_back(parser::Parser({
+			"min-passes",
+			"Specify the minimum number of read passes.",
+			std::regex("^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
+			"integer",
+			false,
+			std::optional<std::string>("2"),
+			1,
+			1,
+			[&](const std::vector<std::string>& matches) -> void {
+				options.min_audio_passes = std::atoi(matches.at(0).c_str());
+				options.min_data_passes = std::atoi(matches.at(0).c_str());
+			}
+		}));
+		parsers.push_back(parser::Parser({
+			"max-passes",
+			"Specify the maximum number of read passes.",
+			std::regex("^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
+			"integer",
+			false,
+			std::optional<std::string>("8"),
+			1,
+			1,
+			[&](const std::vector<std::string>& matches) -> void {
+				options.max_audio_passes = std::atoi(matches.at(0).c_str());
+				options.max_data_passes = std::atoi(matches.at(0).c_str());
+			}
+		}));
+		parsers.push_back(parser::Parser({
+			"max-retries",
+			"Specify the maximum number of read retires.",
+			std::regex("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
+			"integer",
+			false,
+			std::optional<std::string>("255"),
+			1,
+			1,
+			[&](const std::vector<std::string>& matches) -> void {
+				options.max_audio_retries = std::atoi(matches.at(0).c_str());
+				options.max_data_retries = std::atoi(matches.at(0).c_str());
+			}
+		}));
+		parsers.push_back(parser::Parser({
+			"min-copies",
+			"Specify the minimum acceptable number of identical copies.",
+			std::regex("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
+			"integer",
+			false,
+			std::optional<std::string>("1"),
+			1,
+			1,
+			[&](const std::vector<std::string>& matches) -> void {
+				options.min_audio_copies = std::atoi(matches.at(0).c_str());
+				options.min_data_copies = std::atoi(matches.at(0).c_str());
+			}
+		}));
+		parsers.push_back(parser::Parser({
+			"max-copies",
+			"Specify the maximum acceptable number of identical copies.",
+			std::regex("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
+			"integer",
+			false,
+			std::optional<std::string>("2"),
+			1,
+			1,
+			[&](const std::vector<std::string>& matches) -> void {
+				options.max_audio_copies = std::atoi(matches.at(0).c_str());
+				options.max_data_copies = std::atoi(matches.at(0).c_str());
+			}
+		}));
 		return parsers;
 	}
 }

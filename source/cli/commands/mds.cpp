@@ -48,6 +48,20 @@ namespace commands {
 					options.save_data_subchannels = matches.at(0) == "true";
 				}
 			}));
+			parsers.push_back(parser::Parser({
+				"save-subchannels",
+				"Specify whether to save subchannel data.",
+				std::regex("^(true|false)$"),
+				"boolean",
+				false,
+				std::optional<std::string>("false"),
+				1,
+				1,
+				[&](const std::vector<std::string>& matches) -> void {
+					options.save_audio_subchannels = matches.at(0) == "true";
+					options.save_data_subchannels = matches.at(0) == "true";
+				}
+			}));
 			parsers = parser::sort(parsers);
 			try {
 				parser::parse(arguments, parsers);
