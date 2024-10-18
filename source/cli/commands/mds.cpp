@@ -195,7 +195,7 @@ namespace commands {
 				}
 				for (auto bad_sector_index : bad_sector_indices) {
 					auto bad_sector_table_entry = mds::BadSectorTableEntry();
-					bad_sector_table_entry.bad_sector_index = bad_sector_index;
+					bad_sector_table_entry.bad_sector_index = cd::get_relative_sector_index(bad_sector_index);
 					if (std::fwrite(&bad_sector_table_entry, sizeof(bad_sector_table_entry), 1, handle) != 1) {
 						OVERDRIVE_THROW(exceptions::IOWriteException(path));
 					}
