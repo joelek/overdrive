@@ -377,22 +377,24 @@ namespace drive {
 		auto lead_out_first_sector_absolute = std::optional<size_t>();
 		for (auto toc_index = size_t(0); toc_index < toc_count; toc_index += 1) {
 			auto& entry = toc.entries[toc_index];
-			if (entry.point < 1 || entry.point > 99) {
-				if (entry.point == size_t(cdb::ReadTOCResponseFullTOCPoint::LEAD_OUT_TRACK)) {
-					lead_out_first_sector_absolute = cd::get_sector_from_address(entry.paddress);
-				}
-				continue;
+			if (entry.point == size_t(cdb::ReadTOCResponseFullTOCPoint::LEAD_OUT_TRACK)) {
+				lead_out_first_sector_absolute = cd::get_sector_from_address(entry.paddress);
 			}
 			disc.sessions.resize(std::max<size_t>(entry.session_number, disc.sessions.size()));
 			auto& session = disc.sessions.at(entry.session_number - 1);
 			session.number = entry.session_number;
 			session.type = cdb::get_session_type(toc);
-			auto track = disc::TrackInfo();
-			track.number = entry.point;
-			track.type = this->determine_track_type(toc, toc_index);
-			track.first_sector_absolute = cd::get_sector_from_address(entry.paddress);
-			track.length_sectors = 0;
-			session.tracks.push_back(track);
+			auto point = disc::PointInfo();
+			point.entry = entry;
+			session.points.push_back(point);
+			if (entry.point >= 1 && entry.point <= 99) {
+				auto track = disc::TrackInfo();
+				track.number = entry.point;
+				track.type = this->determine_track_type(toc, toc_index);
+				track.first_sector_absolute = cd::get_sector_from_address(entry.paddress);
+				track.length_sectors = 0;
+				session.tracks.push_back(track);
+			}
 		}
 		// Sort in increasing order.
 		std::sort(disc.sessions.begin(), disc.sessions.end(), [](const disc::SessionInfo& one, const disc::SessionInfo& two) -> bool_t {

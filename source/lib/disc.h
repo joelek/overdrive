@@ -55,12 +55,24 @@ namespace disc {
 		protected:
 	};
 
+	class PointInfo {
+		public:
+
+		cdb::ReadTOCResponseFullTOCEntry entry;
+
+		auto print(
+		) const -> void;
+
+		protected:
+	};
+
 	class SessionInfo {
 		public:
 
 		size_t number;
 		cdb::SessionType type;
 		std::vector<TrackInfo> tracks;
+		std::vector<PointInfo> points;
 		size_t length_sectors;
 
 		auto print(

@@ -32,6 +32,11 @@ namespace disc {
 		fprintf(stderr, "%s\n", std::format("\t\tTrack length [sectors]: {}", this->length_sectors).c_str());
 	}
 
+	auto PointInfo::print(
+	) const -> void {
+		fprintf(stderr, "%s\n", std::format("\t\tPoint number: {:0>2X}", this->entry.point).c_str());
+	}
+
 	auto SessionInfo::print(
 	) const -> void {
 		fprintf(stderr, "%s\n", std::format("\tSession number: {}", this->number).c_str());
@@ -41,6 +46,11 @@ namespace disc {
 		for (auto track_index = size_t(0); track_index < this->tracks.size(); track_index += 1) {
 			auto& track = this->tracks.at(track_index);
 			track.print();
+		}
+		fprintf(stderr, "%s\n", std::format("\tSession points: {}", this->points.size()).c_str());
+		for (auto point_index = size_t(0); point_index < this->points.size(); point_index += 1) {
+			auto& point = this->points.at(point_index);
+			point.print();
 		}
 	}
 
