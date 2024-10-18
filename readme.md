@@ -24,14 +24,12 @@ The [AccurateRip drive database](https://www.accuraterip.com/driveoffsets.htm) p
 	Set error recovery to min or max.
 	Read track in several passes and refine sector data using C2 information for all track types.
 	Apply software RSPC for data tracks.
-* Make utility platform-independent.
 * Add debug logging.
 * Add support for injecting files into ISO9660 file systems.
 	Requires software RSPC generation for raw image formats.
 * Reorganize exceptions so that enums and types can be re-used.
 * Improve copier to better extract subchannels.
 * Detect indices in audio tracks including index 00 in pregap (previous track sector range).
-* Add module with os dependencies.
 * Investigate possibility of reading lead-in and lead-out when cdrom error correction is turned off.
 * Investigate multi-session cdrom with several data tracks.
 * Optimize commands to not store silence between data and audio tracks.
