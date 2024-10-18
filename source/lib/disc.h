@@ -118,5 +118,9 @@ namespace disc {
 		const DiscInfo& disc_info,
 		const std::optional<std::set<size_t>>& track_numbers = std::nullopt
 	) -> std::vector<TrackInfo>;
+
+	auto get_disc_points(
+		const DiscInfo& disc_info
+	) -> std::vector<PointInfo>;
 }
 }

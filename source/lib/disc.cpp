@@ -194,5 +194,19 @@ namespace disc {
 		}
 		return tracks;
 	}
+
+	auto get_disc_points(
+		const DiscInfo& disc_info
+	) -> std::vector<PointInfo> {
+		auto points = std::vector<PointInfo>();
+		for (auto session_index = size_t(0); session_index < disc_info.sessions.size(); session_index += 1) {
+			auto& session = disc_info.sessions.at(session_index);
+			for (auto point_index = size_t(0); point_index < session.points.size(); point_index += 1) {
+				auto& point = session.points.at(point_index);
+				points.push_back(point);
+			}
+		}
+		return points;
+	}
 }
 }
