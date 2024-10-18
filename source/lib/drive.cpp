@@ -374,12 +374,8 @@ namespace drive {
 		auto disc = disc::DiscInfo();
 		auto toc = this->read_full_toc();
 		auto toc_count = cdb::validate_full_toc(toc);
-		auto lead_out_first_sector_absolute = std::optional<size_t>();
 		for (auto toc_index = size_t(0); toc_index < toc_count; toc_index += 1) {
 			auto& entry = toc.entries[toc_index];
-			if (entry.adr == 1 && entry.point == size_t(cdb::ReadTOCResponseFullTOCPoint::LEAD_OUT_TRACK_IN_SESSION)) {
-				lead_out_first_sector_absolute = cd::get_sector_from_address(entry.paddress);
-			}
 			disc.sessions.resize(std::max<size_t>(entry.session_number, disc.sessions.size()));
 			auto& session = disc.sessions.at(entry.session_number - 1);
 			session.number = entry.session_number;
@@ -401,6 +397,17 @@ namespace drive {
 			return one.number < two.number;
 		});
 		for (auto& session : disc.sessions) {
+			auto lead_out_first_sector_absolute = std::optional<size_t>();
+			for (auto point_index = size_t(0); point_index < session.points.size(); point_index += 1) {
+				auto& point = session.points.at(point_index);
+				if (point.entry.adr == 1 && point.entry.point == size_t(cdb::ReadTOCResponseFullTOCPoint::LEAD_OUT_TRACK_IN_SESSION)) {
+					lead_out_first_sector_absolute = cd::get_sector_from_address(point.entry.paddress);
+					break;
+				}
+			}
+			if (!lead_out_first_sector_absolute) {
+				OVERDRIVE_THROW(exceptions::MissingValueException("lead out track"));
+			}
 			// Sort in increasing order.
 			std::sort(session.tracks.begin(), session.tracks.end(), [](const disc::TrackInfo& one, const disc::TrackInfo& two) -> bool_t {
 				return one.first_sector_absolute < two.first_sector_absolute;
