@@ -26,7 +26,6 @@ The [AccurateRip drive database](https://www.accuraterip.com/driveoffsets.htm) p
 	Apply software RSPC for data tracks.
 * Make utility platform-independent.
 * Add debug logging.
-* Organize main code into subcommands.
 * Add support for injecting files into ISO9660 file systems.
 	Requires software RSPC generation for raw image formats.
 * Reorganize exceptions so that enums and types can be re-used.
