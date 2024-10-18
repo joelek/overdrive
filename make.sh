@@ -36,6 +36,7 @@ SOURCES=(
 	"lib/command"
 	"lib/copier"
 	"lib/crc"
+	"lib/detail"
 	"lib/disc"
 	"lib/drive"
 	"lib/endian"

@@ -312,5 +312,15 @@ namespace exceptions {
 
 		protected:
 	};
+
+	class WindowsException: public OverdriveException {
+		public:
+
+		WindowsException(
+			size_t code
+		);
+
+		protected:
+	};
 }
 }

@@ -242,7 +242,7 @@ namespace commands {
 
 	auto mds(
 		const std::vector<std::string>& arguments,
-		const command::Detail& detail
+		const detail::Detail& detail
 	) -> void {
 		auto options = internal::parse_options(arguments);
 		auto drive_handle = detail.get_handle(options.drive);

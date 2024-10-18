@@ -115,5 +115,9 @@ namespace exceptions {
 	UnrecognizedCommandException::UnrecognizedCommandException(
 		const std::string& key
 	): CommandException(std::format("Expected command \"{}\" to be recognized!", key)) {}
+
+	WindowsException::WindowsException(
+		size_t code
+	): OverdriveException(std::format("Expected WINAPI to not return error code {}!", code)) {}
 }
 }

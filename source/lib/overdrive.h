@@ -12,6 +12,7 @@
 #include "command.h"
 #include "copier.h"
 #include "crc.h"
+#include "detail.h"
 #include "disc.h"
 #include "drive.h"
 #include "endian.h"

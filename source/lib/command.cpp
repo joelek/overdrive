@@ -12,7 +12,7 @@ namespace command {
 		const std::optional<std::string>& key,
 		const std::vector<std::string>& arguments,
 		const std::vector<Command>& commands,
-		const Detail& detail
+		const detail::Detail& detail
 	) -> void {
 		if (!key) {
 			OVERDRIVE_THROW(exceptions::MissingCommandException());
