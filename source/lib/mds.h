@@ -1,6 +1,7 @@
 #pragma once
 
 #include "cdb.h"
+#include "disc.h"
 #include "shared.h"
 
 namespace overdrive {
@@ -181,5 +182,9 @@ namespace mds {
 	static_assert(sizeof(BadSectorTableEntry) == 4);
 
 	#pragma pack(pop)
+
+	auto get_track_mode(
+		disc::TrackType track_type
+	) -> TrackMode;
 }
 }
