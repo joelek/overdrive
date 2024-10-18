@@ -7,6 +7,7 @@ namespace commands {
 	class CUEOptions: public options::Options {
 		public:
 
+		std::optional<std::set<size_t>> track_numbers;
 		bool_t merge_tracks;
 		bool_t trim_data_tracks;
 		std::string audio_file_format;
@@ -21,6 +22,23 @@ namespace commands {
 		) -> CUEOptions {
 			auto options = CUEOptions();
 			auto parsers = options::get_default_parsers(options);
+			parsers.push_back(parser::Parser({
+				"track-numbers",
+				"Specify which track numbers to save.",
+				std::regex("^([1-9]|[1-9][0-9])$"),
+				"integer",
+				false,
+				std::optional<std::string>(),
+				0,
+				99,
+				[&](const std::vector<std::string>& matches) -> void {
+					auto track_numbers = std::set<size_t>();
+					for (auto& match : matches) {
+						track_numbers.insert(std::atoi(match.c_str()));
+					}
+					options.track_numbers = track_numbers;
+				}
+			}));
 			parsers.push_back(parser::Parser({
 				"merge-tracks",
 				"Specify whether to merge all tracks into a single file.",

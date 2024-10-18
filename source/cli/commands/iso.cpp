@@ -6,6 +6,8 @@ namespace commands {
 	class ISOOptions: public options::Options {
 		public:
 
+		std::optional<std::set<size_t>> track_numbers;
+
 		protected:
 	};
 
@@ -16,6 +18,23 @@ namespace commands {
 		) -> ISOOptions {
 			auto options = ISOOptions();
 			auto parsers = options::get_default_parsers(options);
+			parsers.push_back(parser::Parser({
+				"track-numbers",
+				"Specify which track numbers to save.",
+				std::regex("^([1-9]|[1-9][0-9])$"),
+				"integer",
+				false,
+				std::optional<std::string>(),
+				0,
+				99,
+				[&](const std::vector<std::string>& matches) -> void {
+					auto track_numbers = std::set<size_t>();
+					for (auto& match : matches) {
+						track_numbers.insert(std::atoi(match.c_str()));
+					}
+					options.track_numbers = track_numbers;
+				}
+			}));
 			parsers = parser::sort(parsers);
 			try {
 				parser::parse(arguments, parsers);

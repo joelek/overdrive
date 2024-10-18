@@ -16,7 +16,6 @@ namespace options {
 
 		std::string drive;
 		std::optional<si_t> read_correction;
-		std::optional<std::set<size_t>> track_numbers;
 		std::optional<std::string> path;
 		size_t min_data_passes;
 		size_t max_data_passes;

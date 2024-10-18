@@ -49,23 +49,6 @@ namespace options {
 			}
 		}));
 		parsers.push_back(parser::Parser({
-			"track-numbers",
-			"Specify which track numbers to read.",
-			std::regex("^([1-9]|[1-9][0-9])$"),
-			"integer",
-			false,
-			std::optional<std::string>(),
-			0,
-			99,
-			[&](const std::vector<std::string>& matches) -> void {
-				auto track_numbers = std::set<size_t>();
-				for (auto& match : matches) {
-					track_numbers.insert(std::atoi(match.c_str()));
-				}
-				options.track_numbers = track_numbers;
-			}
-		}));
-		parsers.push_back(parser::Parser({
 			"min-data-passes",
 			"Specify the minimum number of read passes for data tracks.",
 			std::regex("^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
