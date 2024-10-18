@@ -116,7 +116,7 @@ namespace disc {
 
 	auto get_disc_tracks(
 		const DiscInfo& disc_info,
-		const std::optional<std::set<size_t>>& track_numbers
+		const std::optional<std::set<size_t>>& track_numbers = std::nullopt
 	) -> std::vector<TrackInfo>;
 }
 }
