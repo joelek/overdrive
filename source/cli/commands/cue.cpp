@@ -150,9 +150,9 @@ namespace commands {
 					if (disc::is_data_track(track.type)) {
 						auto sector_data_offset = options.trim_data_tracks ? disc::get_user_data_offset(track.type) : 0;
 						auto sector_data_length = options.trim_data_tracks ? disc::get_user_data_length(track.type) : cd::SECTOR_LENGTH;
-						copier::append_sector_data(extracted_sectors_vector, path, sector_data_offset, sector_data_length, handle);
+						copier::append_sector_data(extracted_sectors_vector, path, sector_data_offset, sector_data_length, handle, false);
 					} else {
-						copier::append_sector_data(extracted_sectors_vector, path, 0, cd::SECTOR_LENGTH, handle);
+						copier::append_sector_data(extracted_sectors_vector, path, 0, cd::SECTOR_LENGTH, handle, false);
 					}
 				}
 			}  catch (...) {
@@ -214,7 +214,7 @@ namespace commands {
 						.with_extension(std::format(".{:0>2}.bin", track.number))
 						.create_directories();
 					auto handle = copier::open_handle(path);
-					copier::append_sector_data(extracted_sectors_vector, path, sector_data_offset, sector_data_length, handle);
+					copier::append_sector_data(extracted_sectors_vector, path, sector_data_offset, sector_data_length, handle, false);
 					copier::close_handle(handle);
 				} else {
 					auto extension = options.audio_file_format == "wav" ? "wav" : "bin";
@@ -230,7 +230,7 @@ namespace commands {
 							OVERDRIVE_THROW(exceptions::IOWriteException(path));
 						}
 					}
-					copier::append_sector_data(extracted_sectors_vector, path, 0, cd::SECTOR_LENGTH, handle);
+					copier::append_sector_data(extracted_sectors_vector, path, 0, cd::SECTOR_LENGTH, handle, false);
 					copier::close_handle(handle);
 				}
 			}

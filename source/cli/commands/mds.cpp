@@ -66,7 +66,7 @@ namespace commands {
 					auto extracted_sectors_vector = copier::read_track(drive, track, options);
 					auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
 					copier::log_bad_sector_indices(drive, track, bad_sector_indices);
-					copier::append_sector_data(extracted_sectors_vector, path, 0, cd::SECTOR_LENGTH, handle); // TODO: Write subchannels.
+					copier::append_sector_data(extracted_sectors_vector, path, 0, cd::SECTOR_LENGTH, handle, options.save_data_subchannels);
 					vector::append<size_t>(result, bad_sector_indices);
 				}
 			}  catch (...) {

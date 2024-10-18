@@ -75,7 +75,8 @@ namespace copier {
 		const std::string& path,
 		size_t sector_data_offset,
 		size_t sector_data_length,
-		std::FILE* handle
+		std::FILE* handle,
+		bool_t write_subchannels
 	) -> void;
 
 	auto open_handle(
@@ -90,7 +91,8 @@ namespace copier {
 		const std::vector<std::vector<ExtractedSector>>& extracted_sectors_vector,
 		const std::string& path,
 		size_t sector_data_offset,
-		size_t sector_data_length
+		size_t sector_data_length,
+		bool_t write_subchannels
 	) -> void;
 
 	auto log_bad_sector_indices(

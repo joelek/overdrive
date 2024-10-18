@@ -246,7 +246,8 @@ namespace copier {
 		const std::string& path,
 		size_t sector_data_offset,
 		size_t sector_data_length,
-		std::FILE* handle
+		std::FILE* handle,
+		bool_t write_subchannels
 	) -> void {
 		try {
 			fprintf(stderr, "%s\n", std::format("Saving track sector data to \"{}\"", path).c_str());
@@ -255,6 +256,11 @@ namespace copier {
 				auto& extracted_sector = extracted_sectors.at(0);
 				if (std::fwrite(extracted_sector.sector_data + sector_data_offset, sector_data_length, 1, handle) != 1) {
 					OVERDRIVE_THROW(exceptions::IOWriteException(path));
+				}
+				if (write_subchannels) {
+					if (std::fwrite(extracted_sector.subchannels_data, sizeof(extracted_sector.subchannels_data), 1, handle) != 1) {
+						OVERDRIVE_THROW(exceptions::IOWriteException(path));
+					}
 				}
 			}
 		} catch (...) {
@@ -283,10 +289,11 @@ namespace copier {
 		const std::vector<std::vector<ExtractedSector>>& extracted_sectors_vector,
 		const std::string& path,
 		size_t sector_data_offset,
-		size_t sector_data_length
+		size_t sector_data_length,
+		bool_t write_subchannels
 	) -> void {
 		auto handle = open_handle(path);
-		append_sector_data(extracted_sectors_vector, path, sector_data_offset, sector_data_length, handle);
+		append_sector_data(extracted_sectors_vector, path, sector_data_offset, sector_data_length, handle, write_subchannels);
 		close_handle(handle);
 	}
 

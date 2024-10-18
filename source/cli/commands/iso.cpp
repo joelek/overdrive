@@ -79,7 +79,7 @@ namespace commands {
 					auto path = path::create_path(options.path)
 						.with_extension(std::format(".{:0>2}.iso", track.number))
 						.create_directories();
-					copier::write_sector_data_to_file(extracted_sectors_vector, path, user_data_offset, user_data_length);
+					copier::write_sector_data_to_file(extracted_sectors_vector, path, user_data_offset, user_data_length, false);
 				} else {
 					OVERDRIVE_THROW(exceptions::ExpectedDataTrackException(track.number));
 				}
