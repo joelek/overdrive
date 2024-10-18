@@ -117,8 +117,9 @@ namespace commands {
 			const std::vector<disc::TrackInfo>& tracks,
 			const CUEOptions& options
 		) -> void {
-			auto path = path::create_path(options.path).with_extension(".bin");
-			path.create_directories();
+			auto path = path::create_path(options.path)
+				.with_extension(".bin")
+				.create_directories();
 			auto handle = copier::open_handle(path);
 			try {
 				for (auto track_index = size_t(0); track_index < tracks.size(); track_index += 1) {
@@ -145,8 +146,9 @@ namespace commands {
 			const std::vector<disc::TrackInfo>& tracks,
 			const CUEOptions& options
 		) -> void {
-			auto path = path::create_path(options.path).with_extension(".cue");
-			path.create_directories();
+			auto path = path::create_path(options.path)
+				.with_extension(".cue")
+				.create_directories();
 			auto handle = copier::open_handle(path);
 			try {
 				if (std::fprintf(handle, "%s\n", std::format("FILE \"{}\" {}", std::format("{}.bin", path.fspath.stem().string()), "BINARY").c_str()) < 0) {
@@ -188,15 +190,17 @@ namespace commands {
 				if (disc::is_data_track(track.type)) {
 					auto sector_data_offset = options.trim_data_tracks ? disc::get_user_data_offset(track.type) : 0;
 					auto sector_data_length = options.trim_data_tracks ? disc::get_user_data_length(track.type) : cd::SECTOR_LENGTH;
-					auto path = path::create_path(options.path).with_extension(std::format(".{:0>2}.bin", track.number));
-					path.create_directories();
+					auto path = path::create_path(options.path)
+						.with_extension(std::format(".{:0>2}.bin", track.number))
+						.create_directories();
 					auto handle = copier::open_handle(path);
 					copier::append_sector_data(extracted_sectors_vector, path, sector_data_offset, sector_data_length, handle);
 					copier::close_handle(handle);
 				} else {
 					auto extension = options.audio_file_format == "wav" ? "wav" : "bin";
-					auto path = path::create_path(options.path).with_extension(std::format(".{:0>2}.{}", track.number, extension));
-					path.create_directories();
+					auto path = path::create_path(options.path)
+						.with_extension(std::format(".{:0>2}.{}", track.number, extension))
+						.create_directories();
 					auto handle = copier::open_handle(path);
 					if (options.audio_file_format == "wav") {
 						auto header = wav::Header();
@@ -216,8 +220,9 @@ namespace commands {
 			const std::vector<disc::TrackInfo>& tracks,
 			const CUEOptions& options
 		) -> void {
-			auto path = path::create_path(options.path).with_extension(".cue");
-			path.create_directories();
+			auto path = path::create_path(options.path)
+				.with_extension(".cue")
+				.create_directories();
 			auto handle = copier::open_handle(path);
 			try {
 				for (auto track_index = size_t(0); track_index < tracks.size(); track_index += 1) {

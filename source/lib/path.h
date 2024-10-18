@@ -19,7 +19,7 @@ namespace path {
 		operator std::string();
 
 		auto create_directories(
-		) const -> void;
+		) const -> const Path&;
 
 		auto with_extension(
 			const std::string& extension

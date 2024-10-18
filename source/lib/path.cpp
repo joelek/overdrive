@@ -9,8 +9,9 @@ namespace path {
 	}
 
 	auto Path::create_directories(
-	) const -> void {
+	) const -> const Path& {
 		std::filesystem::create_directories(this->fspath.parent_path());
+		return *this;
 	}
 
 	auto Path::with_extension(
