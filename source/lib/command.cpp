@@ -11,8 +11,7 @@ namespace command {
 	auto run(
 		const std::optional<std::string>& key,
 		const std::vector<std::string>& arguments,
-		const std::vector<Command>& commands,
-		const detail::Detail& detail
+		const std::vector<Command>& commands
 	) -> void {
 		if (!key) {
 			OVERDRIVE_THROW(exceptions::MissingCommandException());
@@ -22,7 +21,7 @@ namespace command {
 			if (command.key != key.value()) {
 				continue;
 			}
-			return command.runner(arguments, detail);
+			return command.runner(arguments);
 		}
 		OVERDRIVE_THROW(exceptions::UnrecognizedCommandException(key.value()));
 	}

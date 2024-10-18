@@ -9,7 +9,6 @@ using namespace shared;
 
 namespace commands {
 	auto cue(
-		const std::vector<std::string>& arguments,
-		const detail::Detail& detail
+		const std::vector<std::string>& arguments
 	) -> void;
 }

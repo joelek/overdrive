@@ -43,8 +43,7 @@ auto main(
 		command::sort(commands);
 		try {
 			auto start_ms = time::get_time_ms();
-			auto detail = detail::create_detail();
-			command::run(command, arguments, commands, detail);
+			command::run(command, arguments, commands);
 			auto duration_ms = time::get_duration_ms(start_ms);
 			fprintf(stderr, "%s\n", std::format("Command execution took {} ms.", duration_ms).c_str());
 		} catch (const exceptions::CommandException& e) {
