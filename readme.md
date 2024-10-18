@@ -35,6 +35,7 @@ The [AccurateRip drive database](https://www.accuraterip.com/driveoffsets.htm) p
 * Add module with os dependencies.
 * Investigate possibility of reading lead-in and lead-out when cdrom error correction is turned off.
 * Investigate multi-session cdrom with several data tracks.
+* Add combined audio/data extraction settings.
 
 ## References
 
