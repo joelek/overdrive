@@ -383,7 +383,7 @@ namespace drive {
 			auto point = disc::PointInfo();
 			point.entry = entry;
 			session.points.push_back(point);
-			if (entry.adr == 1 && entry.point >= 1 && entry.point <= 99) {
+			if (cdb::is_track_reference(entry)) {
 				auto track = disc::TrackInfo();
 				track.number = entry.point;
 				track.type = this->determine_track_type(toc, toc_index);

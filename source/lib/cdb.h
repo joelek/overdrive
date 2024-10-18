@@ -122,13 +122,13 @@ namespace cdb {
 
 	enum class ReadTOCResponseFullTOCPoint: ui08_t {
 		// Adr should be 1.
-		FIRST_TRACK_REFERENCE = 0x00,
-		LAST_TRACK_REFERNCE = 0x63,
+		FIRST_TRACK_REFERENCE = 0x01,
+		LAST_TRACK_REFERENCE = 0x63,
 		FIRST_TRACK_IN_SESSION = 0xA0,
 		LAST_TRACK_IN_SESSION = 0xA1,
 		LEAD_OUT_TRACK_IN_SESSION = 0xA2,
 		// Adr should be 5.
-		FIRST_SKIP_INTERVAL_POINTER = 0x00,
+		FIRST_SKIP_INTERVAL_POINTER = 0x01,
 		LAST_SKIP_INTERVAL_POINTER = 0x40,
 		PMA_OF_NEXT_POSSIBLE_SESSION = 0xB0,
 		NUMBER_OF_SKIP_POINTERS = 0xB1,
@@ -635,5 +635,9 @@ namespace cdb {
 	auto validate_full_toc(
 		const ReadTOCResponseFullTOC& toc
 	) -> size_t;
+
+	auto is_track_reference(
+		const ReadTOCResponseFullTOCEntry& entry
+	) -> bool_t;
 }
 }

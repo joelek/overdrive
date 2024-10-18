@@ -105,5 +105,11 @@ namespace cdb {
 		}
 		return number_of_entires;
 	}
+
+	auto is_track_reference(
+		const ReadTOCResponseFullTOCEntry& entry
+	) -> bool_t {
+		return entry.adr == 1 && entry.point >= size_t(ReadTOCResponseFullTOCPoint::FIRST_TRACK_REFERENCE) && entry.point <= size_t(ReadTOCResponseFullTOCPoint::LAST_TRACK_REFERENCE);
+	}
 }
 }
