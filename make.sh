@@ -43,6 +43,7 @@ SOURCES=(
 	"lib/exceptions"
 	"lib/idiv"
 	"lib/iso9660"
+	"lib/mds"
 	"lib/memory"
 	"lib/options"
 	"lib/path"
