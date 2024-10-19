@@ -37,9 +37,14 @@ namespace odi {
 		ui08_t patch_version;
 		ui08_t : 8;
 		ui32_t sector_table_header_absolute_offset;
+		ui32_t point_table_header_absolute_offset;
+		ui08_t : 8;
+		ui08_t : 8;
+		ui08_t : 8;
+		ui08_t : 8;
 	};
 
-	static_assert(sizeof(FileHeader) == 24);
+	static_assert(sizeof(FileHeader) == 32);
 
 	struct SectorTableHeader {
 		ui32_t entry_count;
@@ -59,6 +64,27 @@ namespace odi {
 	};
 
 	static_assert(sizeof(SectorTableEntry) == 8);
+
+	struct PointTableHeader {
+		ui32_t entry_count;
+		ui08_t entry_length;
+		ui08_t : 8;
+		ui08_t : 8;
+		ui08_t : 8;
+	};
+
+	static_assert(sizeof(PointTableHeader) == 8);
+
+	struct PointTableEntry {
+		ui08_t : 8;
+		byte_t entry[11];
+		ui08_t : 8;
+		ui08_t : 8;
+		ui08_t : 8;
+		ui08_t : 8;
+	};
+
+	static_assert(sizeof(PointTableEntry) == 16);
 
 	struct UncompressedSector {
 		byte_t sector_data[2352];
