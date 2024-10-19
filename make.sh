@@ -47,6 +47,7 @@ SOURCES=(
 	"lib/mds"
 	"lib/memory"
 	"lib/options"
+	"lib/overdrive"
 	"lib/path"
 	"lib/parser"
 	"lib/scsi"
@@ -56,7 +57,6 @@ SOURCES=(
 	"lib/time"
 	"lib/vector"
 	"lib/wav"
-	"lib/overdrive"
 )
 
 TARGETS=(
