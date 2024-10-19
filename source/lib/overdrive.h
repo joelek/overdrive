@@ -22,6 +22,7 @@
 #include "iso9660.h"
 #include "mds.h"
 #include "memory.h"
+#include "odi.h"
 #include "options.h"
 #include "path.h"
 #include "parser.h"

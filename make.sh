@@ -46,6 +46,7 @@ SOURCES=(
 	"lib/iso9660"
 	"lib/mds"
 	"lib/memory"
+	"lib/odi"
 	"lib/options"
 	"lib/overdrive"
 	"lib/path"
