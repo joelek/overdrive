@@ -33,6 +33,10 @@ The [AccurateRip drive database](https://www.accuraterip.com/driveoffsets.htm) p
 * Investigate possibility of reading lead-in and lead-out when cdrom error correction is turned off.
 * Investigate multi-session cdrom with several data tracks.
 * Optimize commands to not store silence between data and audio tracks.
+	Lead out after data track is 150 seconds (11250 sectors).
+	Lead in before audio track is 2 seconds (150 sectors).
+* Change all enums to namespaces.
+* Add sense pointer to ioctl().
 
 ## References
 
