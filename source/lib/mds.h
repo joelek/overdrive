@@ -59,47 +59,35 @@ namespace mds {
 
 	static_assert(sizeof(SubchannelMode) == 1);
 
-	struct FormatHeader {
+	struct FileHeader {
 		ch08_t identifier[16] = { 'M','E','D','I','A',' ','D','E','S','C','R','I','P','T','O','R' };
 		ui08_t major_version = 1;
 		ui08_t minor_version = 3;
-		ui16_t medium_type = 0;
-		ui16_t session_count = 1;
-		ui16_t unknown_a = 2;
+		ui16_t medium_type;
+		ui16_t session_count;
+		ui16_t unknown_a;
 		ui08_t unknown_b[56];
-		ui32_t absolute_offset_to_session_headers = 88;
-		ui32_t absolute_offset_to_footer = 0;
+		ui32_t absolute_offset_to_session_headers;
+		ui32_t absolute_offset_to_footer;
 	};
 
-	static_assert(sizeof(FormatHeader) == 88);
+	static_assert(sizeof(FileHeader) == 88);
 
-	struct SessionHeader {
+	struct SessionTableHeader {
 		si32_t pregap_correction;
 		ui32_t sectors_on_disc;
 		ui16_t session_number;
-		ui08_t entry_count;
-		ui08_t entry_count_type_a;
+		ui08_t point_count;
+		ui08_t non_track_point_count;
 		ui16_t first_track;
 		ui16_t last_track;
 		ui08_t unknown_a[4];
 		ui32_t absolute_offset_to_entry_table;
 	};
 
-	static_assert(sizeof(SessionHeader) == 24);
+	static_assert(sizeof(SessionTableHeader) == 24);
 
-	struct EntryTypeA {
-		TrackMode track_mode : 4;
-		TrackModeFlags track_mode_flags: 4;
-		union {
-			cdb::ReadTOCResponseFullTOCEntry entry;
-			SubchannelMode subchannel_mode;
-		};
-		ui08_t unknown_a[68];
-	};
-
-	static_assert(sizeof(EntryTypeA) == 80);
-
-	struct EntryTypeB {
+	struct SessionTableEntry {
 		TrackMode track_mode : 4;
 		TrackModeFlags track_mode_flags: 4;
 		union {
@@ -118,14 +106,7 @@ namespace mds {
 		ui08_t unknown_e[24];
 	};
 
-	static_assert(sizeof(EntryTypeB) == 80);
-
-	union Entry {
-		EntryTypeA type_a;
-		EntryTypeB type_b;
-	};
-
-	static_assert(sizeof(Entry) == 80);
+	static_assert(sizeof(SessionTableEntry) == 80);
 
 	struct TrackTableHeader {
 		ui08_t unknown_a[24];
@@ -153,17 +134,17 @@ namespace mds {
 
 	static_assert(sizeof(FileTableEntry) == 6);
 
-	struct Footer {
-		ui32_t unknown_a = 1;
+	struct FileFooter {
+		ui32_t unknown_a;
 		ui32_t absolute_offset_to_bad_sectors_table_header;
 	};
 
-	static_assert(sizeof(Footer) == 8);
+	static_assert(sizeof(FileFooter) == 8);
 
 	struct BadSectorTableHeader {
-		ui32_t unknown_a = 2;
-		ui32_t unknown_b = 4;
-		ui32_t unknown_c = 1;
+		ui32_t unknown_a;
+		ui32_t unknown_b;
+		ui32_t unknown_c;
 		ui32_t bad_sector_count;
 	};
 
@@ -180,5 +161,9 @@ namespace mds {
 	auto get_track_mode(
 		disc::TrackType track_type
 	) -> TrackMode;
+
+	auto get_track_mode_flags(
+		disc::TrackType track_type
+	) -> TrackModeFlags;
 }
 }
