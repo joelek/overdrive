@@ -2,9 +2,52 @@
 
 Utility for interfacing with optical drives. Written for the Windows platform.
 
+## Different CD-ROM formats
+
+### Mixed-mode CD-ROM
+
+The mixed-mode CD-ROM format is used to store tracks with mixed content types in a single session. The format pre-dates the multi-session CD-ROM format and was commonly used by video games released around the turn of the century.
+
+The first track of a mixed-mode CD-ROM contains data and all subsequent tracks contain audio.
+
+```
+[Session 1 Lead-In] (4500 sectors)
+[Session 1 Track 1 Pregap] (150 sectors)
+[Session 1 Track 1 Data]
+[Session 1 Track 1 Postgap] (150 sectors) (required due to coming change in track type)
+[Session 1 Track 2 Pregap] (optional)
+[Session 1 Track 2 Audio]
+[Session 1 Track 3 Pregap] (optional)
+[Session 1 Track 3 Audio]
+[Session 1 Lead-Out] (6750 sectors)
+```
+
+### Multi-session CD-ROM
+
+The multi-session CD-ROM format is used to store tracks with mixed content types in multiple sessions. Each session may in turn contain mixed-mode content.
+
+```
+[Session 1 Lead-In] (4500 sectors)
+[Session 1 Track 1 Pregap] (at least 150 sectors)
+[Session 1 Track 1 Audio]
+[Session 1 Track 2 Pregap] (optional)
+[Session 1 Track 2 Audio]
+[Session 1 Lead-Out] (6750 sectors)
+
+[Session 2 Lead-In] (4500 sectors)
+[Session 2 Track 3 Pregap] (150 sectors)
+[Session 2 Track 3 Data]
+[Session 2 Lead-Out] (2250 sectors)
+
+[Session 3 Lead-In] (4500 sectors)
+[Session 3 Track 4 Pregap] (150 sectors)
+[Session 3 Track 4 Data]
+[Session 3 Lead-Out] (2250 sectors)
+```
+
 ## Read correction
 
-Audio tracks on CD-DA and mixed mode CD-ROMs should be extracted using read offset correction. The operation requires knowledge about the `read offset value` of the optical drive used. The value can be either negative or positive where a negative value indicates that the drive in question starts reading audio streams too early. Conversely, a positive value indicates that the drive in question starts reading audio streams too late.
+Audio tracks on CD-DA and mixed-mode CD-ROMs should be extracted using read offset correction. The operation requires knowledge about the `read offset value` of the optical drive used. The value can be either negative or positive where a negative value indicates that the drive in question starts reading audio streams too early. Conversely, a positive value indicates that the drive in question starts reading audio streams too late.
 
 A track with the contents "TRACK" read through a drive with a negative offset of one letter would read the contents as "-TRAC" whereas a drive with a positive offset of one letter would read the contents as "RACK-". In the negative case, the data read includes data not belonging to the track at the start (indicated by the leading dash) and is missing data belonging to the track at the end. In the positive case, the data read is missing data belonging to the track at the start and includes data not belonging to the track at the end (indicated by the trailing dash).
 
