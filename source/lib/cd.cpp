@@ -20,19 +20,31 @@ namespace cd {
 
 	auto get_sector_from_address(
 		const SectorAddress& address
-	) -> ui_t {
+	) -> si_t {
+		if (address.m > MINUTES_PER_DISC) {
+			OVERDRIVE_THROW(exceptions::InvalidValueException("minutes", address.m, 0, MINUTES_PER_DISC));
+		}
+		if (address.s > MINUTES_PER_SECOND - 1) {
+			OVERDRIVE_THROW(exceptions::InvalidValueException("seconds", address.m, 0, MINUTES_PER_SECOND - 1));
+		}
+		if (address.f > SECTORS_PER_SECOND - 1) {
+			OVERDRIVE_THROW(exceptions::InvalidValueException("frames", address.m, 0, SECTORS_PER_SECOND - 1));
+		}
 		auto sector = (address.m * MINUTES_PER_SECOND + address.s) * SECTORS_PER_SECOND + address.f;
 		if (sector > MAX_SECTOR) {
-			OVERDRIVE_THROW(exceptions::InvalidValueException("sector", sector, 0, MAX_SECTOR));
+			sector -= ADDRESSABLE_SECTOR_COUNT;
 		}
 		return sector;
 	}
 
 	auto get_address_from_sector(
-		ui_t sector
+		si_t sector
 	) -> SectorAddress {
-		if (sector > MAX_SECTOR) {
-			OVERDRIVE_THROW(exceptions::InvalidValueException("sector", sector, 0, MAX_SECTOR));
+		if (sector < MIN_SECTOR || sector > MAX_SECTOR) {
+			OVERDRIVE_THROW(exceptions::InvalidValueException("sector", sector, MIN_SECTOR, MAX_SECTOR));
+		}
+		if (sector < 0) {
+			sector += ADDRESSABLE_SECTOR_COUNT;
 		}
 		auto f = sector;
 		auto s = sector / SECTORS_PER_SECOND;

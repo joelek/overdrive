@@ -9,7 +9,8 @@ namespace cd {
 	const auto SECTOR_LENGTH = size_t(2352);
 	const auto MINUTES_PER_SECOND = size_t(60);
 	const auto SECTORS_PER_SECOND = size_t(75);
-	const auto MAX_SECTOR = size_t(100 * MINUTES_PER_SECOND * SECTORS_PER_SECOND - 1);
+	const auto MINUTES_PER_DISC = size_t(99);
+	const auto ADDRESSABLE_SECTOR_COUNT = size_t((MINUTES_PER_DISC + 1) * MINUTES_PER_SECOND * SECTORS_PER_SECOND);
 	const auto SUBCHANNEL_COUNT = size_t(8);
 	const auto SUBCHANNEL_LENGTH = size_t(12);
 	const auto SUBCHANNEL_P_INDEX = size_t(0);
@@ -32,6 +33,8 @@ namespace cd {
 	const auto LEAD_IN_LENGTH = size_t(60 * SECTORS_PER_SECOND);
 	const auto FIRST_LEAD_OUT_LENGTH = size_t(90 * SECTORS_PER_SECOND);
 	const auto SUBSEQUENT_LEAD_OUT_LENGTH = size_t(30 * SECTORS_PER_SECOND);
+	const auto MIN_SECTOR = si_t(0 - LEAD_IN_LENGTH);
+	const auto MAX_SECTOR = si_t(ADDRESSABLE_SECTOR_COUNT - 1 - LEAD_IN_LENGTH);
 
 	#pragma pack(push, 1)
 
@@ -155,10 +158,10 @@ namespace cd {
 
 	auto get_sector_from_address(
 		const SectorAddress& address
-	) -> ui_t;
+	) -> si_t;
 
 	auto get_address_from_sector(
-		ui_t sector
+		si_t sector
 	) -> SectorAddress;
 
 	auto deinterleave_subchannel_data(
