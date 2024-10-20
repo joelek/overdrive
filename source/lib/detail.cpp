@@ -43,6 +43,7 @@ namespace detail {
 			size_t cdb_size,
 			byte_t* data,
 			size_t data_size,
+			pointer<array<255, byte_t>> sense,
 			bool_t write_to_device
 		) -> byte_t {
 			auto sptd_sense = SPTDWithSenseBuffer();
@@ -69,6 +70,9 @@ namespace detail {
 			auto status = GetLastError();
 			if (status != ERROR_SUCCESS) {
 				OVERDRIVE_THROW(exceptions::WindowsException(status));
+			}
+			if (sense != nullptr) {
+				std::memcpy(*sense, sptd_sense.sense, sizeof(*sense));
 			}
 			return sptd_sense.sptd.ScsiStatus;
 		}

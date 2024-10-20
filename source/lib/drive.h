@@ -1,11 +1,11 @@
 #pragma once
 
-#include <functional>
 #include <map>
 #include <optional>
 #include <vector>
 #include "cd.h"
 #include "cdb.h"
+#include "detail.h"
 #include "disc.h"
 #include "shared.h"
 
@@ -23,7 +23,7 @@ namespace drive {
 			std::optional<size_t> sector_data_offset,
 			std::optional<size_t> subchannels_data_offset,
 			std::optional<size_t> c2_data_offset,
-			const std::function<byte_t(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)>& ioctl
+			const detail::ioctl_t& ioctl
 		);
 
 		auto detect_subchannel_timing_offset(
@@ -122,13 +122,13 @@ namespace drive {
 		std::optional<size_t> sector_data_offset;
 		std::optional<size_t> subchannels_data_offset;
 		std::optional<size_t> c2_data_offset;
-		std::function<byte_t(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)> ioctl;
+		detail::ioctl_t ioctl;
 		std::map<cdb::SensePage, std::vector<byte_t>> page_masks;
 	};
 
 	auto create_drive(
 		void* handle,
-		const std::function<byte_t(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)>& ioctl
+		const detail::ioctl_t& ioctl
 	) -> Drive;
 }
 }

@@ -8,11 +8,14 @@ namespace overdrive {
 namespace detail {
 	using namespace shared;
 
+	using get_handle_t = std::function<void*(const std::string& drive)>;
+	using ioctl_t = std::function<byte_t(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, pointer<array<255, byte_t>> sense, bool_t write_to_device)>;
+
 	class Detail {
 		public:
 
-		std::function<void*(const std::string& drive)> get_handle;
-		std::function<byte_t(void* handle, byte_t* cdb, size_t cdb_size, byte_t* data, size_t data_size, bool_t write_to_device)> ioctl;
+		get_handle_t get_handle;
+		ioctl_t ioctl;
 
 		protected:
 	};
