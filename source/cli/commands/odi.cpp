@@ -75,6 +75,7 @@ namespace commands {
 			auto handle = copier::open_handle(path);
 			try {
 				auto file_header = odi::FileHeader();
+				file_header.header_length = sizeof(odi::FileHeader);
 				file_header.sector_table_header_absolute_offset = 0;
 				file_header.point_table_header_absolute_offset = 0;
 				if (std::fwrite(&file_header, sizeof(file_header), 1, handle) != 1) {
@@ -128,6 +129,7 @@ namespace commands {
 				auto sector_table_header = odi::SectorTableHeader();
 				sector_table_header.entry_count = sector_table_entries.size();
 				sector_table_header.entry_length = sizeof(odi::SectorTableEntry);
+				sector_table_header.header_length = sizeof(odi::SectorTableHeader);
 				file_header.sector_table_header_absolute_offset = std::ftell(handle);
 				if (std::fwrite(&sector_table_header, sizeof(sector_table_header), 1, handle) != 1) {
 					OVERDRIVE_THROW(exceptions::IOWriteException(path));
@@ -141,6 +143,7 @@ namespace commands {
 				auto point_table_header = odi::PointTableHeader();
 				point_table_header.entry_count = point_table_entries.size();
 				point_table_header.entry_length = sizeof(odi::PointTableEntry);
+				point_table_header.header_length = sizeof(odi::PointTableHeader);
 				file_header.point_table_header_absolute_offset = std::ftell(handle);
 				if (std::fwrite(&point_table_header, sizeof(point_table_header), 1, handle) != 1) {
 					OVERDRIVE_THROW(exceptions::IOWriteException(path));
