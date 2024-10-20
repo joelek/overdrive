@@ -7,6 +7,9 @@ namespace overdrive {
 namespace odi {
 	using namespace shared;
 
+	const auto MAJOR_VERSION = size_t(1);
+	const auto MINOR_VERSION = size_t(0);
+
 	namespace CompressionMethod {
 		using type = ui08_t;
 
@@ -32,9 +35,9 @@ namespace odi {
 
 	struct FileHeader {
 		ch08_t identifier[16] = "OVERDRIVE IMAGE";
-		ui08_t major_version;
-		ui08_t minor_version;
-		ui08_t patch_version;
+		ui08_t major_version = MAJOR_VERSION;
+		ui08_t minor_version = MINOR_VERSION;
+		ui08_t : 8;
 		ui08_t : 8;
 		ui32_t sector_table_header_absolute_offset;
 		ui32_t point_table_header_absolute_offset;
@@ -76,8 +79,8 @@ namespace odi {
 	static_assert(sizeof(PointTableHeader) == 8);
 
 	struct PointTableEntry {
-		ui08_t : 8;
 		byte_t entry[11];
+		ui08_t : 8;
 		ui08_t : 8;
 		ui08_t : 8;
 		ui08_t : 8;
