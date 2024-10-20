@@ -75,7 +75,7 @@ namespace commands {
 
 				file_header.sector_table_header_absolute_offset = std::ftell(handle);
 				auto sector_table_header = odi::SectorTableHeader();
-				sector_table_header.entry_count = cd::PHYSICAL_SECTOR_OFFSET + 0; // TODO
+				sector_table_header.entry_count = cd::RELATIVE_SECTOR_OFFSET + 0; // TODO
 				sector_table_header.entry_length = sizeof(odi::SectorTableEntry);
 				if (std::fwrite(&sector_table_header, sizeof(sector_table_header), 1, handle) != 1) {
 					OVERDRIVE_THROW(exceptions::IOWriteException(path));

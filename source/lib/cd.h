@@ -28,7 +28,10 @@ namespace cd {
 	const auto PACKET_LENGTH = size_t(PACKET_DATA_LENGTH + PACKET_CIRC_LENGTH + PACKET_SUBCHANNELS_LENGTH);
 	const auto PACKETS_PER_SECTOR = size_t(98);
 	const auto PACKETIZED_SECTOR_LENGTH = size_t(PACKET_LENGTH * PACKETS_PER_SECTOR);
-	const auto PHYSICAL_SECTOR_OFFSET = size_t(150);
+	const auto RELATIVE_SECTOR_OFFSET = size_t(2 * SECTORS_PER_SECOND);
+	const auto LEAD_IN_LENGTH = size_t(60 * SECTORS_PER_SECOND);
+	const auto FIRST_LEAD_OUT_LENGTH = size_t(90 * SECTORS_PER_SECOND);
+	const auto SUBSEQUENT_LEAD_OUT_LENGTH = size_t(30 * SECTORS_PER_SECOND);
 
 	#pragma pack(push, 1)
 

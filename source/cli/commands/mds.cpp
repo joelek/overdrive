@@ -147,7 +147,7 @@ namespace commands {
 				auto& session = disc.sessions.at(session_index);
 				absolute_offset_to_entry_table += sizeof(mds::SessionTableHeader);
 				auto session_table_header = mds::SessionTableHeader();
-				session_table_header.pregap_correction = 0 - static_cast<si32_t>(cd::PHYSICAL_SECTOR_OFFSET);
+				session_table_header.pregap_correction = 0 - static_cast<si32_t>(cd::RELATIVE_SECTOR_OFFSET);
 				session_table_header.sectors_on_disc = session.length_sectors;
 				session_table_header.session_number = session.number;
 				session_table_header.point_count = session.points.size();
@@ -209,7 +209,7 @@ namespace commands {
 			for (auto track_index = size_t(0); track_index < tracks.size(); track_index += 1) {
 				auto& track = tracks.at(track_index);
 				auto track_table_entry = mds::TrackTableEntry();
-				track_table_entry.pregap_sectors = track_index == 0 ? cd::PHYSICAL_SECTOR_OFFSET : 0;
+				track_table_entry.pregap_sectors = track_index == 0 ? cd::RELATIVE_SECTOR_OFFSET : 0;
 				track_table_entry.length_sectors = track.length_sectors;
 				if (std::fwrite(&track_table_entry, sizeof(track_table_entry), 1, handle) != 1) {
 					OVERDRIVE_THROW(exceptions::IOWriteException(path));
