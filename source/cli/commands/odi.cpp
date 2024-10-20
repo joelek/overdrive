@@ -118,11 +118,12 @@ namespace commands {
 					vector::append(sector_table_entries, lead_out_sector_table_entries);
 					absolute_sector_offset += session.lead_out_length_sectors;
 				}
-				auto point_table_entries = std::vector<odi::PointTableEntry>(points.size());
+				auto point_table_entries = std::vector<odi::PointTableEntry>();
 				for (auto point_index = size_t(0); point_index < points.size(); point_index += 1) {
 					auto& point = points.at(point_index);
 					auto point_table_entry = odi::PointTableEntry();
 					*reinterpret_cast<cdb::ReadTOCResponseFullTOCEntry*>(&point_table_entry.entry) = point.entry;
+					point_table_entries.push_back(point_table_entry);
 				}
 				auto sector_table_header = odi::SectorTableHeader();
 				sector_table_header.entry_count = sector_table_entries.size();
