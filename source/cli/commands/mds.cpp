@@ -24,6 +24,7 @@ namespace commands {
 			auto parsers = options::get_default_parsers(options);
 			parsers.push_back(parser::Parser({
 				"save-audio-subchannels",
+				{ "save-subchannels" },
 				"Specify whether to save subchannel data for audio tracks.",
 				std::regex("^(true|false)$"),
 				"boolean",
@@ -37,6 +38,7 @@ namespace commands {
 			}));
 			parsers.push_back(parser::Parser({
 				"save-data-subchannels",
+				{ "save-subchannels" },
 				"Specify whether to save subchannel data for data tracks.",
 				std::regex("^(true|false)$"),
 				"boolean",
@@ -45,20 +47,6 @@ namespace commands {
 				1,
 				1,
 				[&](const std::vector<std::string>& matches) -> void {
-					options.save_data_subchannels = matches.at(0) == "true";
-				}
-			}));
-			parsers.push_back(parser::Parser({
-				"save-subchannels",
-				"Specify whether to save subchannel data.",
-				std::regex("^(true|false)$"),
-				"boolean",
-				false,
-				std::optional<std::string>("false"),
-				1,
-				1,
-				[&](const std::vector<std::string>& matches) -> void {
-					options.save_audio_subchannels = matches.at(0) == "true";
 					options.save_data_subchannels = matches.at(0) == "true";
 				}
 			}));

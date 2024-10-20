@@ -26,6 +26,7 @@ namespace commands {
 			auto parsers = options::get_default_parsers(options);
 			parsers.push_back(parser::Parser({
 				"track-numbers",
+				{},
 				"Specify which track numbers to save.",
 				std::regex("^([1-9]|[1-9][0-9])$"),
 				"integer",
@@ -43,6 +44,7 @@ namespace commands {
 			}));
 			parsers.push_back(parser::Parser({
 				"merge-tracks",
+				{},
 				"Specify whether to merge all tracks into a single file.",
 				std::regex("^(true|false)$"),
 				"boolean",
@@ -56,6 +58,7 @@ namespace commands {
 			}));
 			parsers.push_back(parser::Parser({
 				"trim-data-tracks",
+				{},
 				"Specify whether to trim sector data other than user data from data tracks.",
 				std::regex("^(true|false)$"),
 				"boolean",
@@ -69,6 +72,7 @@ namespace commands {
 			}));
 			parsers.push_back(parser::Parser({
 				"audio-file-format",
+				{},
 				"Specify file format for audio tracks.",
 				std::regex("^(bin|wav)$"),
 				"bin|wav",

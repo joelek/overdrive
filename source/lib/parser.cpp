@@ -40,14 +40,21 @@ namespace parser {
 				auto& value = key_val_matches.at(1);
 				for (auto parser_index = size_t(0); parser_index < parsers.size(); parser_index += 1) {
 					auto& parser = parsers.at(parser_index);
-					if (parser.key != key) {
-						continue;
+					if (parser.key == key) {
+						auto matches = parser.get_matches(value);
+						auto& parser_matches = parser_matches_vector.at(parser_index);
+						vector::append(parser_matches, matches);
+						parsed = true;
 					}
-					auto matches = parser.get_matches(value);
-					auto& parser_matches = parser_matches_vector.at(parser_index);
-					vector::append(parser_matches, matches);
-					parsed = true;
-					break;
+					for (auto alias_index = size_t(0); alias_index < parser.aliases.size(); alias_index += 1) {
+						auto& alias = parser.aliases.at(alias_index);
+						if (alias == key) {
+							auto matches = parser.get_matches(value);
+							auto& parser_matches = parser_matches_vector.at(parser_index);
+							vector::append(parser_matches, matches);
+							parsed = true;
+						}
+					}
 				}
 			} else if (!string::match(argument, key_val_matches, std::regex("^([-]*)([^=]+)[=]([^=]*)$"))) {
 				auto positional_counter = size_t(0);
@@ -119,6 +126,10 @@ namespace parser {
 			if (parser.positional) {
 				fprintf(stderr, "%s\n", std::format("\tMay be specified as positional argument number {}.", positional_counter + 1).c_str());
 				positional_counter += 1;
+			}
+			for (auto alias_index = size_t(0); alias_index < parser.aliases.size(); alias_index += 1) {
+				auto& alias = parser.aliases.at(alias_index);
+				fprintf(stderr, "%s\n", std::format("\tMay be specified using alias \"{}\".", alias).c_str());
 			}
 			fprintf(stderr, "%s\n", std::format("").c_str());
 		}

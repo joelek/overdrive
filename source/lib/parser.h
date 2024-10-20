@@ -15,6 +15,7 @@ namespace parser {
 		public:
 
 		std::string key;
+		std::vector<std::string> aliases;
 		std::string description;
 		std::regex regex;
 		std::string format;
