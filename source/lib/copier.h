@@ -37,6 +37,18 @@ namespace copier {
 		protected:
 	};
 
+	auto read_audio_track(
+		const drive::Drive& drive,
+		const disc::TrackInfo& track,
+		const options::Options& options
+	) -> std::vector<std::vector<ExtractedSector>>;
+
+	auto read_data_track(
+		const drive::Drive& drive,
+		const disc::TrackInfo& track,
+		const options::Options& options
+	) -> std::vector<std::vector<ExtractedSector>>;
+
 	auto get_number_of_identical_copies(
 		std::vector<std::vector<ExtractedSector>>& extracted_sectors_vector
 	) -> size_t;

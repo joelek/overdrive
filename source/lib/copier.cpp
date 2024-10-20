@@ -13,69 +13,65 @@
 
 namespace overdrive {
 namespace copier {
-	namespace internal {
-	namespace {
-		auto read_audio_track(
-			const drive::Drive& drive,
-			const disc::TrackInfo& track,
-			const options::Options& options
-		) -> std::vector<std::vector<ExtractedSector>> {
-			auto read_correction_samples = options.read_correction.value_or(0);
-			fprintf(stderr, "%s\n", std::format("Using read correction [samples]: {}", read_correction_samples).c_str());
-			auto read_correction_bytes = read_correction_samples * si_t(cdda::STEREO_SAMPLE_LENGTH);
-			fprintf(stderr, "%s\n", std::format("Using read correction [bytes]: {}", read_correction_bytes).c_str());
-			auto start_offset_bytes = si_t(track.first_sector_absolute * cd::SECTOR_LENGTH) + read_correction_bytes;
-			auto end_offset_bytes = si_t(track.last_sector_absolute * cd::SECTOR_LENGTH) + read_correction_bytes;
-			auto adjusted_first_sector = idiv::floor(start_offset_bytes, cd::SECTOR_LENGTH);
-			auto adjusted_last_sector = idiv::ceil(end_offset_bytes, cd::SECTOR_LENGTH);
-			auto prefix_length = read_correction_bytes - ((adjusted_first_sector - track.first_sector_absolute) * cd::SECTOR_LENGTH);
-			auto suffix_length = cd::SECTOR_LENGTH - prefix_length;
-			if (read_correction_bytes != 0) {
-				fprintf(stderr, "%s\n", std::format("Adjusted sector range is from {} to {}", adjusted_first_sector, adjusted_last_sector).c_str());
-				fprintf(stderr, "%s\n", std::format("The first {} bytes of sector data will be discarded", prefix_length).c_str());
-				fprintf(stderr, "%s\n", std::format("The last {} bytes of sector data will be discarded", suffix_length).c_str());
-			}
-			auto extracted_sectors_vector = read_absolute_sector_range(
-				drive,
-				adjusted_first_sector,
-				adjusted_last_sector,
-				options.min_audio_passes,
-				options.max_audio_passes,
-				options.max_audio_retries,
-				options.min_audio_copies,
-				options.max_audio_copies
-			);
-			if (read_correction_bytes != 0) {
-				for (auto sector_index = track.first_sector_absolute; sector_index < track.last_sector_absolute; sector_index += 1) {
-					auto& extracted_sectors = extracted_sectors_vector.at(sector_index - track.first_sector_absolute);
-					auto& extracted_sector = extracted_sectors.at(0);
-					std::memmove(&extracted_sector.sector_data[0], &extracted_sector.sector_data[prefix_length], suffix_length);
-					auto& next_extracted_sectors = extracted_sectors_vector.at(sector_index - track.first_sector_absolute + 1);
-					auto& next_extracted_sector = next_extracted_sectors.at(0);
-					std::memmove(&extracted_sector.sector_data[suffix_length], &next_extracted_sector.sector_data[0], prefix_length);
-				}
-				extracted_sectors_vector.resize(track.length_sectors); // This hides read errors in the last sector.
-			}
-			return extracted_sectors_vector;
+	auto read_audio_track(
+		const drive::Drive& drive,
+		const disc::TrackInfo& track,
+		const options::Options& options
+	) -> std::vector<std::vector<ExtractedSector>> {
+		auto read_correction_samples = options.read_correction.value_or(0);
+		fprintf(stderr, "%s\n", std::format("Using read correction [samples]: {}", read_correction_samples).c_str());
+		auto read_correction_bytes = read_correction_samples * si_t(cdda::STEREO_SAMPLE_LENGTH);
+		fprintf(stderr, "%s\n", std::format("Using read correction [bytes]: {}", read_correction_bytes).c_str());
+		auto start_offset_bytes = si_t(track.first_sector_absolute * cd::SECTOR_LENGTH) + read_correction_bytes;
+		auto end_offset_bytes = si_t(track.last_sector_absolute * cd::SECTOR_LENGTH) + read_correction_bytes;
+		auto adjusted_first_sector = idiv::floor(start_offset_bytes, cd::SECTOR_LENGTH);
+		auto adjusted_last_sector = idiv::ceil(end_offset_bytes, cd::SECTOR_LENGTH);
+		auto prefix_length = read_correction_bytes - ((adjusted_first_sector - track.first_sector_absolute) * cd::SECTOR_LENGTH);
+		auto suffix_length = cd::SECTOR_LENGTH - prefix_length;
+		if (read_correction_bytes != 0) {
+			fprintf(stderr, "%s\n", std::format("Adjusted sector range is from {} to {}", adjusted_first_sector, adjusted_last_sector).c_str());
+			fprintf(stderr, "%s\n", std::format("The first {} bytes of sector data will be discarded", prefix_length).c_str());
+			fprintf(stderr, "%s\n", std::format("The last {} bytes of sector data will be discarded", suffix_length).c_str());
 		}
-
-		auto read_data_track(
-			const drive::Drive& drive,
-			const disc::TrackInfo& track,
-			const options::Options& options
-		) -> std::vector<std::vector<ExtractedSector>> {
-			return read_absolute_sector_range(
-				drive,
-				track.first_sector_absolute,
-				track.last_sector_absolute,
-				options.min_data_passes,
-				options.max_data_passes,
-				options.max_data_retries,
-				options.min_data_copies,
-				options.max_data_copies
-			);
+		auto extracted_sectors_vector = read_absolute_sector_range(
+			drive,
+			adjusted_first_sector,
+			adjusted_last_sector,
+			options.min_audio_passes,
+			options.max_audio_passes,
+			options.max_audio_retries,
+			options.min_audio_copies,
+			options.max_audio_copies
+		);
+		if (read_correction_bytes != 0) {
+			for (auto sector_index = track.first_sector_absolute; sector_index < track.last_sector_absolute; sector_index += 1) {
+				auto& extracted_sectors = extracted_sectors_vector.at(sector_index - track.first_sector_absolute);
+				auto& extracted_sector = extracted_sectors.at(0);
+				std::memmove(&extracted_sector.sector_data[0], &extracted_sector.sector_data[prefix_length], suffix_length);
+				auto& next_extracted_sectors = extracted_sectors_vector.at(sector_index - track.first_sector_absolute + 1);
+				auto& next_extracted_sector = next_extracted_sectors.at(0);
+				std::memmove(&extracted_sector.sector_data[suffix_length], &next_extracted_sector.sector_data[0], prefix_length);
+			}
+			extracted_sectors_vector.resize(track.length_sectors); // This hides read errors in the last sector.
 		}
+		return extracted_sectors_vector;
 	}
+
+	auto read_data_track(
+		const drive::Drive& drive,
+		const disc::TrackInfo& track,
+		const options::Options& options
+	) -> std::vector<std::vector<ExtractedSector>> {
+		return read_absolute_sector_range(
+			drive,
+			track.first_sector_absolute,
+			track.last_sector_absolute,
+			options.min_data_passes,
+			options.max_data_passes,
+			options.max_data_retries,
+			options.min_data_copies,
+			options.max_data_copies
+		);
 	}
 
 	auto ExtractedSector::has_identical_sector_data(
@@ -235,9 +231,9 @@ namespace copier {
 	) -> std::vector<std::vector<ExtractedSector>> {
 		fprintf(stderr, "%s\n", std::format("Extracting track number {} containing {} sectors from {} to {}", track.number, track.length_sectors, track.first_sector_absolute, track.last_sector_absolute).c_str());
 		if (disc::is_data_track(track.type)) {
-			return internal::read_data_track(drive, track, options);
+			return read_data_track(drive, track, options);
 		} else {
-			return internal::read_audio_track(drive, track, options);
+			return read_audio_track(drive, track, options);
 		}
 	}
 
