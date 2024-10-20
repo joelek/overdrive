@@ -72,17 +72,14 @@ The [AccurateRip drive database](https://www.accuraterip.com/driveoffsets.htm) p
 	Requires software RSPC generation for raw image formats.
 * Reorganize exceptions so that enums and types can be re-used.
 * Improve copier to better extract subchannels.
-* Detect indices in audio tracks including index 00 in pregap (previous track sector range).
+* Detect indices in audio tracks including index 00 in pregap.
 * Investigate possibility of reading lead-in and lead-out when cdrom error correction is turned off.
-* Investigate multi-session cdrom with several data tracks.
-* Optimize commands to not store silence between data and audio tracks.
-	Lead out after data track is 90 seconds (6750 sectors), second lead out is 30 seconds (2250 sectors).
-	Lead in before audio track is 60 seconds (4500 sectors).
-	Pregap before audio track is 2 seconds (150 sectors).
+* Optimize commands to not store 150 sectors of silence between data and audio tracks on mixed-mode CD-ROMs.
 * Change all enums to namespaces.
 * Add sense pointer to ioctl().
 * Rename repository.
 * Document utility.
+* Add compression to ODI format.
 
 ## References
 
