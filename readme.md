@@ -76,7 +76,6 @@ The [AccurateRip drive database](https://www.accuraterip.com/driveoffsets.htm) p
 * Investigate possibility of reading lead-in and lead-out when cdrom error correction is turned off.
 * Optimize commands to not store 150 sectors of silence between data and audio tracks on mixed-mode CD-ROMs.
 * Change all enums to namespaces.
-* Add sense pointer to ioctl().
 * Document utility.
 * Add compression to ODI format.
 
