@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include <format>
 #include "accuraterip.h"
 #include "bcd.h"
 #include "byteswap.h"
@@ -12,6 +13,7 @@
 #include "exceptions.h"
 #include "iso9660.h"
 #include "scsi.h"
+#include "sense.h"
 
 namespace overdrive {
 namespace drive {
@@ -306,10 +308,15 @@ namespace drive {
 		cdb.header_codes = cdb::ReadCD12HeaderCodes::ALL_HEADERS;
 		cdb.sync = 1;
 		cdb.subchannel_selection_bits = cdb::ReadCD12SubchanelBits::RAW;
+		array<255, byte_t> sense;
 		auto buffer = std::array<byte_t, cdb::READ_CD_LENGTH>();
-		auto status = this->ioctl(handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(buffer.data()), sizeof(buffer), nullptr, false);
+		auto status = this->ioctl(handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(buffer.data()), sizeof(buffer), &sense, false);
 		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
 			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
+		}
+		if (sense[0] == (byte_t)sense::ResponseCodes::FIXED_CURRENT) {
+			auto& fixed_format = *reinterpret_cast<sense::FixedFormat*>(&sense);
+			fprintf(stderr, "%s\n", std::format("Sense info 0x:{:0>2X} 0x:{:0>2X} 0x:{:0>2X}!", static_cast<ui08_t>(fixed_format.sense_key), static_cast<ui08_t>(fixed_format.additional_sense_code), static_cast<ui08_t>(fixed_format.additional_sense_code_qualifier)).c_str());
 		}
 		if (sector_data != nullptr) {
 			if (!this->sector_data_offset) {
