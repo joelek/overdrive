@@ -581,6 +581,27 @@ namespace cdb {
 
 	static_assert(sizeof(ReadCD12) == 12);
 
+	struct ReadCDMSF12 {
+		ui08_t operation_code = 0xB9;
+		ui08_t : 2;
+		ReadCD12ExpectedSectorType expected_sector_type: 3;
+		ui08_t : 3;
+		ui08_t : 8;
+		cd::SectorAddress start_address;
+		cd::SectorAddress end_address_exclusive;
+		ui08_t : 1;
+		ReadCD12Errors errors: 2;
+		ui08_t edc_and_ecc: 1;
+		ui08_t user_data: 1;
+		ReadCD12HeaderCodes header_codes: 2;
+		ui08_t sync: 1;
+		ReadCD12SubchanelBits subchannel_selection_bits: 3;
+		ui08_t : 5;
+		ui08_t control;
+	};
+
+	static_assert(sizeof(ReadCDMSF12) == 12);
+
 	struct ReadCDResponseDataA {
 		byte_t sector_data[cd::SECTOR_LENGTH];
 		byte_t c2_data[cd::C2_LENGTH];

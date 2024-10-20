@@ -296,10 +296,10 @@ namespace drive {
 		pointer<array<cd::SUBCHANNELS_LENGTH, byte_t>> subchannels_data,
 		pointer<array<cd::C2_LENGTH, byte_t>> c2_data
 	) const -> void {
-		auto cdb = cdb::ReadCD12();
+		auto cdb = cdb::ReadCDMSF12();
 		cdb.expected_sector_type = cdb::ReadCD12ExpectedSectorType::ANY;
-		cdb.lba_be = byteswap::byteswap32_on_little_endian_systems(cd::get_relative_sector_index(absolute_index));
-		cdb.transfer_length_be[2] = 1;
+		cdb.start_address = cd::get_address_from_sector(absolute_index);
+		cdb.end_address_exclusive = cd::get_address_from_sector(absolute_index + 1);
 		cdb.errors = cdb::ReadCD12Errors::C2_ERROR_BLOCK_DATA;
 		cdb.edc_and_ecc = 1;
 		cdb.user_data = 1;
