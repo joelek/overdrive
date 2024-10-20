@@ -1,5 +1,6 @@
 #include "cue.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <format>
 #include <optional>
@@ -28,7 +29,7 @@ namespace commands {
 				"track-numbers",
 				{},
 				"Specify which track numbers to save.",
-				std::regex("^([1-9]|[1-9][0-9])$"),
+				std::regex("^([1-9]|[1-9][0-9](?:[-](?:[1-9]|[1-9][0-9]))?)$"),
 				"integer",
 				false,
 				std::optional<std::string>(),
@@ -37,7 +38,19 @@ namespace commands {
 				[&](const std::vector<std::string>& matches) -> void {
 					auto track_numbers = std::set<size_t>();
 					for (auto& match : matches) {
-						track_numbers.insert(std::atoi(match.c_str()));
+						auto parts = string::split(match, "-");
+						if (parts.size() == 1) {
+							track_numbers.insert(std::atoi(parts.at(0).c_str()));
+						} else {
+							auto one = std::atoi(parts.at(0).c_str());
+							auto two = std::atoi(parts.at(1).c_str());
+							if (two < one) {
+								std::swap(one, two);
+							}
+							for (auto track_number = one; track_number < two; track_number += 1) {
+								track_numbers.insert(track_number);
+							}
+						}
 					}
 					options.track_numbers = track_numbers;
 				}
