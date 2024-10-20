@@ -38,6 +38,8 @@ The [AccurateRip drive database](https://www.accuraterip.com/driveoffsets.htm) p
 	Pregap before audio track is 2 seconds (150 sectors).
 * Change all enums to namespaces.
 * Add sense pointer to ioctl().
+* Rename repository.
+* Document utility.
 
 ## References
 
