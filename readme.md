@@ -1,6 +1,6 @@
 # Overdrive
 
-Utility for interfacing with optical drives. Written for the Windows platform.
+Utility for interfacing with optical drives.
 
 ## Different CD-ROM formats
 
