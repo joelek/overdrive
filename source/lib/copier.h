@@ -55,8 +55,8 @@ namespace copier {
 
 	auto read_absolute_sector_range(
 		const drive::Drive& drive,
-		size_t first_sector,
-		size_t last_sector,
+		si_t first_sector,
+		si_t last_sector,
 		size_t min_passes,
 		size_t max_passes,
 		size_t max_retries,

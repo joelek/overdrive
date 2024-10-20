@@ -6,15 +6,15 @@ namespace overdrive {
 namespace cd {
 	auto get_absolute_sector_index(
 		si_t relative_sector_index
-	) -> ui_t {
-		auto absolute_sector_index = ui_t(relative_sector_index) + si_t(RELATIVE_SECTOR_OFFSET);
+	) -> si_t {
+		auto absolute_sector_index = relative_sector_index + si_t(RELATIVE_SECTOR_OFFSET);
 		return absolute_sector_index;
 	}
 
 	auto get_relative_sector_index(
-		ui_t absolute_sector_index
+		si_t absolute_sector_index
 	) -> si_t {
-		auto relative_sector_index = si_t(absolute_sector_index) - si_t(RELATIVE_SECTOR_OFFSET);
+		auto relative_sector_index = absolute_sector_index - si_t(RELATIVE_SECTOR_OFFSET);
 		return relative_sector_index;
 	}
 
