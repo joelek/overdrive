@@ -49,7 +49,7 @@ namespace parser {
 					parsed = true;
 					break;
 				}
-			} else {
+			} else if (!string::match(argument, key_val_matches, std::regex("^([-]*)([^=]+)[=]([^=]*)$"))) {
 				auto positional_counter = size_t(0);
 				for (auto parser_index = size_t(0); parser_index < parsers.size(); parser_index += 1) {
 					auto& parser = parsers.at(parser_index);
