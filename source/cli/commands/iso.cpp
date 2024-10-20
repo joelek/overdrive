@@ -25,7 +25,7 @@ namespace commands {
 				"track-numbers",
 				{},
 				"Specify which track numbers to save.",
-				std::regex("^([1-9]|[1-9][0-9](?:[-](?:[1-9]|[1-9][0-9]))?)$"),
+				std::regex("^((?:[1-9]|[1-9][0-9])(?:[-](?:[1-9]|[1-9][0-9]))?)$"),
 				"integer",
 				false,
 				std::optional<std::string>(),
