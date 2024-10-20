@@ -47,7 +47,7 @@ namespace commands {
 							if (two < one) {
 								std::swap(one, two);
 							}
-							for (auto track_number = one; track_number < two; track_number += 1) {
+							for (auto track_number = one; track_number <= two; track_number += 1) {
 								track_numbers.insert(track_number);
 							}
 						}
