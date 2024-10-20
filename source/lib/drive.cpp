@@ -396,7 +396,14 @@ namespace drive {
 		std::sort(disc.sessions.begin(), disc.sessions.end(), [](const disc::SessionInfo& one, const disc::SessionInfo& two) -> bool_t {
 			return one.number < two.number;
 		});
-		for (auto& session : disc.sessions) {
+		auto absolute_sector_offset = size_t(0);
+		for (auto session_index = size_t(0); session_index < disc.sessions.size(); session_index += 1) {
+			auto& session = disc.sessions.at(session_index);
+			session.lead_in_length_sectors = cd::LEAD_IN_LENGTH;
+			session.lead_out_length_sectors = session_index == 0 ? cd::FIRST_LEAD_OUT_LENGTH : cd::SUBSEQUENT_LEAD_OUT_LENGTH;
+			if (session_index > 0) {
+				absolute_sector_offset += session.lead_in_length_sectors;
+			}
 			auto lead_out_first_sector_absolute = std::optional<size_t>();
 			for (auto point_index = size_t(0); point_index < session.points.size(); point_index += 1) {
 				auto& point = session.points.at(point_index);
@@ -412,6 +419,17 @@ namespace drive {
 			std::sort(session.tracks.begin(), session.tracks.end(), [](const disc::TrackInfo& one, const disc::TrackInfo& two) -> bool_t {
 				return one.first_sector_absolute < two.first_sector_absolute;
 			});
+			auto& first_track = session.tracks.front();
+			session.pregap_sectors = first_track.first_sector_absolute - absolute_sector_offset;
+			if (session.pregap_sectors > cd::RELATIVE_SECTOR_OFFSET) {
+				auto track = disc::TrackInfo();
+				track.number = 0;
+				track.type = first_track.type;
+				track.first_sector_absolute = absolute_sector_offset + cd::RELATIVE_SECTOR_OFFSET;
+				track.length_sectors = session.pregap_sectors - cd::RELATIVE_SECTOR_OFFSET;
+				session.tracks.insert(session.tracks.begin(), track);
+				session.pregap_sectors = cd::RELATIVE_SECTOR_OFFSET;
+			}
 			for (auto track_index = size_t(0); track_index < session.tracks.size(); track_index += 1) {
 				auto& track = session.tracks.at(track_index);
 				if (track_index + 1 < session.tracks.size()) {
@@ -423,7 +441,13 @@ namespace drive {
 				track.last_sector_absolute = track.first_sector_absolute + track.length_sectors;
 				session.length_sectors += track.length_sectors;
 			}
+			absolute_sector_offset += session.pregap_sectors;
+			absolute_sector_offset += session.length_sectors;
+			absolute_sector_offset += session.lead_out_length_sectors;
+			disc.length_sectors += session.lead_in_length_sectors;
+			disc.length_sectors += session.pregap_sectors;
 			disc.length_sectors += session.length_sectors;
+			disc.length_sectors += session.lead_out_length_sectors;
 		}
 		return disc;
 	}

@@ -42,7 +42,10 @@ namespace disc {
 		fprintf(stderr, "%s\n", std::format("\tSession number: {}", this->number).c_str());
 		fprintf(stderr, "%s\n", std::format("\tSession type: {}", enums::SessionType(this->type)).c_str());
 		fprintf(stderr, "%s\n", std::format("\tSession tracks: {}", this->tracks.size()).c_str());
+		fprintf(stderr, "%s\n", std::format("\tSession lead-in length [sectors]: {}", this->lead_in_length_sectors).c_str());
+		fprintf(stderr, "%s\n", std::format("\tSession pregap length [sectors]: {}", this->pregap_sectors).c_str());
 		fprintf(stderr, "%s\n", std::format("\tSession length [sectors]: {}", this->length_sectors).c_str());
+		fprintf(stderr, "%s\n", std::format("\tSession lead-out length [sectors]: {}", this->lead_out_length_sectors).c_str());
 		for (auto track_index = size_t(0); track_index < this->tracks.size(); track_index += 1) {
 			auto& track = this->tracks.at(track_index);
 			track.print();

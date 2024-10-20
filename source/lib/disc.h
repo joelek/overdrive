@@ -73,7 +73,10 @@ namespace disc {
 		cdb::SessionType type;
 		std::vector<TrackInfo> tracks;
 		std::vector<PointInfo> points;
+		size_t lead_in_length_sectors;
+		size_t pregap_sectors;
 		size_t length_sectors;
+		size_t lead_out_length_sectors;
 
 		auto print(
 		) const -> void;
