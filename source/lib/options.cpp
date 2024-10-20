@@ -184,8 +184,8 @@ namespace options {
 			std::regex("^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 			"integer",
 			false,
-			std::optional<std::string>("2"),
-			1,
+			std::optional<std::string>(),
+			0,
 			1,
 			[&](const std::vector<std::string>& matches) -> void {
 				options.min_audio_passes = std::atoi(matches.at(0).c_str());
@@ -198,8 +198,8 @@ namespace options {
 			std::regex("^([1-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 			"integer",
 			false,
-			std::optional<std::string>("8"),
-			1,
+			std::optional<std::string>(),
+			0,
 			1,
 			[&](const std::vector<std::string>& matches) -> void {
 				options.max_audio_passes = std::atoi(matches.at(0).c_str());
@@ -212,8 +212,8 @@ namespace options {
 			std::regex("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 			"integer",
 			false,
-			std::optional<std::string>("255"),
-			1,
+			std::optional<std::string>(),
+			0,
 			1,
 			[&](const std::vector<std::string>& matches) -> void {
 				options.max_audio_retries = std::atoi(matches.at(0).c_str());
@@ -226,8 +226,8 @@ namespace options {
 			std::regex("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 			"integer",
 			false,
-			std::optional<std::string>("1"),
-			1,
+			std::optional<std::string>(),
+			0,
 			1,
 			[&](const std::vector<std::string>& matches) -> void {
 				options.min_audio_copies = std::atoi(matches.at(0).c_str());
@@ -240,8 +240,8 @@ namespace options {
 			std::regex("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 			"integer",
 			false,
-			std::optional<std::string>("2"),
-			1,
+			std::optional<std::string>(),
+			0,
 			1,
 			[&](const std::vector<std::string>& matches) -> void {
 				options.max_audio_copies = std::atoi(matches.at(0).c_str());
