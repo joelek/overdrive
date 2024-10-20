@@ -182,10 +182,11 @@ namespace copier {
 		size_t max_copies
 	) -> std::vector<std::vector<ExtractedSector>> {
 		auto length_sectors = last_sector - first_sector;
+		fprintf(stderr, "%s\n", std::format("Extracting sector range containing {} sectors from {} to {}", length_sectors, first_sector, last_sector).c_str());
 		auto extracted_sectors_vector = std::vector<std::vector<ExtractedSector>>(length_sectors);
 		drive.set_read_retry_count(max_retries);
 		for (auto pass_index = size_t(0); pass_index < max_passes; pass_index += 1) {
-			fprintf(stderr, "%s\n", std::format("Running pass {}", pass_index).c_str());
+			fprintf(stderr, "%s\n", std::format("Running pass {}", pass_index + 1).c_str());
 			for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
 				auto sector = ExtractedSector();
 				auto success = false;
@@ -212,7 +213,7 @@ namespace copier {
 				}
 			}
 			auto number_of_identical_copies = get_number_of_identical_copies(extracted_sectors_vector);
-			fprintf(stderr, "%s\n", std::format("Got {} identical copies", number_of_identical_copies).c_str());
+			fprintf(stderr, "%s\n", std::format("Got {} identical copies during pass {}", number_of_identical_copies, pass_index + 1).c_str());
 			if (pass_index + 1 >= min_passes && number_of_identical_copies >= max_copies) {
 				break;
 			}
