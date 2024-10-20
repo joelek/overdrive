@@ -9,6 +9,7 @@
 #include "exceptions.h"
 #include "idiv.h"
 #include "iso9660.h"
+#include "memory.h"
 #include "string.h"
 
 namespace overdrive {
@@ -195,6 +196,9 @@ namespace copier {
 					success = true;
 				} catch (const exceptions::SCSIException& e) {
 					fprintf(stderr, "%s\n", std::format("Error reading sector {}!", sector_index).c_str());
+				}
+				if (!memory::test(&sector.c2_data, sizeof(sector.c2_data), 0)) {
+					fprintf(stderr, "%s\n", std::format("C2 errors occured for sector {}!", sector_index).c_str());
 				}
 				auto& extracted_sectors = extracted_sectors_vector.at(sector_index - first_sector);
 				auto extracted_sector_with_matching_data = pointer<ExtractedSector>(nullptr);
