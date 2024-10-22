@@ -25,8 +25,8 @@ namespace commands {
 				"track-numbers",
 				{},
 				"Specify which track numbers to save.",
-				std::regex("^((?:[1-9]|[1-9][0-9])(?:[-](?:[1-9]|[1-9][0-9]))?)$"),
-				"integer",
+				std::regex("^((?:[1-9]|[1-9][0-9])|(?:(?:[1-9]|[1-9][0-9])?[:](?:[1-9]|[1-9][0-9])?))$"),
+				"range<integer>",
 				false,
 				std::optional<std::string>(),
 				0,
@@ -34,14 +34,14 @@ namespace commands {
 				[&](const std::vector<std::string>& matches) -> void {
 					auto track_numbers = std::set<size_t>();
 					for (auto& match : matches) {
-						auto parts = string::split(match, "-");
+						auto parts = string::split(match, ":");
 						if (parts.size() == 1) {
 							track_numbers.insert(std::atoi(parts.at(0).c_str()));
 						} else {
-							auto one = std::atoi(parts.at(0).c_str());
-							auto two = std::atoi(parts.at(1).c_str());
+							auto one = parts.at(0) == "" ? 1 : std::atoi(parts.at(0).c_str());
+							auto two = parts.at(1) == "" ? 99 : std::atoi(parts.at(1).c_str());
 							if (two < one) {
-								std::swap(one, two);
+								OVERDRIVE_THROW(exceptions::BadArgumentFormatException("track-numbers", "range<integer>"));
 							}
 							for (auto track_number = one; track_number <= two; track_number += 1) {
 								track_numbers.insert(track_number);
