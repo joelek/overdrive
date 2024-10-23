@@ -3,12 +3,6 @@
 #include <cstdint>
 #include <string>
 
-#ifdef DEBUG
-	#define OVERDRIVE_THROW(exception) throw overdrive::exceptions::DebugException(__FILE__, __LINE__, exception)
-#else
-	#define OVERDRIVE_THROW(exception) throw exception
-#endif
-
 namespace overdrive {
 namespace shared {
 	typedef int8_t si08_t;

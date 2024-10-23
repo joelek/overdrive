@@ -324,3 +324,9 @@ namespace exceptions {
 	};
 }
 }
+
+#ifdef DEBUG
+	#define OVERDRIVE_THROW(exception) throw overdrive::exceptions::DebugException(__FILE__, __LINE__, exception)
+#else
+	#define OVERDRIVE_THROW(exception) throw exception
+#endif
