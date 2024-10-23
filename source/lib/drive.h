@@ -41,7 +41,7 @@ namespace drive {
 		auto determine_track_type(
 			const cdb::ReadTOCResponseFullTOC& toc,
 			ui_t track_index
-		) const -> disc::TrackType;
+		) const -> disc::TrackType::type;
 
 		auto read_normal_toc(
 		) const -> cdb::ReadTOCResponseNormalTOC;
@@ -79,7 +79,7 @@ namespace drive {
 		) const -> cdb::StandardInquiryResponse;
 
 		auto read_all_pages(
-		) const -> std::map<cdb::SensePage, std::vector<byte_t>>;
+		) const -> std::map<cdb::SensePage::type, std::vector<byte_t>>;
 
 		auto test_unit_ready(
 		) const -> bool_t;
@@ -104,16 +104,16 @@ namespace drive {
 		protected:
 
 		auto read_all_pages_with_control(
-			cdb::ModeSensePageControl page_control
-		) const -> std::map<cdb::SensePage, std::vector<byte_t>>;
+			cdb::ModeSensePageControl::type page_control
+		) const -> std::map<cdb::SensePage::type, std::vector<byte_t>>;
 
 		auto validate_page_read(
-			cdb::SensePage page,
+			cdb::SensePage::type page,
 			size_t page_size
 		) const -> void;
 
 		auto validate_page_write(
-			cdb::SensePage page,
+			cdb::SensePage::type page,
 			size_t page_size,
 			const byte_t* page_pointer
 		) const -> void;
@@ -123,7 +123,7 @@ namespace drive {
 		std::optional<size_t> subchannels_data_offset;
 		std::optional<size_t> c2_data_offset;
 		detail::ioctl_t ioctl;
-		std::map<cdb::SensePage, std::vector<byte_t>> page_masks;
+		std::map<cdb::SensePage::type, std::vector<byte_t>> page_masks;
 	};
 
 	auto create_drive(

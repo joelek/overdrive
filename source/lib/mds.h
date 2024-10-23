@@ -8,56 +8,56 @@ namespace overdrive {
 namespace mds {
 	using namespace shared;
 
+	namespace TrackMode {
+		using type = ui08_t;
+
+		const auto NONE = type(0x0);
+		const auto UNKNOWN_1 = type(0x1);
+		const auto DVD = type(0x2);
+		const auto UNKNOWN_3 = type(0x3);
+		const auto UNKNOWN_4 = type(0x4);
+		const auto UNKNOWN_5 = type(0x5);
+		const auto UNKNOWN_6 = type(0x6);
+		const auto UNKNOWN_7 = type(0x7);
+		const auto UNKNOWN_8 = type(0x8);
+		const auto AUDIO = type(0x9);
+		const auto MODE1 = type(0xA);
+		const auto MODE2 = type(0xB);
+		const auto MODE2_FORM1 = type(0xC);
+		const auto MODE2_FORM2 = type(0xD);
+		const auto UNKNOWN_E = type(0xE);
+		const auto UNKNOWN_F = type(0xF);
+	}
+
+	namespace TrackModeFlags {
+		using type = ui08_t;
+
+		const auto UNKNOWN_0 = type(0x0);
+		const auto UNKNOWN_1 = type(0x1);
+		const auto UNKNOWN_2 = type(0x2);
+		const auto UNKNOWN_3 = type(0x3);
+		const auto UNKNOWN_4 = type(0x4);
+		const auto UNKNOWN_5 = type(0x5);
+		const auto UNKNOWN_6 = type(0x6);
+		const auto UNKNOWN_7 = type(0x7);
+		const auto UNKNOWN_8 = type(0x8);
+		const auto UNKNOWN_9 = type(0x9);
+		const auto UNKNOWN_A = type(0xA);
+		const auto UNKNOWN_B = type(0xB);
+		const auto UNKNOWN_C = type(0xC);
+		const auto UNKNOWN_D = type(0xD);
+		const auto UNKNOWN_E = type(0xE);
+		const auto UNKNOWN_F = type(0xF);
+	}
+
+	namespace SubchannelMode {
+		using type = ui08_t;
+
+		const auto NONE = type(0x00);
+		const auto INTERLEAVED_96 = type(0x08);
+	}
+
 	#pragma pack(push, 1)
-
-	enum class TrackMode: ui08_t {
-		NONE = 0x0,
-		UNKNOWN_1 = 0x1,
-		DVD = 0x2,
-		UNKNOWN_3 = 0x3,
-		UNKNOWN_4 = 0x4,
-		UNKNOWN_5 = 0x5,
-		UNKNOWN_6 = 0x6,
-		UNKNOWN_7 = 0x7,
-		UNKNOWN_8 = 0x8,
-		AUDIO = 0x9,
-		MODE1 = 0xA,
-		MODE2 = 0xB,
-		MODE2_FORM1 = 0xC,
-		MODE2_FORM2 = 0xD,
-		UNKNOWN_E = 0xE,
-		UNKNOWN_F = 0xF
-	};
-
-	static_assert(sizeof(TrackMode) == 1);
-
-	enum class TrackModeFlags: ui08_t {
-		UNKNOWN_0 = 0x0,
-		UNKNOWN_1 = 0x1,
-		UNKNOWN_2 = 0x2,
-		UNKNOWN_3 = 0x3,
-		UNKNOWN_4 = 0x4,
-		UNKNOWN_5 = 0x5,
-		UNKNOWN_6 = 0x6,
-		UNKNOWN_7 = 0x7,
-		UNKNOWN_8 = 0x8,
-		UNKNOWN_9 = 0x9,
-		UNKNOWN_A = 0xA,
-		UNKNOWN_B = 0xB,
-		UNKNOWN_C = 0xC,
-		UNKNOWN_D = 0xD,
-		UNKNOWN_E = 0xE,
-		UNKNOWN_F = 0xF
-	};
-
-	static_assert(sizeof(TrackModeFlags) == 1);
-
-	enum class SubchannelMode: ui08_t {
-		NONE = 0x00,
-		INTERLEAVED_96 = 0x08
-	};
-
-	static_assert(sizeof(SubchannelMode) == 1);
 
 	struct FileHeader {
 		ch08_t identifier[16] = { 'M','E','D','I','A',' ','D','E','S','C','R','I','P','T','O','R' };
@@ -88,11 +88,11 @@ namespace mds {
 	static_assert(sizeof(SessionTableHeader) == 24);
 
 	struct SessionTableEntry {
-		TrackMode track_mode : 4;
-		TrackModeFlags track_mode_flags: 4;
+		TrackMode::type track_mode : 4;
+		TrackModeFlags::type track_mode_flags: 4;
 		union {
 			cdb::ReadTOCResponseFullTOCEntry entry;
-			SubchannelMode subchannel_mode;
+			SubchannelMode::type subchannel_mode;
 		};
 		ui32_t absolute_offset_to_track_table_entry;
 		ui16_t sector_length;
@@ -159,11 +159,11 @@ namespace mds {
 	#pragma pack(pop)
 
 	auto get_track_mode(
-		disc::TrackType track_type
-	) -> TrackMode;
+		disc::TrackType::type track_type
+	) -> TrackMode::type;
 
 	auto get_track_mode_flags(
-		disc::TrackType track_type
-	) -> TrackModeFlags;
+		disc::TrackType::type track_type
+	) -> TrackModeFlags::type;
 }
 }

@@ -2,14 +2,34 @@
 
 #include <algorithm>
 #include <format>
+#include <map>
 #include "cdrom.h"
 #include "cdxa.h"
-#include "enums.h"
 #include "exceptions.h"
 #include "string.h"
 
 namespace overdrive {
 namespace disc {
+	auto TrackType::name(
+		type value
+	) -> const std::string& {
+		static const auto names = std::map<type, std::string>({
+			{ AUDIO_2_CHANNELS, "AUDIO_2_CHANNELS" },
+			{ AUDIO_4_CHANNELS, "AUDIO_4_CHANNELS" },
+			{ DATA_MODE0, "DATA_MODE0" },
+			{ DATA_MODE1, "DATA_MODE1" },
+			{ DATA_MODE2, "DATA_MODE2" },
+			{ DATA_MODE2_FORM1, "DATA_MODE2_FORM1" },
+			{ DATA_MODE2_FORM2, "DATA_MODE2_FORM2" },
+		});
+		static const auto fallback = std::string("???");
+		auto iterator = names.find(value);
+		if (iterator == names.end()) {
+			return fallback;
+		}
+		return iterator->second;
+	}
+
 	auto DriveInfo::print(
 	) const -> void {
 		fprintf(stderr, "%s\n", std::format("Drive vendor: \"{}\"", string::trim(this->vendor)).c_str());
@@ -26,7 +46,7 @@ namespace disc {
 	auto TrackInfo::print(
 	) const -> void {
 		fprintf(stderr, "%s\n", std::format("\t\tTrack number: {}", this->number).c_str());
-		fprintf(stderr, "%s\n", std::format("\t\tTrack type: {}", enums::TrackType(this->type)).c_str());
+		fprintf(stderr, "%s\n", std::format("\t\tTrack type: {}", disc::TrackType::name(this->type)).c_str());
 		fprintf(stderr, "%s\n", std::format("\t\tTrack first sector: {}", this->first_sector_absolute).c_str());
 		fprintf(stderr, "%s\n", std::format("\t\tTrack last sector: {}", this->last_sector_absolute).c_str());
 		fprintf(stderr, "%s\n", std::format("\t\tTrack length [sectors]: {}", this->length_sectors).c_str());
@@ -40,7 +60,7 @@ namespace disc {
 	auto SessionInfo::print(
 	) const -> void {
 		fprintf(stderr, "%s\n", std::format("\tSession number: {}", this->number).c_str());
-		fprintf(stderr, "%s\n", std::format("\tSession type: {}", enums::SessionType(this->type)).c_str());
+		fprintf(stderr, "%s\n", std::format("\tSession type: {}", cdb::SessionType::name(this->type)).c_str());
 		fprintf(stderr, "%s\n", std::format("\tSession tracks: {}", this->tracks.size()).c_str());
 		fprintf(stderr, "%s\n", std::format("\tSession lead-in length [sectors]: {}", this->lead_in_length_sectors).c_str());
 		fprintf(stderr, "%s\n", std::format("\tSession pregap length [sectors]: {}", this->pregap_sectors).c_str());
@@ -68,7 +88,7 @@ namespace disc {
 	}
 
 	auto is_audio_track(
-		TrackType type
+		TrackType::type type
 	) -> bool_t {
 		if (type == TrackType::AUDIO_2_CHANNELS) {
 			return true;
@@ -95,7 +115,7 @@ namespace disc {
 	}
 
 	auto is_data_track(
-		TrackType type
+		TrackType::type type
 	) -> bool_t {
 		if (type == TrackType::AUDIO_2_CHANNELS) {
 			return false;
@@ -122,7 +142,7 @@ namespace disc {
 	}
 
 	auto get_user_data_offset(
-		TrackType type
+		TrackType::type type
 	) -> size_t {
 		if (type == TrackType::DATA_MODE1) {
 			return offsetof(cdrom::Mode1Sector, user_data);
@@ -140,7 +160,7 @@ namespace disc {
 	}
 
 	auto get_user_data_length(
-		TrackType type
+		TrackType::type type
 	) -> size_t {
 		if (type == TrackType::DATA_MODE1) {
 			return cdrom::MODE1_DATA_LENGTH;

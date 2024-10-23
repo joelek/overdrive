@@ -5,8 +5,8 @@
 namespace overdrive {
 namespace mds {
 	auto get_track_mode(
-		disc::TrackType track_type
-	) -> TrackMode {
+		disc::TrackType::type track_type
+	) -> TrackMode::type {
 		if (track_type == disc::TrackType::AUDIO_2_CHANNELS) {
 			return TrackMode::AUDIO;
 		}
@@ -33,8 +33,8 @@ namespace mds {
 
 
 	auto get_track_mode_flags(
-		disc::TrackType track_type
-	) -> TrackModeFlags {
+		disc::TrackType::type track_type
+	) -> TrackModeFlags::type {
 		if (track_type == disc::TrackType::AUDIO_2_CHANNELS) {
 			return TrackModeFlags::UNKNOWN_A;
 		}

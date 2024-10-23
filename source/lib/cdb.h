@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include "cd.h"
 #include "shared.h"
 
@@ -10,26 +11,123 @@ namespace cdb {
 	const auto READ_CD_LENGTH = size_t(cd::SECTOR_LENGTH + cd::SUBCHANNELS_LENGTH + cd::C2_LENGTH);
 	const auto LEAD_OUT_TRACK_NUMBER = size_t(0xAA);
 
+	namespace SessionType {
+		using type = ui08_t;
+
+		const auto CDDA_OR_CDROM = type(0x00);
+		const auto CDI = type(0x10);
+		const auto CDXA_OR_DDCD = type(0x20);
+
+		auto name(
+			type value
+		) -> const std::string&;
+	}
+
+	namespace ReadTOCFormat {
+		using type = ui08_t;
+
+		const auto NORMAL_TOC = type(0b0000);
+		const auto SESSION_INFO = type(0b0001);
+		const auto FULL_TOC = type(0b0010);
+		const auto PMA = type(0b0011);
+		const auto ATIP = type(0b0100);
+		const auto CD_TEXT = type(0b0101);
+	}
+
+	namespace ReadTOCResponseFullTOCPoint {
+		using type = ui08_t;
+
+		// Adr should be 1.
+		const auto FIRST_TRACK_REFERENCE = type(0x01);
+		const auto LAST_TRACK_REFERENCE = type(0x63);
+		const auto FIRST_TRACK_IN_SESSION = type(0xA0);
+		const auto LAST_TRACK_IN_SESSION = type(0xA1);
+		const auto LEAD_OUT_TRACK_IN_SESSION = type(0xA2);
+		// Adr should be 5.
+		const auto FIRST_SKIP_INTERVAL_POINTER = type(0x01);
+		const auto LAST_SKIP_INTERVAL_POINTER = type(0x40);
+		const auto PMA_OF_NEXT_POSSIBLE_SESSION = type(0xB0);
+		const auto NUMBER_OF_SKIP_POINTERS = type(0xB1);
+		const auto SKIP_TRACK_ASSIGNMENT_POINTERS_1 = type(0xB2);
+		const auto SKIP_TRACK_ASSIGNMENT_POINTERS_2 = type(0xB3);
+		const auto SKIP_TRACK_ASSIGNMENT_POINTERS_3 = type(0xB4);
+		const auto START_TIME_OF_FIRST_LEAD_IN_AREA = type(0xC0);
+		const auto COPY_OF_ADDITIONAL_ATIP_AREA_1 = type(0xC1);
+	}
+
+	namespace StandardInquiryPeripheralDeviceType {
+		using type = ui08_t;
+
+		const auto CD_OR_DVD = type(0x05);
+	}
+
+	namespace SensePage {
+		using type = ui08_t;
+
+		const auto READ_WRITE_ERROR_RECOVERY_MODE_PAGE = type(0x01);
+		const auto CACHING_MODE_PAGE = type(0x08);
+		const auto CAPABILITIES_AND_MECHANICAL_STATUS_PAGE = type(0x2A);
+		const auto ALL_PAGES = type(0x3F);
+
+		auto name(
+			type value
+		) -> const std::string&;
+	}
+
+	namespace ModeSensePageControl {
+		using type = ui08_t;
+
+		const auto CURRENT_VALUES = type(0b00);
+		const auto CHANGABLE_VALUES = type(0b01);
+		const auto DEFAULT_VALUES = type(0b10);
+		const auto SAVED_VALUES = type(0b11);
+	}
+
+	namespace ReadCD12ExpectedSectorType {
+		using type = ui08_t;
+
+		const auto ANY = type(0b000);
+		const auto CD_DA = type(0b001);
+		const auto CD_ROM_MODE_1 = type(0b010);
+		const auto CD_ROM_MODE_2 = type(0b011);
+		const auto CD_XA_MODE_2_FORM_1 = type(0b100);
+		const auto CD_XA_MODE_2_FORM_2 = type(0b101);
+		const auto RESERVED_6  = type(0b110);
+		const auto RESERVED_7 = type(0b111);
+	}
+
+	namespace ReadCD12HeaderCodes {
+		using type = ui08_t;
+
+		const auto NONE = type(0b00);
+		const auto HEADER_ONLY = type(0b01);
+		const auto SUBHEADER_ONLY  = type(0b10);
+		const auto ALL_HEADERS = type(0b11);
+	}
+
+	namespace ReadCD12Errors {
+		using type = ui08_t;
+
+		const auto NONE = type(0b00);
+		const auto C2_ERROR_BLOCK_DATA = type(0b01);
+		const auto C2_AND_BLOCK_ERROR_BITS  = type(0b10);
+		const auto RESERVED_3 = type(0b11);
+	}
+
+	namespace ReadCD12SubchanelBits {
+		using type = ui08_t;
+
+		const auto NONE = type(0b000);
+		const auto RAW = type(0b001);
+		const auto Q  = type(0b010);
+		const auto RESERVED_3 = type(0b011);
+		const auto P_TO_W = type(0b100);
+		const auto RESERVED_5 = type(0b101);
+		const auto RESERVED_6 = type(0b110);
+		const auto RESERVED_7 = type(0b111);
+	}
+
 	#pragma pack(push, 1)
-
-	enum class SessionType: ui08_t {
-		CDDA_OR_CDROM = 0x00,
-		CDI = 0x10,
-		CDXA_OR_DDCD = 0x20
-	};
-
-	static_assert(sizeof(SessionType) == 1);
-
-	enum class ReadTOCFormat: ui08_t {
-		NORMAL_TOC = 0b0000,
-		SESSION_INFO = 0b0001,
-		FULL_TOC = 0b0010,
-		PMA = 0b0011,
-		ATIP = 0b0100,
-		CD_TEXT = 0b0101
-	};
-
-	static_assert(sizeof(ReadTOCFormat) == 1);
 
 	struct TestUnitReady6 {
 		ui08_t operation_code: 8 = 0x00;
@@ -48,7 +146,7 @@ namespace cdb {
 		ui08_t time: 1;
 		ui08_t : 3;
 		ui08_t : 3;
-		ReadTOCFormat format: 4;
+		ReadTOCFormat::type format: 4;
 		ui08_t : 4;
 		ui08_t : 8;
 		ui08_t : 8;
@@ -119,27 +217,6 @@ namespace cdb {
 	};
 
 	static_assert(sizeof(ReadTOCResponseFullTOCEntry) == 11);
-
-	enum class ReadTOCResponseFullTOCPoint: ui08_t {
-		// Adr should be 1.
-		FIRST_TRACK_REFERENCE = 0x01,
-		LAST_TRACK_REFERENCE = 0x63,
-		FIRST_TRACK_IN_SESSION = 0xA0,
-		LAST_TRACK_IN_SESSION = 0xA1,
-		LEAD_OUT_TRACK_IN_SESSION = 0xA2,
-		// Adr should be 5.
-		FIRST_SKIP_INTERVAL_POINTER = 0x01,
-		LAST_SKIP_INTERVAL_POINTER = 0x40,
-		PMA_OF_NEXT_POSSIBLE_SESSION = 0xB0,
-		NUMBER_OF_SKIP_POINTERS = 0xB1,
-		SKIP_TRACK_ASSIGNMENT_POINTERS_1 = 0xB2,
-		SKIP_TRACK_ASSIGNMENT_POINTERS_2 = 0xB3,
-		SKIP_TRACK_ASSIGNMENT_POINTERS_3 = 0xB4,
-		START_TIME_OF_FIRST_LEAD_IN_AREA = 0xC0,
-		COPY_OF_ADDITIONAL_ATIP_AREA_1 = 0xC1
-	};
-
-	static_assert(sizeof(ReadTOCResponseFullTOCPoint) == 1);
 
 	struct ReadTOCResponseFullTOC {
 		ReadTOCResponseParameterList header;
@@ -222,14 +299,8 @@ namespace cdb {
 
 	static_assert(sizeof(Inquiry6) == 6);
 
-	enum class StandardInquiryPeripheralDeviceType: ui08_t {
-		CD_OR_DVD = 0x05
-	};
-
-	static_assert(sizeof(StandardInquiryPeripheralDeviceType) == 1);
-
 	struct StandardInquiryResponse {
-		StandardInquiryPeripheralDeviceType peripheral_device_type: 5;
+		StandardInquiryPeripheralDeviceType::type peripheral_device_type: 5;
 		ui08_t peripheral_qualifier: 3;
 		ui08_t : 7;
 		ui08_t removable_media: 1;
@@ -279,31 +350,13 @@ namespace cdb {
 
 	static_assert(sizeof(StandardInquiryResponse) == 128);
 
-	enum class SensePage: ui08_t {
-		READ_WRITE_ERROR_RECOVERY_MODE_PAGE = 0x01,
-		CACHING_MODE_PAGE = 0x08,
-		CAPABILITIES_AND_MECHANICAL_STATUS_PAGE = 0x2A,
-		ALL_PAGES = 0x3F
-	};
-
-	static_assert(sizeof(SensePage) == 1);
-
-	enum class ModeSensePageControl: ui08_t {
-		CURRENT_VALUES = 0b00,
-		CHANGABLE_VALUES = 0b01,
-		DEFAULT_VALUES = 0b10,
-		SAVED_VALUES = 0b11
-	};
-
-	static_assert(sizeof(ModeSensePageControl) == 1);
-
 	struct ModeSense6 {
 		ui08_t operation_code = 0x1A;
 		ui08_t : 3;
 		ui08_t disable_block_descriptors: 1;
 		ui08_t : 4;
-		SensePage page_code: 6;
-		ModeSensePageControl page_control: 2;
+		SensePage::type page_code: 6;
+		ModeSensePageControl::type page_control: 2;
 		ui08_t subpage_code;
 		ui08_t allocation_length;
 		ui08_t control;
@@ -350,8 +403,8 @@ namespace cdb {
 		ui08_t disable_block_descriptors: 1;
 		ui08_t long_lba_accepted: 1;
 		ui08_t : 3;
-		SensePage page_code: 6;
-		ModeSensePageControl page_control: 2;
+		SensePage::type page_code: 6;
+		ModeSensePageControl::type page_control: 2;
 		ui08_t subpage_code;
 		ui08_t : 8;
 		ui08_t : 8;
@@ -516,65 +569,21 @@ namespace cdb {
 
 	static_assert(sizeof(CapabilitiesAndMechanicalStatusPage) == 32);
 
-	enum class ReadCD12ExpectedSectorType: ui08_t {
-		ANY = 0b000,
-		CD_DA = 0b001,
-		CD_ROM_MODE_1 = 0b010,
-		CD_ROM_MODE_2 = 0b011,
-		CD_XA_MODE_2_FORM_1 = 0b100,
-		CD_XA_MODE_2_FORM_2 = 0b101,
-		RESERVED_6  = 0b110,
-		RESERVED_7 = 0b111
-	};
-
-	static_assert(sizeof(ReadCD12ExpectedSectorType) == 1);
-
-	enum class ReadCD12HeaderCodes: ui08_t {
-		NONE = 0b00,
-		HEADER_ONLY = 0b01,
-		SUBHEADER_ONLY  = 0b10,
-		ALL_HEADERS = 0b11
-	};
-
-	static_assert(sizeof(ReadCD12HeaderCodes) == 1);
-
-	enum class ReadCD12Errors: ui08_t {
-		NONE = 0b00,
-		C2_ERROR_BLOCK_DATA = 0b01,
-		C2_AND_BLOCK_ERROR_BITS  = 0b10,
-		RESERVED_3 = 0b11
-	};
-
-	static_assert(sizeof(ReadCD12Errors) == 1);
-
-	enum class ReadCD12SubchanelBits: ui08_t {
-		NONE = 0b000,
-		RAW = 0b001,
-		Q  = 0b010,
-		RESERVED_3 = 0b011,
-		P_TO_W = 0b100,
-		RESERVED_5 = 0b101,
-		RESERVED_6 = 0b110,
-		RESERVED_7 = 0b111
-	};
-
-	static_assert(sizeof(ReadCD12SubchanelBits) == 1);
-
 	struct ReadCD12 {
 		ui08_t operation_code = 0xBE;
 		ui08_t real_adr: 1;
 		ui08_t : 1;
-		ReadCD12ExpectedSectorType expected_sector_type: 3;
+		ReadCD12ExpectedSectorType::type expected_sector_type: 3;
 		ui08_t : 3;
 		ui32_t lba_be;
 		ui08_t transfer_length_be[3];
 		ui08_t : 1;
-		ReadCD12Errors errors: 2;
+		ReadCD12Errors::type errors: 2;
 		ui08_t edc_and_ecc: 1;
 		ui08_t user_data: 1;
-		ReadCD12HeaderCodes header_codes: 2;
+		ReadCD12HeaderCodes::type header_codes: 2;
 		ui08_t sync: 1;
-		ReadCD12SubchanelBits subchannel_selection_bits: 3;
+		ReadCD12SubchanelBits::type subchannel_selection_bits: 3;
 		ui08_t : 5;
 		ui08_t control;
 	};
@@ -584,18 +593,18 @@ namespace cdb {
 	struct ReadCDMSF12 {
 		ui08_t operation_code = 0xB9;
 		ui08_t : 2;
-		ReadCD12ExpectedSectorType expected_sector_type: 3;
+		ReadCD12ExpectedSectorType::type expected_sector_type: 3;
 		ui08_t : 3;
 		ui08_t : 8;
 		cd::SectorAddress start_address;
 		cd::SectorAddress end_address_exclusive;
 		ui08_t : 1;
-		ReadCD12Errors errors: 2;
+		ReadCD12Errors::type errors: 2;
 		ui08_t edc_and_ecc: 1;
 		ui08_t user_data: 1;
-		ReadCD12HeaderCodes header_codes: 2;
+		ReadCD12HeaderCodes::type header_codes: 2;
 		ui08_t sync: 1;
-		ReadCD12SubchanelBits subchannel_selection_bits: 3;
+		ReadCD12SubchanelBits::type subchannel_selection_bits: 3;
 		ui08_t : 5;
 		ui08_t control;
 	};
@@ -643,7 +652,7 @@ namespace cdb {
 
 	auto get_session_type(
 		const ReadTOCResponseFullTOC& toc
-	) -> SessionType;
+	) -> SessionType::type;
 
 	auto validate_session_info_toc(
 		const ReadTOCResponseSessionInfoTOC& toc

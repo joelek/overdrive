@@ -16,6 +16,16 @@ namespace iso9660 {
 	const auto PARENT_DIRECTORY_IDENTIFIER = std::string("\1", 1);
 	const auto USER_DATA_SIZE = size_t(2048);
 
+	namespace VolumeDescriptorType {
+		using type = ui08_t;
+
+		const auto BOOT_RECORD = type(0x00);
+		const auto PRIMARY_VOLUME_DESCRIPTOR = type(0x01);
+		const auto SUPPLEMENTARY_VOLUME_DESCRIPTOR = type(0x02);
+		const auto VOLUME_PARTITION_DESCRIPTOR = type(0x03);
+		const auto VOLUME_DESCRIPTOR_SET_TERMINATOR = type(0xFF);
+	}
+
 	#pragma pack(push, 1)
 
 	struct DirectoryEntryTimestamp {
@@ -74,18 +84,8 @@ namespace iso9660 {
 
 	static_assert(sizeof(PrimaryVolumeDescriptorTimestamp) == 17);
 
-	enum class VolumeDescriptorType: ui08_t {
-		BOOT_RECORD = 0,
-		PRIMARY_VOLUME_DESCRIPTOR = 1,
-		SUPPLEMENTARY_VOLUME_DESCRIPTOR = 2,
-		VOLUME_PARTITION_DESCRIPTOR = 3,
-		VOLUME_DESCRIPTOR_SET_TERMINATOR = 255
-	};
-
-	static_assert(sizeof(VolumeDescriptorType) == 1);
-
 	struct VolumeDescriptorHeader {
-		VolumeDescriptorType type;
+		VolumeDescriptorType::type type;
 		ch08_t identifier[5] = { 'C', 'D', '0', '0', '1' };
 		ui08_t version = 1;
 	};

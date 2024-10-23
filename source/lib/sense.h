@@ -6,43 +6,43 @@ namespace overdrive {
 namespace sense {
 	using namespace shared;
 
+	namespace SenseKey {
+		using type = ui08_t;
+
+		const auto NO_SENSE = type(0x0);
+		const auto RECOVERED_ERROR = type(0x1);
+		const auto NOT_READY = type(0x2);
+		const auto MEDIUM_ERROR = type(0x3);
+		const auto HARDWARE_ERROR = type(0x4);
+		const auto ILLEGAL_REQUEST = type(0x5);
+		const auto UNIT_ATTENTION = type(0x6);
+		const auto DATA_PROTECT = type(0x7);
+		const auto BLANK_CHECK = type(0x8);
+		const auto VENDOR_SPECIFIC = type(0x9);
+		const auto COPY_ABORTED = type(0xA);
+		const auto ABORTED_COMMAND = type(0xB);
+		const auto OBSOLETE_C = type(0xC);
+		const auto VOLUME_OVERFLOW = type(0xD);
+		const auto MISCOMPARE = type(0xE);
+		const auto RESERVED_F = type(0xF);
+	}
+
+	namespace ResponseCodes {
+		using type = ui08_t;
+
+		const auto FIXED_CURRENT = type(0x70);
+		const auto FIXED_DEFERRED = type(0x71);
+		const auto DESCRIPTOR_CURRENT = type(0x72);
+		const auto DESCRIPTOR_DEFERRED = type(0x73);
+	}
+
 	#pragma pack(push, 1)
 
-	enum class SenseKey: ui08_t {
-		NO_SENSE = 0x0,
-		RECOVERED_ERROR = 0x1,
-		NOT_READY = 0x2,
-		MEDIUM_ERROR = 0x3,
-		HARDWARE_ERROR = 0x4,
-		ILLEGAL_REQUEST = 0x5,
-		UNIT_ATTENTION = 0x6,
-		DATA_PROTECT = 0x7,
-		BLANK_CHECK = 0x8,
-		VENDOR_SPECIFIC = 0x9,
-		COPY_ABORTED = 0xA,
-		ABORTED_COMMAND = 0xB,
-		OBSOLETE_C = 0xC,
-		VOLUME_OVERFLOW = 0xD,
-		MISCOMPARE = 0xE,
-		RESERVED_F = 0xF
-	};
-
-	static_assert(sizeof(SenseKey) == 1);
-
-	enum class ResponseCodes: ui08_t {
-		FIXED_CURRENT = 0x70,
-		FIXED_DEFERRED = 0x71,
-		DESCRIPTOR_CURRENT = 0x72,
-		DESCRIPTOR_DEFERRED = 0x73
-	};
-
-	static_assert(sizeof(ResponseCodes) == 1);
-
 	struct FixedFormat {
-		ResponseCodes response_code: 7;
+		ResponseCodes::type response_code: 7;
 		ui08_t valid: 1;
 		ui08_t : 8;
-		SenseKey sense_key: 4;
+		SenseKey::type sense_key: 4;
 		ui08_t : 1;
 		ui08_t ili: 1;
 		ui08_t eom: 1;

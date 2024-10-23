@@ -36,6 +36,36 @@ namespace cd {
 	const auto MIN_SECTOR = si_t(0 - LEAD_IN_LENGTH);
 	const auto MAX_SECTOR = si_t(ADDRESSABLE_SECTOR_COUNT - 1 - LEAD_IN_LENGTH);
 
+	namespace TrackCategory {
+		using type = ui08_t;
+
+		const auto AUDIO_2_CHANNELS = type(0x00);
+		const auto DATA = type(0x01);
+		const auto AUDIO_4_CHANNELS = type(0x02);
+		const auto RESERVED = type(0x03);
+	}
+
+	namespace Control {
+		using type = ui08_t;
+
+		const auto AUDIO_2_CHANNELS_COPY_PROTECTED = type(0b0000);
+		const auto AUDIO_2_CHANNELS_COPY_PROTECTED_WITH_PRE_EMPHASIS = type(0b0001);
+		const auto AUDIO_2_CHANNELS_COPY_PERMITTED = type(0b0010);
+		const auto AUDIO_2_CHANNELS_COPY_PERMITTED_WITH_PRE_EMPHASIS = type(0b0011);
+		const auto DATA_COPY_PROTECTED_RECORDED_UINTERRUPTED = type(0b0100);
+		const auto DATA_COPY_PROTECTED_RECORDED_INCREMENTALLY = type(0b0101);
+		const auto DATA_COPY_PERMITTED_RECORDED_UINTERRUPTED = type(0b0110);
+		const auto DATA_COPY_PERMITTED_RECORDED_INCREMENTALLY = type(0b0111);
+		const auto AUDIO_4_CHANNELS_COPY_PROTECTED = type(0b1000);
+		const auto AUDIO_4_CHANNELS_COPY_PROTECTED_WITH_PRE_EMPHASIS = type(0b1001);
+		const auto AUDIO_4_CHANNELS_COPY_PERMITTED = type(0b1010);
+		const auto AUDIO_4_CHANNELS_COPY_PERMITTED_WITH_PRE_EMPHASIS = type(0b1011);
+		const auto RESERVED_1100 = type(0b1100);
+		const auto RESERVED_1101 = type(0b1101);
+		const auto RESERVED_1110 = type(0b1110);
+		const auto RESERVED_1111 = type(0b1111);
+	}
+
 	#pragma pack(push, 1)
 
 	struct SectorAddress {
@@ -51,36 +81,6 @@ namespace cd {
 	};
 
 	static_assert(sizeof(Subchannels) == SUBCHANNELS_LENGTH);
-
-	enum class TrackCategory: ui08_t {
-		AUDIO_2_CHANNELS,
-		DATA,
-		AUDIO_4_CHANNELS,
-		RESERVED,
-	};
-
-	static_assert(sizeof(TrackCategory) == 1);
-
-	enum class Control: ui08_t {
-		AUDIO_2_CHANNELS_COPY_PROTECTED = 0b0000,
-		AUDIO_2_CHANNELS_COPY_PROTECTED_WITH_PRE_EMPHASIS = 0b0001,
-		AUDIO_2_CHANNELS_COPY_PERMITTED = 0b0010,
-		AUDIO_2_CHANNELS_COPY_PERMITTED_WITH_PRE_EMPHASIS = 0b0011,
-		DATA_COPY_PROTECTED_RECORDED_UINTERRUPTED = 0b0100,
-		DATA_COPY_PROTECTED_RECORDED_INCREMENTALLY = 0b0101,
-		DATA_COPY_PERMITTED_RECORDED_UINTERRUPTED = 0b0110,
-		DATA_COPY_PERMITTED_RECORDED_INCREMENTALLY = 0b0111,
-		AUDIO_4_CHANNELS_COPY_PROTECTED = 0b1000,
-		AUDIO_4_CHANNELS_COPY_PROTECTED_WITH_PRE_EMPHASIS = 0b1001,
-		AUDIO_4_CHANNELS_COPY_PERMITTED = 0b1010,
-		AUDIO_4_CHANNELS_COPY_PERMITTED_WITH_PRE_EMPHASIS = 0b1011,
-		RESERVED_1100 = 0b1100,
-		RESERVED_1101 = 0b1101,
-		RESERVED_1110 = 0b1110,
-		RESERVED_1111 = 0b1111
-	};
-
-	static_assert(sizeof(Control) == 1);
 
 	struct SubchannelQMode1Data {
 		ui08_t track_number;
@@ -135,7 +135,7 @@ namespace cd {
 
 	struct SubchannelQ {
 		ui08_t adr: 4;
-		Control control: 4;
+		Control::type control: 4;
 		union {
 			SubchannelQMode1Data mode1;
 			SubchannelQMode2Data mode2;
@@ -170,14 +170,14 @@ namespace cd {
 
 	auto get_track_category(
 		ui_t control
-	) -> TrackCategory;
+	) -> TrackCategory::type;
 
 	auto is_audio_category(
-		TrackCategory category
+		TrackCategory::type category
 	) -> bool_t;
 
 	auto is_data_category(
-		TrackCategory category
+		TrackCategory::type category
 	) -> bool_t;
 }
 }

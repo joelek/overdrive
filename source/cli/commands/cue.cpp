@@ -122,7 +122,7 @@ namespace commands {
 		}
 
 		auto get_track_tag(
-			disc::TrackType type,
+			disc::TrackType::type type,
 			bool_t trim_data_tracks
 		) -> std::string {
 			if (type == disc::TrackType::AUDIO_2_CHANNELS) {

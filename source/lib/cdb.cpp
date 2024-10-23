@@ -1,19 +1,52 @@
 #include "cdb.h"
 
+#include <map>
 #include "byteswap.h"
 #include "exceptions.h"
 
 namespace overdrive {
 namespace cdb {
+	auto SessionType::name(
+		type value
+	) -> const std::string& {
+		static const auto names = std::map<type, std::string>({
+			{ CDDA_OR_CDROM, "CDDA_OR_CDROM" },
+			{ CDI, "CDI" },
+			{ CDXA_OR_DDCD, "CDXA_OR_DDCD" }
+		});
+		static const auto fallback = std::string("???");
+		auto iterator = names.find(value);
+		if (iterator == names.end()) {
+			return fallback;
+		}
+		return iterator->second;
+	}
+
+	auto SensePage::name(
+		type value
+	) -> const std::string& {
+		static const auto names = std::map<type, std::string>({
+			{ CACHING_MODE_PAGE, "CACHING_MODE_PAGE" },
+			{ CAPABILITIES_AND_MECHANICAL_STATUS_PAGE, "CAPABILITIES_AND_MECHANICAL_STATUS_PAGE" },
+			{ READ_WRITE_ERROR_RECOVERY_MODE_PAGE, "READ_WRITE_ERROR_RECOVERY_MODE_PAGE" }
+		});
+		static const auto fallback = std::string("???");
+		auto iterator = names.find(value);
+		if (iterator == names.end()) {
+			return fallback;
+		}
+		return iterator->second;
+	}
+
 	auto get_session_type(
 		const ReadTOCResponseFullTOC& toc
-	) -> SessionType {
+	) -> SessionType::type {
 		auto toc_length = byteswap::byteswap16_on_little_endian_systems(toc.header.data_length_be);
 		auto track_count = (toc_length - sizeof(toc.header.data_length_be)) / sizeof(ReadTOCResponseFullTOCEntry);
 		for (auto track_index = size_t(0); track_index < track_count; track_index += 1) {
 			auto& track = toc.entries[track_index];
 			if (track.adr == 1 && track.point == size_t(ReadTOCResponseFullTOCPoint::FIRST_TRACK_IN_SESSION)) {
-				return static_cast<SessionType>(track.paddress.s);
+				return track.paddress.s;
 			}
 		}
 		OVERDRIVE_THROW(exceptions::MissingValueException("first track point"));

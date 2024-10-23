@@ -9,7 +9,6 @@
 #include "byteswap.h"
 #include "cdrom.h"
 #include "cdxa.h"
-#include "enums.h"
 #include "exceptions.h"
 #include "iso9660.h"
 #include "scsi.h"
@@ -80,7 +79,7 @@ namespace drive {
 	auto Drive::determine_track_type(
 		const cdb::ReadTOCResponseFullTOC& toc,
 		ui_t track_index
-	) const -> disc::TrackType {
+	) const -> disc::TrackType::type {
 		auto& track = toc.entries[track_index];
 		auto category = cd::get_track_category(track.control);
 		if (category == cd::TrackCategory::AUDIO_2_CHANNELS) {
@@ -132,7 +131,7 @@ namespace drive {
 		cdb.format = cdb::ReadTOCFormat::NORMAL_TOC;
 		cdb.time = 1;
 		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), nullptr, false);
-		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+		if (status != scsi::StatusCode::GOOD) {
 			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
 		return data;
@@ -146,7 +145,7 @@ namespace drive {
 		cdb.format = cdb::ReadTOCFormat::SESSION_INFO;
 		cdb.time = 1;
 		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), nullptr, false);
-		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+		if (status != scsi::StatusCode::GOOD) {
 			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
 		return data;
@@ -160,7 +159,7 @@ namespace drive {
 		cdb.format = cdb::ReadTOCFormat::FULL_TOC;
 		cdb.time = 1;
 		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), nullptr, false);
-		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+		if (status != scsi::StatusCode::GOOD) {
 			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
 		return data;
@@ -174,7 +173,7 @@ namespace drive {
 		cdb.format = cdb::ReadTOCFormat::PMA;
 		cdb.time = 1;
 		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), nullptr, false);
-		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+		if (status != scsi::StatusCode::GOOD) {
 			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
 		return data;
@@ -188,7 +187,7 @@ namespace drive {
 		cdb.format = cdb::ReadTOCFormat::ATIP;
 		cdb.time = 1;
 		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), nullptr, false);
-		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+		if (status != scsi::StatusCode::GOOD) {
 			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
 		return data;
@@ -202,7 +201,7 @@ namespace drive {
 		cdb.page_code = cdb::SensePage::READ_WRITE_ERROR_RECOVERY_MODE_PAGE;
 		cdb.allocation_length_be = byteswap::byteswap16_on_little_endian_systems(sizeof(data));
 		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), nullptr, false);
-		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+		if (status != scsi::StatusCode::GOOD) {
 			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
 		return data.page;
@@ -219,7 +218,7 @@ namespace drive {
 		data.header.mode_data_length_be = sizeof(data) - sizeof(data.header.mode_data_length_be);
 		data.page = page;
 		auto status = this->ioctl(handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), nullptr, true);
-		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+		if (status != scsi::StatusCode::GOOD) {
 			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
 	}
@@ -232,7 +231,7 @@ namespace drive {
 		cdb.page_code = cdb::SensePage::CACHING_MODE_PAGE;
 		cdb.allocation_length_be = byteswap::byteswap16_on_little_endian_systems(sizeof(data));
 		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), nullptr, false);
-		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+		if (status != scsi::StatusCode::GOOD) {
 			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
 		return data.page;
@@ -249,7 +248,7 @@ namespace drive {
 		data.header.mode_data_length_be = sizeof(data) - sizeof(data.header.mode_data_length_be);
 		data.page = page;
 		auto status = this->ioctl(handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), nullptr, true);
-		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+		if (status != scsi::StatusCode::GOOD) {
 			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
 	}
@@ -262,7 +261,7 @@ namespace drive {
 		cdb.page_code = cdb::SensePage::CAPABILITIES_AND_MECHANICAL_STATUS_PAGE;
 		cdb.allocation_length_be = byteswap::byteswap16_on_little_endian_systems(sizeof(data));
 		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), nullptr, false);
-		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+		if (status != scsi::StatusCode::GOOD) {
 			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
 		return data.page;
@@ -274,14 +273,14 @@ namespace drive {
 		auto data = cdb::StandardInquiryResponse();
 		cdb.allocation_length_be = byteswap::byteswap16_on_little_endian_systems(sizeof(data));
 		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), nullptr, false);
-		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+		if (status != scsi::StatusCode::GOOD) {
 			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
 		return data;
 	}
 
 	auto Drive::read_all_pages(
-	) const -> std::map<cdb::SensePage, std::vector<byte_t>> {
+	) const -> std::map<cdb::SensePage::type, std::vector<byte_t>> {
 		return this->read_all_pages_with_control(cdb::ModeSensePageControl::CURRENT_VALUES);
 	}
 
@@ -289,7 +288,7 @@ namespace drive {
 	) const -> bool_t {
 		auto cdb = cdb::TestUnitReady6();
 		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), nullptr, 0, nullptr, false);
-		return status == byte_t(scsi::StatusCode::GOOD);
+		return status == scsi::StatusCode::GOOD;
 	}
 
 	auto Drive::read_absolute_sector(
@@ -311,10 +310,10 @@ namespace drive {
 		array<255, byte_t> sense;
 		auto buffer = std::array<byte_t, cdb::READ_CD_LENGTH>();
 		auto status = this->ioctl(handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(buffer.data()), sizeof(buffer), &sense, false);
-		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+		if (status != scsi::StatusCode::GOOD) {
 			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
-		if (sense[0] == (byte_t)sense::ResponseCodes::FIXED_CURRENT) {
+		if (sense[0] == sense::ResponseCodes::FIXED_CURRENT) {
 			auto& fixed_format = *reinterpret_cast<sense::FixedFormat*>(&sense);
 			fprintf(stderr, "%s\n", std::format("Sense info 0x:{:0>2X} 0x:{:0>2X} 0x:{:0>2X}!", static_cast<ui08_t>(fixed_format.sense_key), static_cast<ui08_t>(fixed_format.additional_sense_code), static_cast<ui08_t>(fixed_format.additional_sense_code_qualifier)).c_str());
 		}
@@ -468,22 +467,22 @@ namespace drive {
 	}
 
 	auto Drive::read_all_pages_with_control(
-		cdb::ModeSensePageControl page_control
-	) const -> std::map<cdb::SensePage, std::vector<byte_t>> {
+		cdb::ModeSensePageControl::type page_control
+	) const -> std::map<cdb::SensePage::type, std::vector<byte_t>> {
 		auto cdb = cdb::ModeSense10();
 		auto data = std::vector<byte_t>(65535);
 		cdb.page_control = page_control;
 		cdb.page_code = cdb::SensePage::ALL_PAGES;
 		cdb.allocation_length_be = byteswap::byteswap16_on_little_endian_systems(65535);
 		auto status = this->ioctl(this->handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(data.data()), 65535, nullptr, false);
-		if (scsi::StatusCode(status) != scsi::StatusCode::GOOD) {
+		if (status != scsi::StatusCode::GOOD) {
 			OVERDRIVE_THROW(exceptions::InvalidSCSIStatusException());
 		}
 		auto offset = size_t(0);
 		auto& header = *reinterpret_cast<cdb::ModeParameterHeader10*>(data.data() + offset);
 		offset += sizeof(cdb::ModeParameterHeader10);
 		auto length = sizeof(header.mode_data_length_be) + byteswap::byteswap16_on_little_endian_systems(header.mode_data_length_be);
-		auto map = std::map<cdb::SensePage, std::vector<byte_t>>();
+		auto map = std::map<cdb::SensePage::type, std::vector<byte_t>>();
 		while (offset < length) {
 			auto header_length = sizeof(cdb::ModePageHeader);
 			if (offset + header_length > length) {
@@ -494,7 +493,7 @@ namespace drive {
 			if (offset + total_page_length > length) {
 				OVERDRIVE_THROW(exceptions::MemoryReadException());
 			}
-			auto key = cdb::SensePage(header.page_code);
+			auto key = cdb::SensePage::type(header.page_code);
 			auto value = std::vector<byte_t>(total_page_length);
 			std::memcpy(value.data(), data.data() + offset, total_page_length);
 			map[key] = std::move(value);
@@ -504,7 +503,7 @@ namespace drive {
 	}
 
 	auto Drive::validate_page_read(
-		cdb::SensePage page,
+		cdb::SensePage::type page,
 		size_t page_size
 	) const -> void {
 		if (!this->page_masks.contains(page)) {
@@ -512,12 +511,12 @@ namespace drive {
 		}
 		auto& page_mask = this->page_masks.at(page);
 		if (page_mask.size() < page_size) {
-			OVERDRIVE_THROW(exceptions::InvalidSCSIModePageSizeException(enums::SensePage(page), page_size, page_mask.size()));
+			OVERDRIVE_THROW(exceptions::InvalidSCSIModePageSizeException(cdb::SensePage::name(page), page_size, page_mask.size()));
 		}
 	}
 
 	auto Drive::validate_page_write(
-		cdb::SensePage page,
+		cdb::SensePage::type page,
 		size_t page_size,
 		const byte_t* page_pointer
 	) const -> void {
@@ -526,7 +525,7 @@ namespace drive {
 		}
 		auto& page_mask = this->page_masks.at(page);
 		if (page_mask.size() < page_size) {
-			OVERDRIVE_THROW(exceptions::InvalidSCSIModePageSizeException(enums::SensePage(page), page_size, page_mask.size()));
+			OVERDRIVE_THROW(exceptions::InvalidSCSIModePageSizeException(cdb::SensePage::name(page), page_size, page_mask.size()));
 		}
 		for (auto byte_index = size_t(0); byte_index < page_mask.size(); byte_index += 1) {
 			auto mask = page_mask[byte_index];

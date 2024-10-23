@@ -82,7 +82,7 @@ namespace cd {
 
 	auto get_track_category(
 		ui_t control
-	) -> TrackCategory {
+	) -> TrackCategory::type {
 		auto category = (control >> 2) & 0b11;
 		if (category == 0b00) {
 			return TrackCategory::AUDIO_2_CHANNELS;
@@ -100,7 +100,7 @@ namespace cd {
 	}
 
 	auto is_audio_category(
-		TrackCategory category
+		TrackCategory::type category
 	) -> bool_t {
 		if (category == TrackCategory::AUDIO_2_CHANNELS) {
 			return true;
@@ -118,7 +118,7 @@ namespace cd {
 	}
 
 	auto is_data_category(
-		TrackCategory category
+		TrackCategory::type category
 	) -> bool_t {
 		if (category == TrackCategory::AUDIO_2_CHANNELS) {
 			return false;

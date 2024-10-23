@@ -16,7 +16,6 @@
 #include "disc.h"
 #include "drive.h"
 #include "endian.h"
-#include "enums.h"
 #include "exceptions.h"
 #include "idiv.h"
 #include "iso9660.h"

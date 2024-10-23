@@ -6,21 +6,17 @@ namespace overdrive {
 namespace scsi {
 	using namespace shared;
 
-	#pragma pack(push, 1)
+	namespace StatusCode {
+		using type = ui08_t;
 
-	enum class StatusCode: ui08_t {
-		GOOD = 0x00,
-		CHECK_CONDITION = 0x02,
-		CONDITION_MET = 0x04,
-		BUSY = 0x08,
-		RESERVATION_CONFLICT = 0x18,
-		TASK_SET_FULL = 0x28,
-		ACA_ACTIVE = 0x30,
-		TASK_ABORTED = 0x40
-	};
-
-	static_assert(sizeof(StatusCode) == 1);
-
-	#pragma pack(pop)
+		const auto GOOD = type(0x00);
+		const auto CHECK_CONDITION = type(0x02);
+		const auto CONDITION_MET = type(0x04);
+		const auto BUSY = type(0x08);
+		const auto RESERVATION_CONFLICT = type(0x18);
+		const auto TASK_SET_FULL = type(0x28);
+		const auto ACA_ACTIVE = type(0x30);
+		const auto TASK_ABORTED = type(0x40);
+	}
 }
 }

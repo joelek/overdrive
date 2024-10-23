@@ -11,15 +11,21 @@ namespace overdrive {
 namespace disc {
 	using namespace shared;
 
-	enum class TrackType {
-		AUDIO_2_CHANNELS,
-		AUDIO_4_CHANNELS,
-		DATA_MODE0,
-		DATA_MODE1,
-		DATA_MODE2,
-		DATA_MODE2_FORM1,
-		DATA_MODE2_FORM2
-	};
+	namespace TrackType {
+		using type = ui08_t;
+
+		const auto AUDIO_2_CHANNELS = type(0x00);
+		const auto AUDIO_4_CHANNELS = type(0x01);
+		const auto DATA_MODE0 = type(0x02);
+		const auto DATA_MODE1 = type(0x03);
+		const auto DATA_MODE2 = type(0x04);
+		const auto DATA_MODE2_FORM1 = type(0x05);
+		const auto DATA_MODE2_FORM2 = type(0x06);
+
+		auto name(
+			type value
+		) -> const std::string&;
+	}
 
 	class DriveInfo {
 		public:
@@ -44,7 +50,7 @@ namespace disc {
 		public:
 
 		size_t number;
-		TrackType type;
+		TrackType::type type;
 		size_t first_sector_absolute;
 		size_t last_sector_absolute;
 		size_t length_sectors;
@@ -70,7 +76,7 @@ namespace disc {
 		public:
 
 		size_t number;
-		cdb::SessionType type;
+		cdb::SessionType::type type;
 		std::vector<TrackInfo> tracks;
 		std::vector<PointInfo> points;
 		size_t lead_in_length_sectors;
@@ -97,19 +103,19 @@ namespace disc {
 	};
 
 	auto is_audio_track(
-		TrackType type
+		TrackType::type type
 	) -> bool_t;
 
 	auto is_data_track(
-		TrackType type
+		TrackType::type type
 	) -> bool_t;
 
 	auto get_user_data_offset(
-		TrackType type
+		TrackType::type type
 	) -> size_t;
 
 	auto get_user_data_length(
-		TrackType type
+		TrackType::type type
 	) -> size_t;
 
 	auto truncate_disc(
