@@ -77,7 +77,9 @@ The [AccurateRip drive database](https://www.accuraterip.com/driveoffsets.htm) p
 * Optimize commands to not store 150 sectors of silence between data and audio tracks on mixed-mode CD-ROMs.
 * Change all enums to namespaces.
 * Document utility.
+* Document ODI format.
 * Add compression to ODI format.
+* Consider 64 bit offsets in ODI format.
 
 ## References
 
