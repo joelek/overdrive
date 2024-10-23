@@ -20,47 +20,47 @@ if [ $1 = "release" ]; then
 fi
 
 SOURCES=(
-	"cli/commands/cue"
-	"cli/commands/iso"
-	"cli/commands/mds"
-	"cli/commands/odi"
-	"lib/accuraterip"
-	"lib/app"
-	"lib/bcd"
-	"lib/byteswap"
-	"lib/cd"
-	"lib/cdb"
-	"lib/cdda"
-	"lib/cdrom"
-	"lib/cdxa"
-	"lib/command"
-	"lib/copier"
-	"lib/crc"
-	"lib/detail"
-	"lib/disc"
-	"lib/drive"
-	"lib/endian"
-	"lib/exceptions"
-	"lib/idiv"
-	"lib/iso9660"
-	"lib/mds"
-	"lib/memory"
-	"lib/odi"
-	"lib/options"
-	"lib/overdrive"
-	"lib/path"
-	"lib/parser"
-	"lib/scsi"
-	"lib/sense"
-	"lib/shared"
-	"lib/string"
-	"lib/time"
-	"lib/vector"
-	"lib/wav"
+	"cli/commands/cue.cpp"
+	"cli/commands/iso.cpp"
+	"cli/commands/mds.cpp"
+	"cli/commands/odi.cpp"
+	"lib/accuraterip.cpp"
+	"lib/app.cpp"
+	"lib/bcd.cpp"
+	"lib/byteswap.cpp"
+	"lib/cd.cpp"
+	"lib/cdb.cpp"
+	"lib/cdda.cpp"
+	"lib/cdrom.cpp"
+	"lib/cdxa.cpp"
+	"lib/command.cpp"
+	"lib/copier.cpp"
+	"lib/crc.cpp"
+	"lib/detail.cpp"
+	"lib/disc.cpp"
+	"lib/drive.cpp"
+	"lib/endian.cpp"
+	"lib/exceptions.cpp"
+	"lib/idiv.cpp"
+	"lib/iso9660.cpp"
+	"lib/mds.cpp"
+	"lib/memory.cpp"
+	"lib/odi.cpp"
+	"lib/options.cpp"
+	"lib/overdrive.cpp"
+	"lib/path.cpp"
+	"lib/parser.cpp"
+	"lib/scsi.cpp"
+	"lib/sense.cpp"
+	"lib/shared.cpp"
+	"lib/string.cpp"
+	"lib/time.cpp"
+	"lib/vector.cpp"
+	"lib/wav.cpp"
 )
 
 TARGETS=(
-	"cli/overdrive"
+	"cli/overdrive.cpp"
 )
 
 mkdir -p build/objects
@@ -78,9 +78,9 @@ done
 echo "[phase: sources]"
 
 for i in ${SOURCES[@]}; do
-	echo "[compiling: source/$i.cpp]"
+	echo "[compiling: source/$i]"
 	mkdir -p $(dirname "build/objects/$i.o")
-	gcc $COMPILER_OPTIONS -c source/$i.cpp -o build/objects/$i.o
+	gcc $COMPILER_OPTIONS -c source/$i -o build/objects/$i.o
 	RETURN_CODE=$?
 	if [ $RETURN_CODE -gt 0 ]; then
 		echo "[failure]"
@@ -91,9 +91,9 @@ done
 echo "[phase: targets]"
 
 for i in ${TARGETS[@]}; do
-	echo "[compiling: source/$i.cpp]"
+	echo "[compiling: source/$i]"
 	mkdir -p $(dirname "build/targets/$i")
-	gcc $COMPILER_OPTIONS ${OBJECTS[@]} source/$i.cpp -o build/targets/$i -l stdc++
+	gcc $COMPILER_OPTIONS ${OBJECTS[@]} source/$i -o build/targets/${i%.*} -l stdc++
 	RETURN_CODE=$?
 	if [ $RETURN_CODE -gt 0 ]; then
 		echo "[failure]"
