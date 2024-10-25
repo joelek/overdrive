@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include "cd.h"
 #include "shared.h"
 
 namespace overdrive {
@@ -14,6 +15,7 @@ namespace odi {
 		using type = ui08_t;
 
 		const auto NONE = type(0x00);
+		const auto LOSSLESS_STEREO_AUDIO = type(0x01);
 
 		auto name(
 			type value
@@ -85,12 +87,17 @@ namespace odi {
 	static_assert(sizeof(PointTableEntry) == 16);
 
 	struct UncompressedSector {
-		byte_t sector_data[2352];
-		byte_t subchannels_data[96];
+		byte_t sector_data[cd::SECTOR_LENGTH];
+		byte_t subchannels_data[cd::SUBCHANNELS_LENGTH];
 	};
 
 	static_assert(sizeof(UncompressedSector) == 2448);
 
 	#pragma pack(pop)
+
+	auto compress_sector(
+		const array<cd::SECTOR_LENGTH, byte_t>& sector_data,
+		CompressionMethod::type compression_method
+	) -> size_t;
 }
 }
