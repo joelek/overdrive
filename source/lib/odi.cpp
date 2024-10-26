@@ -74,13 +74,19 @@ namespace odi {
 				auto& sample = stereo_sector.samples[sample_index];
 				decorrelate_spatially(sample);
 			}
-			auto& previous_sample = stereo_sector.samples[0];
-			for (auto sample_index = size_t(1); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
+			for (auto sample_index = cdda::STEREO_SAMPLES_PER_SECTOR - 1; sample_index > 0; sample_index -= 1) {
+				auto& previous_sample = stereo_sector.samples[sample_index - 1];
 				auto& sample = stereo_sector.samples[sample_index];
 				decorrelate_temporally(previous_sample, sample);
-				previous_sample = sample;
 			}
 			// TODO: Entropy code.
+		}
+
+		auto decompress_sector_lossless_stereo_audio(
+			array<2352, byte_t>& sector_data,
+			size_t compressed_byte_count
+		) -> void {
+			// TODO
 		}
 	}
 	}
@@ -94,6 +100,20 @@ namespace odi {
 		}
 		if (compression_method == CompressionMethod::LOSSLESS_STEREO_AUDIO) {
 			return internal::compress_sector_lossless_stereo_audio(sector_data);
+		}
+		OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
+	}
+
+	auto decompress_sector(
+		array<2352, byte_t>& sector_data,
+		size_t compressed_byte_count,
+		CompressionMethod::type compression_method
+	) -> void {
+		if (compression_method == CompressionMethod::NONE) {
+			return;
+		}
+		if (compression_method == CompressionMethod::LOSSLESS_STEREO_AUDIO) {
+			return internal::decompress_sector_lossless_stereo_audio(sector_data, compressed_byte_count);
 		}
 		OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
 	}
