@@ -38,24 +38,32 @@ namespace odi {
 
 	namespace internal {
 	namespace {
-		auto encode_xy_channels(
-			si16_t l,
-			si16_t r,
-			si16_t& x,
-			si16_t& y
+		auto decorrelate_spatially(
+			cdda::StereoSample& sample
 		) -> void {
-			x = l;
-			y = r - l;
+			sample.r = sample.r - sample.l;
 		}
 
-		auto decode_xy_channels(
-			si16_t& l,
-			si16_t& r,
-			si16_t x,
-			si16_t y
+		auto recorrelate_spatially(
+			cdda::StereoSample& sample
 		) -> void {
-			l = x;
-			r = x + y;
+			sample.r = sample.r + sample.l;
+		}
+
+		auto decorrelate_temporally(
+			const cdda::StereoSample& previous_sample,
+			cdda::StereoSample& sample
+		) -> void {
+			sample.r = sample.r - previous_sample.r;
+			sample.l = sample.l - previous_sample.l;
+		}
+
+		auto recorrelate_temporally(
+			const cdda::StereoSample& previous_sample,
+			cdda::StereoSample& sample
+		) -> void {
+			sample.r = sample.r + previous_sample.r;
+			sample.l = sample.l + previous_sample.l;
 		}
 
 		auto compress_sector_lossless_stereo_audio(
@@ -64,14 +72,15 @@ namespace odi {
 			auto& stereo_sector = *reinterpret_cast<cdda::StereoSector*>(sector_data);
 			for (auto sample_index = size_t(0); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
 				auto& sample = stereo_sector.samples[sample_index];
-				auto l = sample[0];
-				auto r = sample[1];
-				auto x = si16_t();
-				auto y = si16_t();
-				encode_xy_channels(l, r, x, y);
-				// TODO: Compute channel-wise temporal delta.
-				// TODO: Entropy code.
+				decorrelate_spatially(sample);
 			}
+			auto& previous_sample = stereo_sector.samples[0];
+			for (auto sample_index = size_t(1); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
+				auto& sample = stereo_sector.samples[sample_index];
+				decorrelate_temporally(previous_sample, sample);
+				previous_sample = sample;
+			}
+			// TODO: Entropy code.
 		}
 	}
 	}

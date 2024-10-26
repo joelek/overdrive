@@ -16,8 +16,15 @@ namespace cdda {
 
 	#pragma pack(push, 1)
 
+	struct StereoSample {
+		si16_t l;
+		si16_t r;
+	};
+
+	static_assert(sizeof(StereoSample) == 4);
+
 	struct StereoSector {
-		si16_t samples[STEREO_SAMPLES_PER_SECTOR][STEREO_CHANNELS];
+		StereoSample samples[STEREO_SAMPLES_PER_SECTOR];
 	};
 
 	static_assert(sizeof(StereoSector) == 2352);
