@@ -9,6 +9,7 @@ namespace cdda {
 
 	const auto SECTOR_LENGTH = size_t(cd::SECTOR_LENGTH);
 	const auto FRAME_LENGTH = size_t(cd::PACKET_DATA_LENGTH);
+	const auto SAMPLES_PER_SECTOR = size_t(SECTOR_LENGTH / sizeof(si16_t));
 	const auto STEREO_CHANNELS = size_t(2);
 	const auto STEREO_SAMPLE_LENGTH = size_t(STEREO_CHANNELS * sizeof(si16_t));
 	const auto STEREO_SAMPLES_PER_SECTOR = size_t(SECTOR_LENGTH / STEREO_SAMPLE_LENGTH);

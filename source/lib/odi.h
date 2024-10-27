@@ -39,7 +39,7 @@ namespace odi {
 		ch08_t identifier[16] = "OVERDRIVE IMAGE";
 		ui08_t major_version = MAJOR_VERSION;
 		ui08_t minor_version = MINOR_VERSION;
-		ui16_t header_length;
+		ui16_t header_length = sizeof(FileHeader);
 		ui32_t sector_table_header_absolute_offset;
 		ui32_t point_table_header_absolute_offset;
 		ui08_t : 8;
@@ -53,7 +53,7 @@ namespace odi {
 	struct SectorTableHeader {
 		ui32_t entry_count;
 		ui16_t entry_length;
-		ui16_t header_length;
+		ui16_t header_length = sizeof(SectorTableHeader);
 	};
 
 	static_assert(sizeof(SectorTableHeader) == 8);
@@ -70,7 +70,7 @@ namespace odi {
 	struct PointTableHeader {
 		ui32_t entry_count;
 		ui16_t entry_length;
-		ui16_t header_length;
+		ui16_t header_length = sizeof(PointTableHeader);
 	};
 
 	static_assert(sizeof(PointTableHeader) == 8);
