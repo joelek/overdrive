@@ -50,14 +50,26 @@ namespace odi {
 
 	static_assert(sizeof(FileHeader) == 32);
 
-	struct SectorTableEntry {
-		ui32_t compressed_data_absolute_offset;
+	struct CompressionHeader {
 		ui16_t compressed_byte_count;
 		CompressionMethod::type compression_method;
-		Readability::type readability;
 	};
 
-	static_assert(sizeof(SectorTableEntry) == 8);
+	static_assert(sizeof(CompressionHeader) == 3);
+
+	struct SectorTableEntry {
+		ui32_t compressed_data_absolute_offset;
+		CompressionHeader sector_data;
+		Readability::type readability;
+		CompressionHeader subchannels_data;
+		ui08_t : 8;
+		ui08_t : 8;
+		ui08_t : 8;
+		ui08_t : 8;
+		ui08_t : 8;
+	};
+
+	static_assert(sizeof(SectorTableEntry) == 16);
 
 	struct SectorTableHeader {
 		ui32_t entry_count;
