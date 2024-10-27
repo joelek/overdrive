@@ -41,9 +41,9 @@ namespace odi {
 		ui08_t minor_version = MINOR_VERSION;
 		ui16_t header_length = sizeof(FileHeader);
 		ui32_t sector_table_header_absolute_offset;
+		ui08_t : 8;
+		ui08_t : 8;
 		ui32_t point_table_header_absolute_offset;
-		ui08_t : 8;
-		ui08_t : 8;
 		ui08_t : 8;
 		ui08_t : 8;
 	};
@@ -59,11 +59,11 @@ namespace odi {
 
 	struct SectorTableEntry {
 		ui32_t compressed_data_absolute_offset;
-		CompressionHeader sector_data;
+		ui08_t : 8;
+		ui08_t : 8;
 		Readability::type readability;
+		CompressionHeader sector_data;
 		CompressionHeader subchannels_data;
-		ui08_t : 8;
-		ui08_t : 8;
 		ui08_t : 8;
 		ui08_t : 8;
 		ui08_t : 8;
