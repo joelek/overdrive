@@ -115,12 +115,12 @@ namespace odi {
 
 	#pragma pack(pop)
 
-	auto compress_sector(
+	auto compress_sector_data(
 		array<cd::SECTOR_LENGTH, byte_t>& sector_data,
 		CompressionMethod::type compression_method
 	) -> size_t;
 
-	auto decompress_sector(
+	auto decompress_sector_data(
 		array<cd::SECTOR_LENGTH, byte_t>& sector_data,
 		size_t compressed_byte_count,
 		CompressionMethod::type compression_method
