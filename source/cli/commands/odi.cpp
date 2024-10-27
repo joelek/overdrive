@@ -63,6 +63,26 @@ namespace commands {
 			return sector_table_entries;
 		}
 
+		auto compress_sector(
+			copier::ExtractedSector& extracted_sector,
+			disc::TrackType::type type
+		) -> odi::SectorTableEntry {
+			if (type == disc::TrackType::AUDIO_2_CHANNELS) {
+				try {
+					auto sector_table_entry = odi::SectorTableEntry();
+					sector_table_entry.compressed_byte_count = odi::compress_sector(extracted_sector.sector_data, odi::CompressionMethod::LOSSLESS_STEREO_AUDIO);
+					sector_table_entry.compression_method = odi::CompressionMethod::LOSSLESS_STEREO_AUDIO;
+					sector_table_entry.readability = extracted_sector.counter == 0 ? odi::Readability::UNREADABLE : odi::Readability::READABLE;
+					return sector_table_entry;
+				} catch (const exceptions::CompressionException& e) {}
+			}
+			auto sector_table_entry = odi::SectorTableEntry();
+			sector_table_entry.compressed_byte_count = sizeof(odi::UncompressedSector);
+			sector_table_entry.compression_method = odi::CompressionMethod::NONE;
+			sector_table_entry.readability = extracted_sector.counter == 0 ? odi::Readability::UNREADABLE : odi::Readability::READABLE;
+			return sector_table_entry;
+		}
+
 		auto write_odi(
 			const drive::Drive& drive,
 			const disc::DiscInfo& disc,
@@ -101,11 +121,9 @@ namespace commands {
 							auto& extracted_sectors = extracted_sectors_vector.at(sector_index);
 							auto& extracted_sector = extracted_sectors.at(0);
 							auto& sector_table_entry = track_sector_table_entries.at(sector_index);
+							sector_table_entry = compress_sector(extracted_sector, track.type);
 							sector_table_entry.compressed_data_absolute_offset = std::ftell(handle);
-							sector_table_entry.compressed_byte_count = sizeof(odi::UncompressedSector);
-							sector_table_entry.compression_method = odi::CompressionMethod::NONE;
-							sector_table_entry.readability = extracted_sector.counter == 0 ? odi::Readability::UNREADABLE : odi::Readability::READABLE;
-							if (std::fwrite(extracted_sector.sector_data, sizeof(extracted_sector.sector_data), 1, handle) != 1) {
+							if (std::fwrite(extracted_sector.sector_data, sector_table_entry.compressed_byte_count, 1, handle) != 1) {
 								OVERDRIVE_THROW(exceptions::IOWriteException(path));
 							}
 							if (std::fwrite(extracted_sector.subchannels_data, sizeof(extracted_sector.subchannels_data), 1, handle) != 1) {
