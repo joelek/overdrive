@@ -98,13 +98,6 @@ namespace odi {
 
 	static_assert(sizeof(PointTableHeader) == 8);
 
-	struct UncompressedSector {
-		byte_t sector_data[cd::SECTOR_LENGTH];
-		byte_t subchannels_data[cd::SUBCHANNELS_LENGTH];
-	};
-
-	static_assert(sizeof(UncompressedSector) == 2448);
-
 	struct LosslessStereoAudioHeader {
 		ui16_t header_length = sizeof(LosslessStereoAudioHeader);
 		ui08_t k;
