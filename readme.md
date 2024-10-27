@@ -77,10 +77,6 @@ The [AccurateRip drive database](https://www.accuraterip.com/driveoffsets.htm) p
 * Optimize commands to not store 150 sectors of silence between data and audio tracks on mixed-mode CD-ROMs.
 * Document utility.
 * Document ODI format.
-* Consider 64 bit offsets in ODI format.
-	Current 32 bit limits format from being used for DVDs.
-	Formats other than CD require sector size being specified.
-	Other formats do not always contain subchannels.
 
 ## References
 
