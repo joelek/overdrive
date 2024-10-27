@@ -144,6 +144,7 @@ namespace commands {
 					*reinterpret_cast<cdb::ReadTOCResponseFullTOCEntry*>(&point_table_entry.entry) = point.entry;
 					point_table_entries.push_back(point_table_entry);
 				}
+				std::fseek(handle, idiv::ceil(std::ftell(handle), 16) * 16, SEEK_SET);
 				auto sector_table_header = odi::SectorTableHeader();
 				sector_table_header.entry_count = sector_table_entries.size();
 				sector_table_header.entry_length = sizeof(odi::SectorTableEntry);
