@@ -152,11 +152,34 @@ namespace odi {
 		}
 
 		auto decompress_sector_lossless_stereo_audio(
-			array<cd::SECTOR_LENGTH, byte_t>& sector_data,
+			array<cd::SECTOR_LENGTH, byte_t>& target_sector_data,
 			size_t compressed_byte_count
 		) -> void {
-			(void)sector_data;
-			(void)compressed_byte_count;
+			auto& stereo_sector = *reinterpret_cast<cdda::StereoSector*>(&target_sector_data);
+			auto& unsigned_sector = *reinterpret_cast<cdda::UnsignedSector*>(&target_sector_data);
+			auto compressed_sector = std::vector<byte_t>(compressed_byte_count);
+			std::memcpy(&compressed_sector, &target_sector_data, compressed_byte_count);
+			auto& header = *reinterpret_cast<LosslessStereoAudioHeader*>(&compressed_sector);
+			auto power = size_t(1) << header.k;
+			auto bitreader = bits::BitReader(compressed_sector, header.header_length);
+			for (auto sample_index = size_t(0); sample_index < cd::SECTOR_LENGTH; sample_index += 1) {
+				auto width = size_t(header.k + 1);
+				auto value = size_t(0);
+				while (true) {
+					value = bitreader.decode_bits(1);
+					if (value != 0) {
+						break;
+					}
+					width += 1;
+				}
+				width -= 1;
+				value = (value << width) | bitreader.decode_bits(width);
+				auto sample = value + 1 - power;
+				unsigned_sector.samples[sample_index] = sample;
+			}
+			transform_from_optimized_representation(stereo_sector);
+			recorrelate_temporally(stereo_sector);
+			recorrelate_spatially(stereo_sector);
 		}
 	}
 	}
