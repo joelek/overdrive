@@ -50,14 +50,6 @@ namespace odi {
 
 	static_assert(sizeof(FileHeader) == 32);
 
-	struct SectorTableHeader {
-		ui32_t entry_count;
-		ui16_t entry_length;
-		ui16_t header_length = sizeof(SectorTableHeader);
-	};
-
-	static_assert(sizeof(SectorTableHeader) == 8);
-
 	struct SectorTableEntry {
 		ui32_t compressed_data_absolute_offset;
 		ui16_t compressed_byte_count;
@@ -67,13 +59,13 @@ namespace odi {
 
 	static_assert(sizeof(SectorTableEntry) == 8);
 
-	struct PointTableHeader {
+	struct SectorTableHeader {
 		ui32_t entry_count;
-		ui16_t entry_length;
-		ui16_t header_length = sizeof(PointTableHeader);
+		ui16_t entry_length = sizeof(SectorTableEntry);
+		ui16_t header_length = sizeof(SectorTableHeader);
 	};
 
-	static_assert(sizeof(PointTableHeader) == 8);
+	static_assert(sizeof(SectorTableHeader) == 8);
 
 	struct PointTableEntry {
 		byte_t entry[11];
@@ -85,6 +77,14 @@ namespace odi {
 	};
 
 	static_assert(sizeof(PointTableEntry) == 16);
+
+	struct PointTableHeader {
+		ui32_t entry_count;
+		ui16_t entry_length = sizeof(PointTableEntry);
+		ui16_t header_length = sizeof(PointTableHeader);
+	};
+
+	static_assert(sizeof(PointTableHeader) == 8);
 
 	struct UncompressedSector {
 		byte_t sector_data[cd::SECTOR_LENGTH];

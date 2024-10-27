@@ -36,6 +36,12 @@ namespace cdda {
 
 	static_assert(sizeof(Sector) == 2352);
 
+	struct UnsignedSector {
+		ui16_t samples[cdda::SAMPLES_PER_SECTOR];
+	};
+
+	static_assert(sizeof(UnsignedSector) == 2352);
+
 	#pragma pack(pop)
 }
 }
