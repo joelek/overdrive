@@ -7,6 +7,26 @@ namespace overdrive {
 namespace bits {
 	using namespace shared;
 
+	class BitReader {
+		public:
+
+		BitReader(
+			const std::vector<byte_t>& data,
+			size_t offset
+		);
+
+		auto decode_bits(
+			size_t width
+		) -> size_t;
+
+		protected:
+
+		const std::vector<byte_t>& data;
+		size_t offset;
+		byte_t current_byte;
+		size_t bits_in_byte;
+	};
+
 	class BitWriter {
 		public:
 
