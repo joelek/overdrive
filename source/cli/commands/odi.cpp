@@ -159,6 +159,7 @@ namespace commands {
 						OVERDRIVE_THROW(exceptions::IOWriteException(path));
 					}
 				}
+				std::fseek(handle, idiv::ceil(std::ftell(handle), 16) * 16, SEEK_SET);
 				auto point_table_header = odi::PointTableHeader();
 				point_table_header.entry_count = point_table_entries.size();
 				point_table_header.entry_length = sizeof(odi::PointTableEntry);
