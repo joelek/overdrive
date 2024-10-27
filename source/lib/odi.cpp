@@ -1,6 +1,12 @@
 #include "odi.h"
 
+#include <algorithm>
+#include <array>
+#include <bit>
+#include <cstring>
 #include <map>
+#include <vector>
+#include "bits.h"
 #include "cdda.h"
 #include "exceptions.h"
 
@@ -70,7 +76,7 @@ namespace odi {
 		auto recorrelate_temporally(
 			cdda::StereoSector& stereo_sector
 		) -> void {
-			for (auto sample_index = 1; sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
+			for (auto sample_index = size_t(1); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
 				auto& previous_sample = stereo_sector.samples[sample_index - 1];
 				auto& sample = stereo_sector.samples[sample_index];
 				sample.r = sample.r + previous_sample.r;
@@ -78,26 +84,85 @@ namespace odi {
 			}
 		}
 
+		auto transform_into_optimized_representation(
+			cdda::StereoSector& stereo_sector
+		) -> void {
+			for (auto sample_index = size_t(0); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
+				auto& sample = stereo_sector.samples[sample_index];
+				sample.r = sample.r < 0 ? 0 - (sample.r << 1) - 1 : sample.r << 1;
+				sample.l = sample.l < 0 ? 0 - (sample.l << 1) - 1 : sample.l << 1;
+			}
+		}
+
+		auto transform_from_optimized_representation(
+			cdda::StereoSector& stereo_sector
+		) -> void {
+			for (auto sample_index = size_t(0); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
+				auto& sample = stereo_sector.samples[sample_index];
+				sample.r = sample.r & 1 ? 0 - ((sample.r + 1) >> 1) : sample.r >> 1;
+				sample.l = sample.l & 1 ? 0 - ((sample.l + 1) >> 1) : sample.l >> 1;
+			}
+		}
+
+		auto compress_using_exponential_golomb_coding(
+			const cdda::UnsignedSector& unsigned_sector,
+			size_t k
+		) -> std::vector<byte_t> {
+			auto compressed_sector = std::vector<byte_t>();
+			compressed_sector.resize(sizeof(LosslessStereoAudioHeader));
+			auto& header = *reinterpret_cast<LosslessStereoAudioHeader*>(compressed_sector.data());
+			header.header_length = sizeof(LosslessStereoAudioHeader);
+			header.k = k;
+			auto bitwriter = bits::BitWriter(compressed_sector);
+			auto power = size_t(1) << k;
+			for (auto sample_index = size_t(0); sample_index < cdda::SAMPLES_PER_SECTOR; sample_index += 1) {
+				auto sample = unsigned_sector.samples[sample_index];
+				auto value = sample + power - 1;
+				auto width = sizeof(value) * 8 - std::countl_zero(value + 1);
+				bitwriter.append_bits(0, width - 1 - k);
+				bitwriter.append_bits(value + 1, width);
+			}
+			bitwriter.flush_bits();
+			return compressed_sector;
+		}
+
 		auto compress_sector_lossless_stereo_audio(
-			array<2352, byte_t>& sector_data
+			array<cd::SECTOR_LENGTH, byte_t>& target_sector_data
 		) -> size_t {
-			auto& stereo_sector = *reinterpret_cast<cdda::StereoSector*>(sector_data);
+			auto sector_data = std::array<byte_t, cd::SECTOR_LENGTH>();
+			std::memcpy(&sector_data, &target_sector_data, cd::SECTOR_LENGTH);
+			auto& stereo_sector = *reinterpret_cast<cdda::StereoSector*>(&sector_data);
 			decorrelate_spatially(stereo_sector);
 			decorrelate_temporally(stereo_sector);
-			// TODO: Entropy code.
+			transform_into_optimized_representation(stereo_sector);
+			auto& unsigned_sector = *reinterpret_cast<cdda::UnsignedSector*>(&sector_data);
+			auto compressed_sectors = std::array<std::vector<byte_t>, 16>();
+			for (auto k = size_t(0); k < 16; k += 1) {
+				compressed_sectors.at(k) = std::move(compress_using_exponential_golomb_coding(unsigned_sector, k));
+			}
+			std::sort(compressed_sectors.begin(), compressed_sectors.end(), [](const std::vector<byte_t>& one, const std::vector<byte_t>& two) -> bool_t {
+				return one.size() < two.size();
+			});
+			auto& best = compressed_sectors.front();
+			if (best.size() >= cd::SECTOR_LENGTH) {
+				OVERDRIVE_THROW(exceptions::CompressedSizeExceededUncompressedSizeException(best.size(), cd::SECTOR_LENGTH));
+			}
+			std::memcpy(&target_sector_data, best.data(), best.size());
+			return best.size();
 		}
 
 		auto decompress_sector_lossless_stereo_audio(
-			array<2352, byte_t>& sector_data,
+			array<cd::SECTOR_LENGTH, byte_t>& sector_data,
 			size_t compressed_byte_count
 		) -> void {
-			// TODO
+			(void)sector_data;
+			(void)compressed_byte_count;
 		}
 	}
 	}
 
 	auto compress_sector(
-		array<2352, byte_t>& sector_data,
+		array<cd::SECTOR_LENGTH, byte_t>& sector_data,
 		CompressionMethod::type compression_method
 	) -> size_t {
 		if (compression_method == CompressionMethod::NONE) {
@@ -110,7 +175,7 @@ namespace odi {
 	}
 
 	auto decompress_sector(
-		array<2352, byte_t>& sector_data,
+		array<cd::SECTOR_LENGTH, byte_t>& sector_data,
 		size_t compressed_byte_count,
 		CompressionMethod::type compression_method
 	) -> void {

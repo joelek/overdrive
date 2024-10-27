@@ -93,6 +93,14 @@ namespace odi {
 
 	static_assert(sizeof(UncompressedSector) == 2448);
 
+	struct LosslessStereoAudioHeader {
+		ui16_t header_length = sizeof(LosslessStereoAudioHeader);
+		ui08_t k;
+		ui08_t : 8;
+	};
+
+	static_assert(sizeof(LosslessStereoAudioHeader) == 4);
+
 	#pragma pack(pop)
 
 	auto compress_sector(

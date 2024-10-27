@@ -322,6 +322,27 @@ namespace exceptions {
 
 		protected:
 	};
+
+	class CompressionException: public OverdriveException {
+		public:
+
+		CompressionException(
+			const std::string& message
+		);
+
+		protected:
+	};
+
+	class CompressedSizeExceededUncompressedSizeException: public CompressionException {
+		public:
+
+		CompressedSizeExceededUncompressedSizeException(
+			size_t compressed_byte_count,
+			size_t uncompressed_byte_count
+		);
+
+		protected:
+	};
 }
 }
 

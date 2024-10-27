@@ -119,5 +119,14 @@ namespace exceptions {
 	WindowsException::WindowsException(
 		size_t code
 	): OverdriveException(std::format("Expected WINAPI to not return error code {}!", code)) {}
+
+	CompressionException::CompressionException(
+		const std::string& message
+	): OverdriveException(message) {}
+
+	CompressedSizeExceededUncompressedSizeException::CompressedSizeExceededUncompressedSizeException(
+		size_t compressed_byte_count,
+		size_t uncompressed_byte_count
+	): CompressionException(std::format("Expected compressed size of {} to not exceed the uncompressed size of {}!", compressed_byte_count, uncompressed_byte_count)) {}
 }
 }
