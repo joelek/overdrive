@@ -27,6 +27,7 @@ SOURCES=(
 	"lib/accuraterip.cpp"
 	"lib/app.cpp"
 	"lib/bcd.cpp"
+	"lib/bits.cpp"
 	"lib/byteswap.cpp"
 	"lib/cd.cpp"
 	"lib/cdb.cpp"

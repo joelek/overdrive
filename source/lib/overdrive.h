@@ -3,6 +3,7 @@
 #include "accuraterip.h"
 #include "app.h"
 #include "bcd.h"
+#include "bits.h"
 #include "byteswap.h"
 #include "cd.h"
 #include "cdb.h"
