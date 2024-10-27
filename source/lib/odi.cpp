@@ -39,46 +39,51 @@ namespace odi {
 	namespace internal {
 	namespace {
 		auto decorrelate_spatially(
-			cdda::StereoSample& sample
+			cdda::StereoSector& stereo_sector
 		) -> void {
-			sample.r = sample.r - sample.l;
+			for (auto sample_index = size_t(0); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
+				auto& sample = stereo_sector.samples[sample_index];
+				sample.r = sample.r - sample.l;
+			}
 		}
 
 		auto recorrelate_spatially(
-			cdda::StereoSample& sample
+			cdda::StereoSector& stereo_sector
 		) -> void {
-			sample.r = sample.r + sample.l;
+			for (auto sample_index = size_t(0); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
+				auto& sample = stereo_sector.samples[sample_index];
+				sample.r = sample.r + sample.l;
+			}
 		}
 
 		auto decorrelate_temporally(
-			const cdda::StereoSample& previous_sample,
-			cdda::StereoSample& sample
+			cdda::StereoSector& stereo_sector
 		) -> void {
-			sample.r = sample.r - previous_sample.r;
-			sample.l = sample.l - previous_sample.l;
+			for (auto sample_index = cdda::STEREO_SAMPLES_PER_SECTOR - 1; sample_index > 0; sample_index -= 1) {
+				auto& previous_sample = stereo_sector.samples[sample_index - 1];
+				auto& sample = stereo_sector.samples[sample_index];
+				sample.r = sample.r - previous_sample.r;
+				sample.l = sample.l - previous_sample.l;
+			}
 		}
 
 		auto recorrelate_temporally(
-			const cdda::StereoSample& previous_sample,
-			cdda::StereoSample& sample
+			cdda::StereoSector& stereo_sector
 		) -> void {
-			sample.r = sample.r + previous_sample.r;
-			sample.l = sample.l + previous_sample.l;
+			for (auto sample_index = 1; sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
+				auto& previous_sample = stereo_sector.samples[sample_index - 1];
+				auto& sample = stereo_sector.samples[sample_index];
+				sample.r = sample.r + previous_sample.r;
+				sample.l = sample.l + previous_sample.l;
+			}
 		}
 
 		auto compress_sector_lossless_stereo_audio(
 			array<2352, byte_t>& sector_data
 		) -> size_t {
 			auto& stereo_sector = *reinterpret_cast<cdda::StereoSector*>(sector_data);
-			for (auto sample_index = size_t(0); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
-				auto& sample = stereo_sector.samples[sample_index];
-				decorrelate_spatially(sample);
-			}
-			for (auto sample_index = cdda::STEREO_SAMPLES_PER_SECTOR - 1; sample_index > 0; sample_index -= 1) {
-				auto& previous_sample = stereo_sector.samples[sample_index - 1];
-				auto& sample = stereo_sector.samples[sample_index];
-				decorrelate_temporally(previous_sample, sample);
-			}
+			decorrelate_spatially(stereo_sector);
+			decorrelate_temporally(stereo_sector);
 			// TODO: Entropy code.
 		}
 
