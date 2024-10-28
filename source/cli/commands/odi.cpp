@@ -122,6 +122,7 @@ namespace commands {
 						auto extracted_sectors_vector = copier::read_track(drive, track, options);
 						auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
 						copier::log_bad_sector_indices(drive, track, bad_sector_indices);
+						auto compressed_byte_count = size_t(0);
 						auto track_sector_table_entries = std::vector<odi::SectorTableEntry>(track.length_sectors);
 						for (auto sector_index = size_t(0); sector_index < extracted_sectors_vector.size(); sector_index += 1) {
 							auto& extracted_sectors = extracted_sectors_vector.at(sector_index);
@@ -135,9 +136,12 @@ namespace commands {
 							if (std::fwrite(extracted_sector.subchannels_data, sector_table_entry.subchannels_data.compressed_byte_count, 1, handle) != 1) {
 								OVERDRIVE_THROW(exceptions::IOWriteException(path));
 							}
+							compressed_byte_count += sector_table_entry.sector_data.compressed_byte_count;
 						}
 						vector::append(sector_table_entries, track_sector_table_entries);
 						absolute_sector_offset += track.length_sectors;
+						auto compression_rate = float(compressed_byte_count) / (extracted_sectors_vector.size() * cd::SECTOR_LENGTH);
+						fprintf(stderr, "%s\n", std::format("Saved track {} with a compression rate of {:.2f}", track.number, compression_rate).c_str());
 					}
 					auto lead_out_sector_table_entries = save_sector_range(drive, absolute_sector_offset, absolute_sector_offset + session.lead_out_length_sectors, options, handle, path);
 					vector::append(sector_table_entries, lead_out_sector_table_entries);
