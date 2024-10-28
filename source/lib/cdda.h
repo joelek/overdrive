@@ -17,9 +17,10 @@ namespace cdda {
 
 	#pragma pack(push, 1)
 
+	// Mark members as volatile to prevent compiler from optimizing memory accesses when adhering to the strict aliasing rules.
 	union Sample {
-		ui16_t ui;
-		si16_t si;
+		volatile ui16_t ui;
+		volatile si16_t si;
 	};
 
 	static_assert(sizeof(Sample) == 2);
