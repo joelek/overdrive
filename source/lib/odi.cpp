@@ -49,7 +49,7 @@ namespace odi {
 		) -> void {
 			for (auto sample_index = size_t(0); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
 				auto& sample = stereo_sector.samples[sample_index];
-				sample.r = sample.r - sample.l;
+				sample.r.si = sample.r.si - sample.l.si;
 			}
 		}
 
@@ -58,7 +58,7 @@ namespace odi {
 		) -> void {
 			for (auto sample_index = size_t(0); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
 				auto& sample = stereo_sector.samples[sample_index];
-				sample.r = sample.r + sample.l;
+				sample.r.si = sample.r.si + sample.l.si;
 			}
 		}
 
@@ -68,8 +68,8 @@ namespace odi {
 			for (auto sample_index = cdda::STEREO_SAMPLES_PER_SECTOR - 1; sample_index > 0; sample_index -= 1) {
 				auto& previous_sample = stereo_sector.samples[sample_index - 1];
 				auto& sample = stereo_sector.samples[sample_index];
-				sample.r = sample.r - previous_sample.r;
-				sample.l = sample.l - previous_sample.l;
+				sample.r.si = sample.r.si - previous_sample.r.si;
+				sample.l.si = sample.l.si - previous_sample.l.si;
 			}
 		}
 
@@ -79,8 +79,8 @@ namespace odi {
 			for (auto sample_index = size_t(1); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
 				auto& previous_sample = stereo_sector.samples[sample_index - 1];
 				auto& sample = stereo_sector.samples[sample_index];
-				sample.r = sample.r + previous_sample.r;
-				sample.l = sample.l + previous_sample.l;
+				sample.r.si = sample.r.si + previous_sample.r.si;
+				sample.l.si = sample.l.si + previous_sample.l.si;
 			}
 		}
 

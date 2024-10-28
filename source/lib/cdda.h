@@ -17,19 +17,6 @@ namespace cdda {
 
 	#pragma pack(push, 1)
 
-	struct StereoSample {
-		si16_t l;
-		si16_t r;
-	};
-
-	static_assert(sizeof(StereoSample) == 4);
-
-	struct StereoSector {
-		StereoSample samples[STEREO_SAMPLES_PER_SECTOR];
-	};
-
-	static_assert(sizeof(StereoSector) == 2352);
-
 	union Sample {
 		ui16_t ui;
 		si16_t si;
@@ -42,6 +29,19 @@ namespace cdda {
 	};
 
 	static_assert(sizeof(Sector) == 2352);
+
+	struct StereoSample {
+		Sample l;
+		Sample r;
+	};
+
+	static_assert(sizeof(StereoSample) == 4);
+
+	struct StereoSector {
+		StereoSample samples[STEREO_SAMPLES_PER_SECTOR];
+	};
+
+	static_assert(sizeof(StereoSector) == 2352);
 
 	#pragma pack(pop)
 }
