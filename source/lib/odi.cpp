@@ -85,38 +85,36 @@ namespace odi {
 		}
 
 		auto transform_into_optimized_representation(
-			cdda::StereoSector& stereo_sector
+			cdda::Sector& sector
 		) -> void {
-			for (auto sample_index = size_t(0); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
-				auto& sample = stereo_sector.samples[sample_index];
-				sample.r = sample.r < 0 ? 0 - (sample.r << 1) - 1 : sample.r << 1;
-				sample.l = sample.l < 0 ? 0 - (sample.l << 1) - 1 : sample.l << 1;
+			for (auto sample_index = size_t(0); sample_index < cdda::SAMPLES_PER_SECTOR; sample_index += 1) {
+				auto& sample = sector.samples[sample_index];
+				sample.ui = sample.si < 0 ? 0 - (sample.si << 1) - 1 : sample.si << 1;
 			}
 		}
 
 		auto transform_from_optimized_representation(
-			cdda::StereoSector& stereo_sector
+			cdda::Sector& sector
 		) -> void {
-			for (auto sample_index = size_t(0); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
-				auto& sample = stereo_sector.samples[sample_index];
-				sample.r = sample.r & 1 ? 0 - ((sample.r + 1) >> 1) : sample.r >> 1;
-				sample.l = sample.l & 1 ? 0 - ((sample.l + 1) >> 1) : sample.l >> 1;
+			for (auto sample_index = size_t(0); sample_index < cdda::SAMPLES_PER_SECTOR; sample_index += 1) {
+				auto& sample = sector.samples[sample_index];
+				sample.si = (sample.ui & 1) ? 0 - ((sample.ui + 1) >> 1) : sample.ui >> 1;
 			}
 		}
 
 		auto compress_using_exponential_golomb_coding(
-			const cdda::UnsignedSector& unsigned_sector,
+			const cdda::Sector& sector,
 			size_t k
 		) -> std::vector<byte_t> {
 			auto compressed_sector = std::vector<byte_t>();
 			compressed_sector.resize(sizeof(LosslessStereoAudioHeader));
 			auto& header = *reinterpret_cast<LosslessStereoAudioHeader*>(compressed_sector.data());
-			header.header_length = sizeof(LosslessStereoAudioHeader);
+			header = LosslessStereoAudioHeader();
 			header.k = k;
 			auto bitwriter = bits::BitWriter(compressed_sector);
 			auto power = size_t(1) << k;
 			for (auto sample_index = size_t(0); sample_index < cdda::SAMPLES_PER_SECTOR; sample_index += 1) {
-				auto sample = unsigned_sector.samples[sample_index];
+				auto sample = sector.samples[sample_index].ui;
 				auto value = sample + power - 1;
 				auto width = sizeof(value) * 8 - std::countl_zero(value + 1);
 				bitwriter.append_bits(0, width - 1 - k);
@@ -134,8 +132,8 @@ namespace odi {
 			auto& stereo_sector = *reinterpret_cast<cdda::StereoSector*>(&sector_data);
 			decorrelate_spatially(stereo_sector);
 			decorrelate_temporally(stereo_sector);
-			transform_into_optimized_representation(stereo_sector);
-			auto& unsigned_sector = *reinterpret_cast<cdda::UnsignedSector*>(&sector_data);
+			auto& unsigned_sector = *reinterpret_cast<cdda::Sector*>(&sector_data);
+			transform_into_optimized_representation(unsigned_sector);
 			auto compressed_sectors = std::array<std::vector<byte_t>, 16>();
 			for (auto k = size_t(0); k < 16; k += 1) {
 				compressed_sectors.at(k) = std::move(compress_using_exponential_golomb_coding(unsigned_sector, k));
@@ -156,13 +154,13 @@ namespace odi {
 			size_t compressed_byte_count
 		) -> void {
 			auto& stereo_sector = *reinterpret_cast<cdda::StereoSector*>(&target_sector_data);
-			auto& unsigned_sector = *reinterpret_cast<cdda::UnsignedSector*>(&target_sector_data);
+			auto& unsigned_sector = *reinterpret_cast<cdda::Sector*>(&target_sector_data);
 			auto compressed_sector = std::vector<byte_t>(compressed_byte_count);
-			std::memcpy(&compressed_sector, &target_sector_data, compressed_byte_count);
-			auto& header = *reinterpret_cast<LosslessStereoAudioHeader*>(&compressed_sector);
+			std::memcpy(compressed_sector.data(), &target_sector_data, compressed_byte_count);
+			auto& header = *reinterpret_cast<LosslessStereoAudioHeader*>(compressed_sector.data());
 			auto power = size_t(1) << header.k;
 			auto bitreader = bits::BitReader(compressed_sector, header.header_length);
-			for (auto sample_index = size_t(0); sample_index < cd::SECTOR_LENGTH; sample_index += 1) {
+			for (auto sample_index = size_t(0); sample_index < cdda::SAMPLES_PER_SECTOR; sample_index += 1) {
 				auto width = size_t(header.k + 1);
 				auto value = size_t(0);
 				while (true) {
@@ -173,11 +171,13 @@ namespace odi {
 					width += 1;
 				}
 				width -= 1;
-				value = (value << width) | bitreader.decode_bits(width);
-				auto sample = value + 1 - power;
-				unsigned_sector.samples[sample_index] = sample;
+				if (width > 0) {
+					value = (value << width) | bitreader.decode_bits(width);
+				}
+				auto sample = value - power;
+				unsigned_sector.samples[sample_index].ui = sample;
 			}
-			transform_from_optimized_representation(stereo_sector);
+			transform_from_optimized_representation(unsigned_sector);
 			recorrelate_temporally(stereo_sector);
 			recorrelate_spatially(stereo_sector);
 		}

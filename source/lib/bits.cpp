@@ -9,7 +9,8 @@ namespace bits {
 		data(data),
 		offset(offset),
 		current_byte(0),
-		bits_in_byte(0)
+		bits_in_byte(0),
+		mask(0b00000000)
 	{
 
 	}
@@ -23,10 +24,11 @@ namespace bits {
 				this->current_byte = this->data.at(offset);
 				this->bits_in_byte = 8;
 				this->offset += 1;
+				this->mask = 0b10000000;
 			}
-			value = (value << 1) | (this->current_byte & 1);
-			this->current_byte >>= 1;
+			value = (value << 1) | ((this->current_byte & this->mask) ? 1 : 0);
 			this->bits_in_byte -= 1;
+			this->mask >>= 1;
 		}
 		return value;
 	}
@@ -45,13 +47,16 @@ namespace bits {
 		size_t value,
 		size_t width
 	) -> void {
-		for (auto bit = size_t(0); bit < width; bit += 1) {
-			this->current_byte = (this->current_byte << 1) | (value & 1);
-			this->bits_in_byte += 1;
-			if (this->bits_in_byte == 8) {
-				this->flush_bits();
+		if (width > 0) {
+			auto mask = (size_t(1) << (width - 1));
+			for (auto bit = size_t(0); bit < width; bit += 1) {
+				this->current_byte |= ((value & mask) ? 1 : 0) << (8 - bits_in_byte - 1);
+				this->bits_in_byte += 1;
+				if (this->bits_in_byte == 8) {
+					this->flush_bits();
+				}
+				mask >>= 1;
 			}
-			value >>= 1;
 		}
 	}
 

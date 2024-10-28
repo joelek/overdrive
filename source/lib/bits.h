@@ -25,6 +25,7 @@ namespace bits {
 		size_t offset;
 		byte_t current_byte;
 		size_t bits_in_byte;
+		size_t mask;
 	};
 
 	class BitWriter {

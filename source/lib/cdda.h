@@ -30,17 +30,18 @@ namespace cdda {
 
 	static_assert(sizeof(StereoSector) == 2352);
 
-	union Sector {
-		StereoSector stereo;
+	union Sample {
+		ui16_t ui;
+		si16_t si;
+	};
+
+	static_assert(sizeof(Sample) == 2);
+
+	struct Sector {
+		Sample samples[cdda::SAMPLES_PER_SECTOR];
 	};
 
 	static_assert(sizeof(Sector) == 2352);
-
-	struct UnsignedSector {
-		ui16_t samples[cdda::SAMPLES_PER_SECTOR];
-	};
-
-	static_assert(sizeof(UnsignedSector) == 2352);
 
 	#pragma pack(pop)
 }
