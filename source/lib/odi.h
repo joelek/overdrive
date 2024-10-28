@@ -75,9 +75,17 @@ namespace odi {
 		ui32_t entry_count;
 		ui16_t entry_length = sizeof(SectorTableEntry);
 		ui16_t header_length = sizeof(SectorTableHeader);
+		ui08_t : 8;
+		ui08_t : 8;
+		ui08_t : 8;
+		ui08_t : 8;
+		ui08_t : 8;
+		ui08_t : 8;
+		ui08_t : 8;
+		ui08_t : 8;
 	};
 
-	static_assert(sizeof(SectorTableHeader) == 8);
+	static_assert(sizeof(SectorTableHeader) == 16);
 
 	struct PointTableEntry {
 		byte_t entry[11];
@@ -94,9 +102,17 @@ namespace odi {
 		ui32_t entry_count;
 		ui16_t entry_length = sizeof(PointTableEntry);
 		ui16_t header_length = sizeof(PointTableHeader);
+		ui08_t : 8;
+		ui08_t : 8;
+		ui08_t : 8;
+		ui08_t : 8;
+		ui08_t : 8;
+		ui08_t : 8;
+		ui08_t : 8;
+		ui08_t : 8;
 	};
 
-	static_assert(sizeof(PointTableHeader) == 8);
+	static_assert(sizeof(PointTableHeader) == 16);
 
 	struct LosslessStereoAudioHeader {
 		ui16_t header_length = sizeof(LosslessStereoAudioHeader);
