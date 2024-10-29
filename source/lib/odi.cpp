@@ -304,7 +304,7 @@ namespace odi {
 			if (best.size() >= cd::SECTOR_LENGTH) {
 				OVERDRIVE_THROW(exceptions::CompressedSizeExceededUncompressedSizeException(best.size(), cd::SECTOR_LENGTH));
 			}
-			std::memcpy(&data, best.data(), best.size());
+			std::memcpy(data, best.data(), best.size());
 			return best.size();
 		}
 
@@ -314,7 +314,7 @@ namespace odi {
 			size_t compressed_byte_count
 		) -> void {
 			auto original_data = std::vector<byte_t>(compressed_byte_count);
-			std::memcpy(original_data.data(), &data, compressed_byte_count);
+			std::memcpy(original_data.data(), data, compressed_byte_count);
 			auto& header = *reinterpret_cast<GenericLosslessHeader*>(original_data.data());
 			auto power = size_t(1) << header.k;
 			auto bitreader = bits::BitReader(original_data, header.header_length);
