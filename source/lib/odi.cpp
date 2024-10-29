@@ -180,7 +180,7 @@ namespace odi {
 			}
 		}
 
-		auto compress_using_exponential_golomb_coding(
+		auto compress_sector_using_exponential_golomb_coding(
 			const cdda::Sector& sector,
 			size_t k,
 			size_t r_predictor_index,
@@ -220,7 +220,7 @@ namespace odi {
 			transform_into_optimized_representation(unsigned_sector);
 			auto compressed_sectors = std::array<std::vector<byte_t>, 16>();
 			for (auto k = size_t(0); k < 16; k += 1) {
-				compressed_sectors.at(k) = std::move(compress_using_exponential_golomb_coding(unsigned_sector, k, r_predictor_index, l_predictor_index));
+				compressed_sectors.at(k) = std::move(compress_sector_using_exponential_golomb_coding(unsigned_sector, k, r_predictor_index, l_predictor_index));
 			}
 			std::sort(compressed_sectors.begin(), compressed_sectors.end(), [](const std::vector<byte_t>& one, const std::vector<byte_t>& two) -> bool_t {
 				return one.size() < two.size();
@@ -265,6 +265,77 @@ namespace odi {
 			recorrelate_temporally(stereo_sector, header.r_predictor_index, header.l_predictor_index);
 			recorrelate_spatially(stereo_sector);
 		}
+
+		auto compress_data_using_exponential_golomb_coding(
+			byte_t* data,
+			size_t size,
+			size_t k
+		) -> std::vector<byte_t> {
+			auto compressed_data = std::vector<byte_t>();
+			compressed_data.resize(sizeof(GenericLosslessHeader));
+			auto& header = *reinterpret_cast<GenericLosslessHeader*>(compressed_data.data());
+			header = GenericLosslessHeader();
+			header.k = k;
+			auto bitwriter = bits::BitWriter(compressed_data);
+			auto power = size_t(1) << k;
+			for (auto byte_index = size_t(0); byte_index < size; byte_index += 1) {
+				auto byte = data[byte_index];
+				auto value = byte + power - 1;
+				auto width = sizeof(value) * 8 - std::countl_zero(value + 1);
+				bitwriter.append_bits(0, width - 1 - k);
+				bitwriter.append_bits(value + 1, width);
+			}
+			bitwriter.flush_bits();
+			return compressed_data;
+		}
+
+		auto compress_data_generic_lossless(
+			byte_t* data,
+			size_t size
+		) -> size_t {
+			auto compressed_buffers = std::array<std::vector<byte_t>, 8>();
+			for (auto k = size_t(0); k < 8; k += 1) {
+				compressed_buffers.at(k) = std::move(compress_data_using_exponential_golomb_coding(data, size, k));
+			}
+			std::sort(compressed_buffers.begin(), compressed_buffers.end(), [](const std::vector<byte_t>& one, const std::vector<byte_t>& two) -> bool_t {
+				return one.size() < two.size();
+			});
+			auto& best = compressed_buffers.front();
+			if (best.size() >= cd::SECTOR_LENGTH) {
+				OVERDRIVE_THROW(exceptions::CompressedSizeExceededUncompressedSizeException(best.size(), cd::SECTOR_LENGTH));
+			}
+			std::memcpy(&data, best.data(), best.size());
+			return best.size();
+		}
+
+		auto decompress_data_generic_lossless(
+			byte_t* data,
+			size_t size,
+			size_t compressed_byte_count
+		) -> void {
+			auto original_data = std::vector<byte_t>(compressed_byte_count);
+			std::memcpy(original_data.data(), &data, compressed_byte_count);
+			auto& header = *reinterpret_cast<GenericLosslessHeader*>(original_data.data());
+			auto power = size_t(1) << header.k;
+			auto bitreader = bits::BitReader(original_data, header.header_length);
+			for (auto byte_index = size_t(0); byte_index < size; byte_index += 1) {
+				auto width = size_t(header.k + 1);
+				auto value = size_t(0);
+				while (true) {
+					value = bitreader.decode_bits(1);
+					if (value != 0) {
+						break;
+					}
+					width += 1;
+				}
+				width -= 1;
+				if (width > 0) {
+					value = (value << width) | bitreader.decode_bits(width);
+				}
+				auto byte = value - power;
+				data[byte_index] = byte;
+			}
+		}
 	}
 	}
 
@@ -277,6 +348,9 @@ namespace odi {
 		}
 		if (compression_method == CompressionMethod::LOSSLESS_STEREO_AUDIO) {
 			return internal::compress_sector_lossless_stereo_audio(sector_data);
+		}
+		if (compression_method == CompressionMethod::GENERIC_LOSSLESS) {
+			return internal::compress_data_generic_lossless(sector_data, sizeof(sector_data));
 		}
 		OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
 	}
@@ -291,6 +365,9 @@ namespace odi {
 		}
 		if (compression_method == CompressionMethod::LOSSLESS_STEREO_AUDIO) {
 			return internal::decompress_sector_lossless_stereo_audio(sector_data, compressed_byte_count);
+		}
+		if (compression_method == CompressionMethod::GENERIC_LOSSLESS) {
+			return internal::decompress_data_generic_lossless(sector_data, sizeof(sector_data), compressed_byte_count);
 		}
 		OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
 	}

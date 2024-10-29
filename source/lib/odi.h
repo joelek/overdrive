@@ -16,6 +16,7 @@ namespace odi {
 
 		const auto NONE = type(0x00);
 		const auto LOSSLESS_STEREO_AUDIO = type(0x01);
+		const auto GENERIC_LOSSLESS = type(0x02);
 
 		auto name(
 			type value
@@ -125,6 +126,14 @@ namespace odi {
 	};
 
 	static_assert(sizeof(LosslessStereoAudioHeader) == 8);
+
+	struct GenericLosslessHeader {
+		ui16_t header_length = sizeof(GenericLosslessHeader);
+		ui08_t k;
+		ui08_t : 8;
+	};
+
+	static_assert(sizeof(GenericLosslessHeader) == 4);
 
 	#pragma pack(pop)
 
