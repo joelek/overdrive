@@ -181,17 +181,18 @@ namespace odi {
 		}
 
 		auto compress_sector_using_exponential_golomb_coding(
-			const cdda::Sector& sector,
+			ui16_t* values,
+			size_t size,
 			size_t k,
 			bits::BitWriter& bitwriter
 		) -> void {
 			auto power = size_t(1) << k;
-			for (auto sample_index = size_t(0); sample_index < cdda::SAMPLES_PER_SECTOR; sample_index += 1) {
-				auto sample = sector.samples[sample_index].ui;
-				auto value = sample + power - 1;
-				auto width = sizeof(value) * 8 - std::countl_zero(value + 1);
+			for (auto value_index = size_t(0); value_index < size; value_index += 1) {
+				auto value = values[value_index];
+				auto exponential_value = value + power - 1;
+				auto width = sizeof(exponential_value) * 8 - std::countl_zero(exponential_value + 1);
 				bitwriter.append_bits(0, width - 1 - k);
-				bitwriter.append_bits(value + 1, width);
+				bitwriter.append_bits(exponential_value + 1, width);
 			}
 			bitwriter.flush_bits();
 		}
@@ -206,8 +207,9 @@ namespace odi {
 			auto r_predictor_index = find_optimal_predictor_for_r(stereo_sector);
 			auto l_predictor_index = find_optimal_predictor_for_l(stereo_sector);
 			decorrelate_temporally(stereo_sector, r_predictor_index, l_predictor_index);
-			auto& unsigned_sector = *reinterpret_cast<cdda::Sector*>(&sector_data);
-			transform_into_optimized_representation(unsigned_sector);
+			auto& sector = *reinterpret_cast<cdda::Sector*>(&sector_data);
+			transform_into_optimized_representation(sector);
+			auto samples = reinterpret_cast<ui16_t*>(&sector_data);
 			auto compressed_sectors = std::array<std::vector<byte_t>, 16>();
 			for (auto k = size_t(0); k < 16; k += 1) {
 				auto& compressed_sector = compressed_sectors.at(k);
@@ -218,7 +220,7 @@ namespace odi {
 				header.r_predictor_index = r_predictor_index;
 				header.l_predictor_index = l_predictor_index;
 				auto bitwriter = bits::BitWriter(compressed_sector);
-				compress_sector_using_exponential_golomb_coding(unsigned_sector, k, bitwriter);
+				compress_sector_using_exponential_golomb_coding(samples, cdda::SAMPLES_PER_SECTOR, k, bitwriter);
 			}
 			std::sort(compressed_sectors.begin(), compressed_sectors.end(), [](const std::vector<byte_t>& one, const std::vector<byte_t>& two) -> bool_t {
 				return one.size() < two.size();
@@ -265,18 +267,18 @@ namespace odi {
 		}
 
 		auto compress_data_using_exponential_golomb_coding(
-			byte_t* data,
+			ui08_t* values,
 			size_t size,
 			size_t k,
 			bits::BitWriter& bitwriter
 		) -> void {
 			auto power = size_t(1) << k;
-			for (auto byte_index = size_t(0); byte_index < size; byte_index += 1) {
-				auto byte = data[byte_index];
-				auto value = byte + power - 1;
-				auto width = sizeof(value) * 8 - std::countl_zero(value + 1);
+			for (auto value_index = size_t(0); value_index < size; value_index += 1) {
+				auto value = values[value_index];
+				auto exponential_value = value + power - 1;
+				auto width = sizeof(exponential_value) * 8 - std::countl_zero(exponential_value + 1);
 				bitwriter.append_bits(0, width - 1 - k);
-				bitwriter.append_bits(value + 1, width);
+				bitwriter.append_bits(exponential_value + 1, width);
 			}
 			bitwriter.flush_bits();
 		}
