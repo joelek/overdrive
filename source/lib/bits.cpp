@@ -81,10 +81,10 @@ namespace bits {
 		auto power = size_t(1) << k;
 		for (auto value_index = size_t(0); value_index < size; value_index += 1) {
 			auto value = values[value_index];
-			auto exponential_value = value + power - 1;
-			auto width = sizeof(exponential_value) * 8 - std::countl_zero(exponential_value + 1);
+			auto exponential_value = value + power;
+			auto width = sizeof(exponential_value) * 8 - std::countl_zero(exponential_value);
 			bitwriter.append_bits(0, width - 1 - k);
-			bitwriter.append_bits(exponential_value + 1, width);
+			bitwriter.append_bits(exponential_value , width);
 		}
 		bitwriter.flush_bits();
 	}
@@ -98,10 +98,10 @@ namespace bits {
 		auto power = size_t(1) << k;
 		for (auto value_index = size_t(0); value_index < size; value_index += 1) {
 			auto value = values[value_index];
-			auto exponential_value = value + power - 1;
-			auto width = sizeof(exponential_value) * 8 - std::countl_zero(exponential_value + 1);
+			auto exponential_value = value + power;
+			auto width = sizeof(exponential_value) * 8 - std::countl_zero(exponential_value);
 			bitwriter.append_bits(0, width - 1 - k);
-			bitwriter.append_bits(exponential_value + 1, width);
+			bitwriter.append_bits(exponential_value, width);
 		}
 		bitwriter.flush_bits();
 	}
