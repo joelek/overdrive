@@ -371,5 +371,38 @@ namespace odi {
 		}
 		OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
 	}
+
+	auto compress_subchannels_data(
+		array<cd::SUBCHANNELS_LENGTH, byte_t>& subchannels_data,
+		CompressionMethod::type compression_method
+	) -> size_t {
+		if (compression_method == CompressionMethod::NONE) {
+			return sizeof(subchannels_data);
+		}
+		if (compression_method == CompressionMethod::LOSSLESS_STEREO_AUDIO) {
+			OVERDRIVE_THROW(exceptions::CompressionException("Expected compression method to be supported for data type!"));
+		}
+		if (compression_method == CompressionMethod::GENERIC_LOSSLESS) {
+			return internal::compress_data_generic_lossless(subchannels_data, sizeof(subchannels_data));
+		}
+		OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
+	}
+
+	auto decompress_subchannels_data(
+		array<cd::SUBCHANNELS_LENGTH, byte_t>& subchannels_data,
+		size_t compressed_byte_count,
+		CompressionMethod::type compression_method
+	) -> void {
+		if (compression_method == CompressionMethod::NONE) {
+			return;
+		}
+		if (compression_method == CompressionMethod::LOSSLESS_STEREO_AUDIO) {
+			OVERDRIVE_THROW(exceptions::CompressionException("Expected compression method to be supported for data type!"));
+		}
+		if (compression_method == CompressionMethod::GENERIC_LOSSLESS) {
+			return internal::decompress_data_generic_lossless(subchannels_data, sizeof(subchannels_data), compressed_byte_count);
+		}
+		OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
+	}
 }
 }

@@ -147,5 +147,16 @@ namespace odi {
 		size_t compressed_byte_count,
 		CompressionMethod::type compression_method
 	) -> void;
+
+	auto compress_subchannels_data(
+		array<cd::SUBCHANNELS_LENGTH, byte_t>& subchannels_data,
+		CompressionMethod::type compression_method
+	) -> size_t;
+
+	auto decompress_subchannels_data(
+		array<cd::SUBCHANNELS_LENGTH, byte_t>& subchannels_data,
+		size_t compressed_byte_count,
+		CompressionMethod::type compression_method
+	) -> void;
 }
 }
