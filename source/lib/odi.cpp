@@ -131,8 +131,8 @@ namespace odi {
 			size_t r_predictor_index,
 			size_t l_predictor_index
 		) -> void {
-			auto r_predictor = PREDICTORS.at(r_predictor_index);
-			auto l_predictor = PREDICTORS.at(l_predictor_index);
+			auto& r_predictor = PREDICTORS.at(r_predictor_index);
+			auto& l_predictor = PREDICTORS.at(l_predictor_index);
 			for (auto sample_index = cdda::STEREO_SAMPLES_PER_SECTOR - 1; sample_index >= 2; sample_index -= 1) {
 				auto& sample_m2 = stereo_sector.samples[sample_index - 2];
 				auto& sample_m1 = stereo_sector.samples[sample_index - 1];
@@ -149,8 +149,8 @@ namespace odi {
 			size_t r_predictor_index,
 			size_t l_predictor_index
 		) -> void {
-			auto r_predictor = PREDICTORS.at(r_predictor_index);
-			auto l_predictor = PREDICTORS.at(l_predictor_index);
+			auto& r_predictor = PREDICTORS.at(r_predictor_index);
+			auto& l_predictor = PREDICTORS.at(l_predictor_index);
 			for (auto sample_index = size_t(2); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
 				auto& sample_m2 = stereo_sector.samples[sample_index - 2];
 				auto& sample_m1 = stereo_sector.samples[sample_index - 1];
