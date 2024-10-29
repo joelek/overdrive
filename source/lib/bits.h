@@ -49,5 +49,33 @@ namespace bits {
 		byte_t current_byte;
 		size_t bits_in_byte;
 	};
+
+	auto compress_data_using_exponential_golomb_coding(
+		const ui08_t* values,
+		size_t size,
+		size_t k,
+		BitWriter& bitwriter
+	) -> void;
+
+	auto compress_data_using_exponential_golomb_coding(
+		const ui16_t* values,
+		size_t size,
+		size_t k,
+		BitWriter& bitwriter
+	) -> void;
+
+	auto decompress_data_using_exponential_golomb_coding(
+		ui08_t* values,
+		size_t size,
+		size_t k,
+		BitReader& bitreader
+	) -> void;
+
+	auto decompress_data_using_exponential_golomb_coding(
+		ui16_t* values,
+		size_t size,
+		size_t k,
+		BitReader& bitreader
+	) -> void;
 }
 }

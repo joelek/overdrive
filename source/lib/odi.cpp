@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <array>
-#include <bit>
 #include <cstring>
 #include <map>
 #include <vector>
@@ -180,23 +179,6 @@ namespace odi {
 			}
 		}
 
-		auto compress_sector_using_exponential_golomb_coding(
-			ui16_t* values,
-			size_t size,
-			size_t k,
-			bits::BitWriter& bitwriter
-		) -> void {
-			auto power = size_t(1) << k;
-			for (auto value_index = size_t(0); value_index < size; value_index += 1) {
-				auto value = values[value_index];
-				auto exponential_value = value + power - 1;
-				auto width = sizeof(exponential_value) * 8 - std::countl_zero(exponential_value + 1);
-				bitwriter.append_bits(0, width - 1 - k);
-				bitwriter.append_bits(exponential_value + 1, width);
-			}
-			bitwriter.flush_bits();
-		}
-
 		auto compress_sector_lossless_stereo_audio(
 			array<cd::SECTOR_LENGTH, byte_t>& target_sector_data
 		) -> size_t {
@@ -220,7 +202,7 @@ namespace odi {
 				header.r_predictor_index = r_predictor_index;
 				header.l_predictor_index = l_predictor_index;
 				auto bitwriter = bits::BitWriter(compressed_sector);
-				compress_sector_using_exponential_golomb_coding(samples, cdda::SAMPLES_PER_SECTOR, k, bitwriter);
+				bits::compress_data_using_exponential_golomb_coding(samples, cdda::SAMPLES_PER_SECTOR, k, bitwriter);
 			}
 			std::sort(compressed_sectors.begin(), compressed_sectors.end(), [](const std::vector<byte_t>& one, const std::vector<byte_t>& two) -> bool_t {
 				return one.size() < two.size();
@@ -238,49 +220,16 @@ namespace odi {
 			size_t compressed_byte_count
 		) -> void {
 			auto& stereo_sector = *reinterpret_cast<cdda::StereoSector*>(&target_sector_data);
-			auto& unsigned_sector = *reinterpret_cast<cdda::Sector*>(&target_sector_data);
-			auto compressed_sector = std::vector<byte_t>(compressed_byte_count);
-			std::memcpy(compressed_sector.data(), &target_sector_data, compressed_byte_count);
-			auto& header = *reinterpret_cast<LosslessStereoAudioHeader*>(compressed_sector.data());
-			auto power = size_t(1) << header.k;
-			auto bitreader = bits::BitReader(compressed_sector, header.header_length);
-			for (auto sample_index = size_t(0); sample_index < cdda::SAMPLES_PER_SECTOR; sample_index += 1) {
-				auto width = size_t(header.k + 1);
-				auto value = size_t(0);
-				while (true) {
-					value = bitreader.decode_bits(1);
-					if (value != 0) {
-						break;
-					}
-					width += 1;
-				}
-				width -= 1;
-				if (width > 0) {
-					value = (value << width) | bitreader.decode_bits(width);
-				}
-				auto sample = value - power;
-				unsigned_sector.samples[sample_index].ui = sample;
-			}
-			transform_from_optimized_representation(unsigned_sector);
+			auto& sector = *reinterpret_cast<cdda::Sector*>(&target_sector_data);
+			auto samples = reinterpret_cast<ui16_t*>(&target_sector_data);
+			auto original = std::vector<byte_t>(compressed_byte_count);
+			std::memcpy(original.data(), &target_sector_data, compressed_byte_count);
+			auto& header = *reinterpret_cast<LosslessStereoAudioHeader*>(original.data());
+			auto bitreader = bits::BitReader(original, header.header_length);
+			bits::decompress_data_using_exponential_golomb_coding(samples, cdda::SAMPLES_PER_SECTOR, header.k, bitreader);
+			transform_from_optimized_representation(sector);
 			recorrelate_temporally(stereo_sector, header.r_predictor_index, header.l_predictor_index);
 			recorrelate_spatially(stereo_sector);
-		}
-
-		auto compress_data_using_exponential_golomb_coding(
-			ui08_t* values,
-			size_t size,
-			size_t k,
-			bits::BitWriter& bitwriter
-		) -> void {
-			auto power = size_t(1) << k;
-			for (auto value_index = size_t(0); value_index < size; value_index += 1) {
-				auto value = values[value_index];
-				auto exponential_value = value + power - 1;
-				auto width = sizeof(exponential_value) * 8 - std::countl_zero(exponential_value + 1);
-				bitwriter.append_bits(0, width - 1 - k);
-				bitwriter.append_bits(exponential_value + 1, width);
-			}
-			bitwriter.flush_bits();
 		}
 
 		auto compress_data_generic_lossless(
@@ -295,7 +244,7 @@ namespace odi {
 				header = GenericLosslessHeader();
 				header.k = k;
 				auto bitwriter = bits::BitWriter(compressed_buffer);
-				compress_data_using_exponential_golomb_coding(data, size, k, bitwriter);
+				bits::compress_data_using_exponential_golomb_coding(data, size, k, bitwriter);
 			}
 			std::sort(compressed_buffers.begin(), compressed_buffers.end(), [](const std::vector<byte_t>& one, const std::vector<byte_t>& two) -> bool_t {
 				return one.size() < two.size();
@@ -313,28 +262,11 @@ namespace odi {
 			size_t size,
 			size_t compressed_byte_count
 		) -> void {
-			auto original_data = std::vector<byte_t>(compressed_byte_count);
-			std::memcpy(original_data.data(), data, compressed_byte_count);
-			auto& header = *reinterpret_cast<GenericLosslessHeader*>(original_data.data());
-			auto power = size_t(1) << header.k;
-			auto bitreader = bits::BitReader(original_data, header.header_length);
-			for (auto byte_index = size_t(0); byte_index < size; byte_index += 1) {
-				auto width = size_t(header.k + 1);
-				auto value = size_t(0);
-				while (true) {
-					value = bitreader.decode_bits(1);
-					if (value != 0) {
-						break;
-					}
-					width += 1;
-				}
-				width -= 1;
-				if (width > 0) {
-					value = (value << width) | bitreader.decode_bits(width);
-				}
-				auto byte = value - power;
-				data[byte_index] = byte;
-			}
+			auto original = std::vector<byte_t>(compressed_byte_count);
+			std::memcpy(original.data(), data, compressed_byte_count);
+			auto& header = *reinterpret_cast<GenericLosslessHeader*>(original.data());
+			auto bitreader = bits::BitReader(original, header.header_length);
+			bits::decompress_data_using_exponential_golomb_coding(data, size, header.k, bitreader);
 		}
 	}
 	}

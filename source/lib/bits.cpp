@@ -1,5 +1,8 @@
 #include "bits.h"
 
+#include <bit>
+#include <cstring>
+
 namespace overdrive {
 namespace bits {
 	BitReader::BitReader(
@@ -66,6 +69,90 @@ namespace bits {
 			this->data.push_back(this->current_byte);
 			this->current_byte = 0;
 			this->bits_in_byte = 0;
+		}
+	}
+
+	auto compress_data_using_exponential_golomb_coding(
+		const ui08_t* values,
+		size_t size,
+		size_t k,
+		BitWriter& bitwriter
+	) -> void {
+		auto power = size_t(1) << k;
+		for (auto value_index = size_t(0); value_index < size; value_index += 1) {
+			auto value = values[value_index];
+			auto exponential_value = value + power - 1;
+			auto width = sizeof(exponential_value) * 8 - std::countl_zero(exponential_value + 1);
+			bitwriter.append_bits(0, width - 1 - k);
+			bitwriter.append_bits(exponential_value + 1, width);
+		}
+		bitwriter.flush_bits();
+	}
+
+	auto compress_data_using_exponential_golomb_coding(
+		const ui16_t* values,
+		size_t size,
+		size_t k,
+		BitWriter& bitwriter
+	) -> void {
+		auto power = size_t(1) << k;
+		for (auto value_index = size_t(0); value_index < size; value_index += 1) {
+			auto value = values[value_index];
+			auto exponential_value = value + power - 1;
+			auto width = sizeof(exponential_value) * 8 - std::countl_zero(exponential_value + 1);
+			bitwriter.append_bits(0, width - 1 - k);
+			bitwriter.append_bits(exponential_value + 1, width);
+		}
+		bitwriter.flush_bits();
+	}
+
+	auto decompress_data_using_exponential_golomb_coding(
+		ui08_t* values,
+		size_t size,
+		size_t k,
+		BitReader& bitreader
+	) -> void {
+		auto power = size_t(1) << k;
+		for (auto value_index = size_t(0); value_index < size; value_index += 1) {
+			auto width = size_t(k + 1);
+			auto exponential_value = size_t(0);
+			while (true) {
+				exponential_value = bitreader.decode_bits(1);
+				if (exponential_value != 0) {
+					break;
+				}
+				width += 1;
+			}
+			width -= 1;
+			if (width > 0) {
+				exponential_value = (exponential_value << width) | bitreader.decode_bits(width);
+			}
+			values[value_index] = exponential_value - power;
+		}
+	}
+
+	auto decompress_data_using_exponential_golomb_coding(
+		ui16_t* values,
+		size_t size,
+		size_t k,
+		BitReader& bitreader
+	) -> void {
+		auto power = size_t(1) << k;
+		for (auto value_index = size_t(0); value_index < size; value_index += 1) {
+			auto width = size_t(k + 1);
+			auto exponential_value = size_t(0);
+			while (true) {
+				exponential_value = bitreader.decode_bits(1);
+				if (exponential_value != 0) {
+					break;
+				}
+				width += 1;
+			}
+			width -= 1;
+			if (width > 0) {
+				exponential_value = (exponential_value << width) | bitreader.decode_bits(width);
+			}
+			values[value_index] = exponential_value - power;
 		}
 	}
 }
