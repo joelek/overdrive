@@ -16,7 +16,8 @@ namespace odi {
 	) -> const std::string& {
 		static const auto names = std::map<type, std::string>({
 			{ NONE, "NONE" },
-			{ LOSSLESS_STEREO_AUDIO, "LOSSLESS_STEREO_AUDIO" }
+			{ LOSSLESS_STEREO_AUDIO, "LOSSLESS_STEREO_AUDIO" },
+			{ GENERIC_LOSSLESS, "GENERIC_LOSSLESS" },
 		});
 		static const auto fallback = std::string("???");
 		auto iterator = names.find(value);
