@@ -44,6 +44,20 @@ namespace odi {
 
 	namespace internal {
 	namespace {
+		class Predictor {
+			public:
+
+			si_t m2;
+			si_t m1;
+
+			protected:
+		};
+
+		const auto PREDICTORS = std::array<Predictor, 2>({
+			{ -1, 2 }, // Linear
+			{ 0, 1 } // Repeat
+		});
+
 		auto decorrelate_spatially(
 			cdda::StereoSector& stereo_sector
 		) -> void {
@@ -62,25 +76,89 @@ namespace odi {
 			}
 		}
 
-		auto decorrelate_temporally(
+		auto find_optimal_predictor_for_r(
 			cdda::StereoSector& stereo_sector
+		) -> size_t {
+			auto absolute_differences = std::array<size_t, PREDICTORS.size()>();
+			for (auto predictor_index = size_t(0); predictor_index < PREDICTORS.size(); predictor_index += 1) {
+				auto& predictor = PREDICTORS.at(predictor_index);
+				auto& absolute_difference = absolute_differences.at(predictor_index);
+				for (auto sample_index = size_t(2); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
+					auto& sample_m2 = stereo_sector.samples[sample_index - 2];
+					auto& sample_m1 = stereo_sector.samples[sample_index - 1];
+					auto& sample = stereo_sector.samples[sample_index];
+					auto prediction = si16_t(predictor.m2 * sample_m2.r.si + predictor.m1 * sample_m1.r.si);
+					auto residual = si16_t(sample.r.si - prediction);
+					absolute_difference += residual < 0 ? 0 - residual : residual;
+				}
+			}
+			auto absolute_differences_index_of_min_value = size_t(0);
+			for (auto absolute_differences_index = size_t(1); absolute_differences_index < absolute_differences.size(); absolute_differences_index += 1) {
+				if (absolute_differences.at(absolute_differences_index) < absolute_differences.at(absolute_differences_index_of_min_value)) {
+					absolute_differences_index_of_min_value = absolute_differences_index;
+				}
+			}
+			return absolute_differences_index_of_min_value;
+		}
+
+		auto find_optimal_predictor_for_l(
+			cdda::StereoSector& stereo_sector
+		) -> size_t {
+			auto absolute_differences = std::array<size_t, PREDICTORS.size()>();
+			for (auto predictor_index = size_t(0); predictor_index < PREDICTORS.size(); predictor_index += 1) {
+				auto& predictor = PREDICTORS.at(predictor_index);
+				auto& absolute_difference = absolute_differences.at(predictor_index);
+				for (auto sample_index = size_t(2); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
+					auto& sample_m2 = stereo_sector.samples[sample_index - 2];
+					auto& sample_m1 = stereo_sector.samples[sample_index - 1];
+					auto& sample = stereo_sector.samples[sample_index];
+					auto prediction = si16_t(predictor.m2 * sample_m2.l.si + predictor.m1 * sample_m1.l.si);
+					auto residual = si16_t(sample.l.si - prediction);
+					absolute_difference += residual < 0 ? 0 - residual : residual;
+				}
+			}
+			auto absolute_differences_index_of_min_value = size_t(0);
+			for (auto absolute_differences_index = size_t(1); absolute_differences_index < absolute_differences.size(); absolute_differences_index += 1) {
+				if (absolute_differences.at(absolute_differences_index) < absolute_differences.at(absolute_differences_index_of_min_value)) {
+					absolute_differences_index_of_min_value = absolute_differences_index;
+				}
+			}
+			return absolute_differences_index_of_min_value;
+		}
+
+		auto decorrelate_temporally(
+			cdda::StereoSector& stereo_sector,
+			size_t r_predictor_index,
+			size_t l_predictor_index
 		) -> void {
-			for (auto sample_index = cdda::STEREO_SAMPLES_PER_SECTOR - 1; sample_index > 0; sample_index -= 1) {
-				auto& previous_sample = stereo_sector.samples[sample_index - 1];
+			auto r_predictor = PREDICTORS.at(r_predictor_index);
+			auto l_predictor = PREDICTORS.at(l_predictor_index);
+			for (auto sample_index = cdda::STEREO_SAMPLES_PER_SECTOR - 1; sample_index >= 2; sample_index -= 1) {
+				auto& sample_m2 = stereo_sector.samples[sample_index - 2];
+				auto& sample_m1 = stereo_sector.samples[sample_index - 1];
 				auto& sample = stereo_sector.samples[sample_index];
-				sample.r.si = sample.r.si - previous_sample.r.si;
-				sample.l.si = sample.l.si - previous_sample.l.si;
+				auto r_prediction = si16_t(r_predictor.m2 * sample_m2.r.si + r_predictor.m1 * sample_m1.r.si);
+				auto l_prediction = si16_t(l_predictor.m2 * sample_m2.l.si + l_predictor.m1 * sample_m1.l.si);
+				sample.r.si -= r_prediction;
+				sample.l.si -= l_prediction;
 			}
 		}
 
 		auto recorrelate_temporally(
-			cdda::StereoSector& stereo_sector
+			cdda::StereoSector& stereo_sector,
+			size_t r_predictor_index,
+			size_t l_predictor_index
 		) -> void {
-			for (auto sample_index = size_t(1); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
-				auto& previous_sample = stereo_sector.samples[sample_index - 1];
+			auto r_predictor = PREDICTORS.at(r_predictor_index);
+			auto l_predictor = PREDICTORS.at(l_predictor_index);
+			for (auto sample_index = size_t(2); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
+				auto& sample_m2 = stereo_sector.samples[sample_index - 2];
+				auto& sample_m1 = stereo_sector.samples[sample_index - 1];
 				auto& sample = stereo_sector.samples[sample_index];
-				sample.r.si = sample.r.si + previous_sample.r.si;
-				sample.l.si = sample.l.si + previous_sample.l.si;
+				auto r_prediction = si16_t(r_predictor.m2 * sample_m2.r.si + r_predictor.m1 * sample_m1.r.si);
+				auto l_prediction = si16_t(l_predictor.m2 * sample_m2.l.si + l_predictor.m1 * sample_m1.l.si);
+				sample.r.si += r_prediction;
+				sample.l.si += l_prediction;
 			}
 		}
 
@@ -104,13 +182,17 @@ namespace odi {
 
 		auto compress_using_exponential_golomb_coding(
 			const cdda::Sector& sector,
-			size_t k
+			size_t k,
+			size_t r_predictor_index,
+			size_t l_predictor_index
 		) -> std::vector<byte_t> {
 			auto compressed_sector = std::vector<byte_t>();
 			compressed_sector.resize(sizeof(LosslessStereoAudioHeader));
 			auto& header = *reinterpret_cast<LosslessStereoAudioHeader*>(compressed_sector.data());
 			header = LosslessStereoAudioHeader();
 			header.k = k;
+			header.r_predictor_index = r_predictor_index;
+			header.l_predictor_index = l_predictor_index;
 			auto bitwriter = bits::BitWriter(compressed_sector);
 			auto power = size_t(1) << k;
 			for (auto sample_index = size_t(0); sample_index < cdda::SAMPLES_PER_SECTOR; sample_index += 1) {
@@ -131,12 +213,14 @@ namespace odi {
 			std::memcpy(&sector_data, &target_sector_data, cd::SECTOR_LENGTH);
 			auto& stereo_sector = *reinterpret_cast<cdda::StereoSector*>(&sector_data);
 			decorrelate_spatially(stereo_sector);
-			decorrelate_temporally(stereo_sector);
+			auto r_predictor_index = find_optimal_predictor_for_r(stereo_sector);
+			auto l_predictor_index = find_optimal_predictor_for_l(stereo_sector);
+			decorrelate_temporally(stereo_sector, r_predictor_index, l_predictor_index);
 			auto& unsigned_sector = *reinterpret_cast<cdda::Sector*>(&sector_data);
 			transform_into_optimized_representation(unsigned_sector);
 			auto compressed_sectors = std::array<std::vector<byte_t>, 16>();
 			for (auto k = size_t(0); k < 16; k += 1) {
-				compressed_sectors.at(k) = std::move(compress_using_exponential_golomb_coding(unsigned_sector, k));
+				compressed_sectors.at(k) = std::move(compress_using_exponential_golomb_coding(unsigned_sector, k, r_predictor_index, l_predictor_index));
 			}
 			std::sort(compressed_sectors.begin(), compressed_sectors.end(), [](const std::vector<byte_t>& one, const std::vector<byte_t>& two) -> bool_t {
 				return one.size() < two.size();
@@ -178,7 +262,7 @@ namespace odi {
 				unsigned_sector.samples[sample_index].ui = sample;
 			}
 			transform_from_optimized_representation(unsigned_sector);
-			recorrelate_temporally(stereo_sector);
+			recorrelate_temporally(stereo_sector, header.r_predictor_index, header.l_predictor_index);
 			recorrelate_spatially(stereo_sector);
 		}
 	}

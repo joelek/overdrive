@@ -117,10 +117,14 @@ namespace odi {
 	struct LosslessStereoAudioHeader {
 		ui16_t header_length = sizeof(LosslessStereoAudioHeader);
 		ui08_t k;
+		ui08_t r_predictor_index;
+		ui08_t l_predictor_index;
+		ui08_t : 8;
+		ui08_t : 8;
 		ui08_t : 8;
 	};
 
-	static_assert(sizeof(LosslessStereoAudioHeader) == 4);
+	static_assert(sizeof(LosslessStereoAudioHeader) == 8);
 
 	#pragma pack(pop)
 
