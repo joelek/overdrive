@@ -343,6 +343,15 @@ namespace exceptions {
 
 		protected:
 	};
+
+	class CompressionValidationError: public CompressionException {
+		public:
+
+		CompressionValidationError(
+		);
+
+		protected:
+	};
 }
 }
 
