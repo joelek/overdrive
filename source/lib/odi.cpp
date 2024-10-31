@@ -251,8 +251,8 @@ namespace odi {
 				return one.size() < two.size();
 			});
 			auto& best = compressed_buffers.front();
-			if (best.size() >= cd::SECTOR_LENGTH) {
-				OVERDRIVE_THROW(exceptions::CompressedSizeExceededUncompressedSizeException(best.size(), cd::SECTOR_LENGTH));
+			if (best.size() >= size) {
+				OVERDRIVE_THROW(exceptions::CompressedSizeExceededUncompressedSizeException(best.size(), size));
 			}
 			std::memcpy(data, best.data(), best.size());
 			return best.size();
