@@ -26,25 +26,23 @@ namespace commands {
 
 		auto compress_sector(
 			copier::ExtractedSector& extracted_sector,
-			disc::TrackType::type type
+			odi::CompressionMethod::type sector_data_method,
+			odi::CompressionMethod::type subchannels_method
 		) -> odi::SectorTableEntry {
-			if (type == disc::TrackType::AUDIO_2_CHANNELS) {
-				try {
-					auto sector_table_entry = odi::SectorTableEntry();
-					sector_table_entry.readability = extracted_sector.counter == 0 ? odi::Readability::UNREADABLE : odi::Readability::READABLE;
-					sector_table_entry.sector_data.compressed_byte_count = odi::compress_sector_data(extracted_sector.sector_data, odi::CompressionMethod::LOSSLESS_STEREO_AUDIO);
-					sector_table_entry.sector_data.compression_method = odi::CompressionMethod::LOSSLESS_STEREO_AUDIO;
-					sector_table_entry.subchannels_data.compressed_byte_count = odi::compress_subchannels_data(extracted_sector.subchannels_data, odi::CompressionMethod::GENERIC_LOSSLESS);
-					sector_table_entry.subchannels_data.compression_method = odi::CompressionMethod::GENERIC_LOSSLESS;
-					return sector_table_entry;
-				} catch (const exceptions::CompressionException& e) {}
-			}
 			auto sector_table_entry = odi::SectorTableEntry();
 			sector_table_entry.readability = extracted_sector.counter == 0 ? odi::Readability::UNREADABLE : odi::Readability::READABLE;
 			sector_table_entry.sector_data.compressed_byte_count = cd::SECTOR_LENGTH;
 			sector_table_entry.sector_data.compression_method = odi::CompressionMethod::NONE;
 			sector_table_entry.subchannels_data.compressed_byte_count = cd::SUBCHANNELS_LENGTH;
 			sector_table_entry.subchannels_data.compression_method = odi::CompressionMethod::NONE;
+			try {
+				sector_table_entry.sector_data.compressed_byte_count = odi::compress_sector_data(extracted_sector.sector_data, sector_data_method);
+				sector_table_entry.sector_data.compression_method = sector_data_method;
+			} catch (const exceptions::CompressedSizeExceededUncompressedSizeException& e) {}
+			try {
+				sector_table_entry.subchannels_data.compressed_byte_count = odi::compress_subchannels_data(extracted_sector.subchannels_data, subchannels_method);
+				sector_table_entry.subchannels_data.compression_method = subchannels_method;
+			} catch (const exceptions::CompressedSizeExceededUncompressedSizeException& e) {}
 			return sector_table_entry;
 		}
 
@@ -73,16 +71,12 @@ namespace commands {
 				auto& extracted_sectors = extracted_sectors_vector.at(sector_index);
 				auto& extracted_sector = extracted_sectors.at(0);
 				auto& sector_table_entry = sector_table_entries.at(sector_index);
+				sector_table_entry = compress_sector(extracted_sector, odi::CompressionMethod::GENERIC_LOSSLESS, odi::CompressionMethod::GENERIC_LOSSLESS);
 				sector_table_entry.compressed_data_absolute_offset = std::ftell(handle);
-				sector_table_entry.readability = extracted_sector.counter == 0 ? odi::Readability::UNREADABLE : odi::Readability::READABLE;
-				sector_table_entry.sector_data.compressed_byte_count = cd::SECTOR_LENGTH;
-				sector_table_entry.sector_data.compression_method = odi::CompressionMethod::NONE;
-				sector_table_entry.subchannels_data.compressed_byte_count = cd::SUBCHANNELS_LENGTH;
-				sector_table_entry.subchannels_data.compression_method = odi::CompressionMethod::NONE;
-				if (std::fwrite(extracted_sector.sector_data, sizeof(extracted_sector.sector_data), 1, handle) != 1) {
+				if (std::fwrite(extracted_sector.sector_data, sector_table_entry.sector_data.compressed_byte_count, 1, handle) != 1) {
 					OVERDRIVE_THROW(exceptions::IOWriteException(path));
 				}
-				if (std::fwrite(extracted_sector.subchannels_data, sizeof(extracted_sector.subchannels_data), 1, handle) != 1) {
+				if (std::fwrite(extracted_sector.subchannels_data, sector_table_entry.subchannels_data.compressed_byte_count, 1, handle) != 1) {
 					OVERDRIVE_THROW(exceptions::IOWriteException(path));
 				}
 			}
@@ -128,7 +122,9 @@ namespace commands {
 							auto& extracted_sectors = extracted_sectors_vector.at(sector_index);
 							auto& extracted_sector = extracted_sectors.at(0);
 							auto& sector_table_entry = track_sector_table_entries.at(sector_index);
-							sector_table_entry = compress_sector(extracted_sector, track.type);
+							auto sector_data_method = track.type == disc::TrackType::AUDIO_2_CHANNELS ? odi::CompressionMethod::LOSSLESS_STEREO_AUDIO : odi::CompressionMethod::GENERIC_LOSSLESS;
+							auto subchannels_data_method = odi::CompressionMethod::GENERIC_LOSSLESS;
+							sector_table_entry = compress_sector(extracted_sector, sector_data_method, subchannels_data_method);
 							sector_table_entry.compressed_data_absolute_offset = std::ftell(handle);
 							if (std::fwrite(extracted_sector.sector_data, sector_table_entry.sector_data.compressed_byte_count, 1, handle) != 1) {
 								OVERDRIVE_THROW(exceptions::IOWriteException(path));
