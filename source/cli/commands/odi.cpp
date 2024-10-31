@@ -75,8 +75,8 @@ namespace commands {
 					sector_table_entry.readability = extracted_sector.counter == 0 ? odi::Readability::UNREADABLE : odi::Readability::READABLE;
 					sector_table_entry.sector_data.compressed_byte_count = odi::compress_sector_data(extracted_sector.sector_data, odi::CompressionMethod::LOSSLESS_STEREO_AUDIO);
 					sector_table_entry.sector_data.compression_method = odi::CompressionMethod::LOSSLESS_STEREO_AUDIO;
-					sector_table_entry.subchannels_data.compressed_byte_count = cd::SUBCHANNELS_LENGTH;
-					sector_table_entry.subchannels_data.compression_method = odi::CompressionMethod::NONE;
+					sector_table_entry.subchannels_data.compressed_byte_count = odi::compress_subchannels_data(extracted_sector.subchannels_data, odi::CompressionMethod::GENERIC_LOSSLESS);
+					sector_table_entry.subchannels_data.compression_method = odi::CompressionMethod::GENERIC_LOSSLESS;
 					return sector_table_entry;
 				} catch (const exceptions::CompressionException& e) {}
 			}
