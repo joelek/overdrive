@@ -62,15 +62,17 @@ namespace odi {
 		class Predictor {
 			public:
 
+			si_t m3;
 			si_t m2;
 			si_t m1;
 
 			protected:
 		};
 
-		const auto PREDICTORS = std::array<Predictor, 2>({
-			{ -1, 2 }, // Linear
-			{ 0, 1 } // Repeat
+		const auto PREDICTORS = std::array<Predictor, 3>({
+			{ 1, -2, 2 }, // Quadratic
+			{ 0, -1, 2 }, // Linear
+			{ 0, 0, 1 } // Repeat
 		});
 
 		auto decorrelate_spatially(
@@ -98,11 +100,12 @@ namespace odi {
 			for (auto predictor_index = size_t(0); predictor_index < PREDICTORS.size(); predictor_index += 1) {
 				auto& predictor = PREDICTORS.at(predictor_index);
 				auto& absolute_difference = absolute_differences.at(predictor_index);
-				for (auto sample_index = size_t(2); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
+				for (auto sample_index = size_t(3); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
+					auto& sample_m3 = stereo_sector.samples[sample_index - 3];
 					auto& sample_m2 = stereo_sector.samples[sample_index - 2];
 					auto& sample_m1 = stereo_sector.samples[sample_index - 1];
 					auto& sample = stereo_sector.samples[sample_index];
-					auto prediction = si16_t(predictor.m2 * sample_m2.r.si + predictor.m1 * sample_m1.r.si);
+					auto prediction = si16_t(predictor.m3 * sample_m3.r.si + predictor.m2 * sample_m2.r.si + predictor.m1 * sample_m1.r.si);
 					auto residual = si16_t(sample.r.si - prediction);
 					absolute_difference += residual < 0 ? 0 - residual : residual;
 				}
@@ -123,11 +126,12 @@ namespace odi {
 			for (auto predictor_index = size_t(0); predictor_index < PREDICTORS.size(); predictor_index += 1) {
 				auto& predictor = PREDICTORS.at(predictor_index);
 				auto& absolute_difference = absolute_differences.at(predictor_index);
-				for (auto sample_index = size_t(2); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
+				for (auto sample_index = size_t(3); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
+					auto& sample_m3 = stereo_sector.samples[sample_index - 3];
 					auto& sample_m2 = stereo_sector.samples[sample_index - 2];
 					auto& sample_m1 = stereo_sector.samples[sample_index - 1];
 					auto& sample = stereo_sector.samples[sample_index];
-					auto prediction = si16_t(predictor.m2 * sample_m2.l.si + predictor.m1 * sample_m1.l.si);
+					auto prediction = si16_t(predictor.m3 * sample_m3.l.si + predictor.m2 * sample_m2.l.si + predictor.m1 * sample_m1.l.si);
 					auto residual = si16_t(sample.l.si - prediction);
 					absolute_difference += residual < 0 ? 0 - residual : residual;
 				}
@@ -148,12 +152,13 @@ namespace odi {
 		) -> void {
 			auto& r_predictor = PREDICTORS.at(r_predictor_index);
 			auto& l_predictor = PREDICTORS.at(l_predictor_index);
-			for (auto sample_index = cdda::STEREO_SAMPLES_PER_SECTOR - 1; sample_index >= 2; sample_index -= 1) {
+			for (auto sample_index = cdda::STEREO_SAMPLES_PER_SECTOR - 1; sample_index >= 3; sample_index -= 1) {
+				auto& sample_m3 = stereo_sector.samples[sample_index - 3];
 				auto& sample_m2 = stereo_sector.samples[sample_index - 2];
 				auto& sample_m1 = stereo_sector.samples[sample_index - 1];
 				auto& sample = stereo_sector.samples[sample_index];
-				auto r_prediction = si16_t(r_predictor.m2 * sample_m2.r.si + r_predictor.m1 * sample_m1.r.si);
-				auto l_prediction = si16_t(l_predictor.m2 * sample_m2.l.si + l_predictor.m1 * sample_m1.l.si);
+				auto r_prediction = si16_t(r_predictor.m3 * sample_m3.r.si + r_predictor.m2 * sample_m2.r.si + r_predictor.m1 * sample_m1.r.si);
+				auto l_prediction = si16_t(l_predictor.m3 * sample_m3.l.si + l_predictor.m2 * sample_m2.l.si + l_predictor.m1 * sample_m1.l.si);
 				sample.r.si -= r_prediction;
 				sample.l.si -= l_prediction;
 			}
@@ -166,12 +171,13 @@ namespace odi {
 		) -> void {
 			auto& r_predictor = PREDICTORS.at(r_predictor_index);
 			auto& l_predictor = PREDICTORS.at(l_predictor_index);
-			for (auto sample_index = size_t(2); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
+			for (auto sample_index = size_t(3); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
+				auto& sample_m3 = stereo_sector.samples[sample_index - 3];
 				auto& sample_m2 = stereo_sector.samples[sample_index - 2];
 				auto& sample_m1 = stereo_sector.samples[sample_index - 1];
 				auto& sample = stereo_sector.samples[sample_index];
-				auto r_prediction = si16_t(r_predictor.m2 * sample_m2.r.si + r_predictor.m1 * sample_m1.r.si);
-				auto l_prediction = si16_t(l_predictor.m2 * sample_m2.l.si + l_predictor.m1 * sample_m1.l.si);
+				auto r_prediction = si16_t(r_predictor.m3 * sample_m3.r.si + r_predictor.m2 * sample_m2.r.si + r_predictor.m1 * sample_m1.r.si);
+				auto l_prediction = si16_t(l_predictor.m3 * sample_m3.l.si + l_predictor.m2 * sample_m2.l.si + l_predictor.m1 * sample_m1.l.si);
 				sample.r.si += r_prediction;
 				sample.l.si += l_prediction;
 			}
