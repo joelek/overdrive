@@ -16,7 +16,7 @@ namespace odi {
 	) -> const std::string& {
 		static const auto names = std::map<type, std::string>({
 			{ NONE, "NONE" },
-			{ GENERIC_LOSSLESS, "GENERIC_LOSSLESS" },
+			{ EXPONENTIAL_GOLOMB, "EXPONENTIAL_GOLOMB" },
 			{ LOSSLESS_STEREO_AUDIO, "LOSSLESS_STEREO_AUDIO" }
 		});
 		static const auto fallback = std::string("???");
@@ -32,7 +32,7 @@ namespace odi {
 	) -> const std::string& {
 		static const auto names = std::map<type, std::string>({
 			{ NONE, "NONE" },
-			{ GENERIC_LOSSLESS, "GENERIC_LOSSLESS" },
+			{ EXPONENTIAL_GOLOMB, "EXPONENTIAL_GOLOMB" },
 		});
 		static const auto fallback = std::string("???");
 		auto iterator = names.find(value);
@@ -248,16 +248,16 @@ namespace odi {
 			recorrelate_spatially(stereo_sector);
 		}
 
-		auto compress_data_generic_lossless(
+		auto compress_data_exponential_golomb(
 			byte_t* data,
 			size_t size
 		) -> size_t {
 			auto compressed_buffers = std::array<std::vector<byte_t>, 8>();
 			for (auto k = size_t(0); k < 8; k += 1) {
 				auto& compressed_buffer = compressed_buffers.at(k);
-				compressed_buffer.resize(sizeof(GenericLosslessHeader));
-				auto& header = *reinterpret_cast<GenericLosslessHeader*>(compressed_buffer.data());
-				header = GenericLosslessHeader();
+				compressed_buffer.resize(sizeof(ExponentialGolombHeader));
+				auto& header = *reinterpret_cast<ExponentialGolombHeader*>(compressed_buffer.data());
+				header = ExponentialGolombHeader();
 				header.k = k;
 				auto bitwriter = bits::BitWriter(compressed_buffer);
 				bits::compress_data_using_exponential_golomb_coding(data, size, k, bitwriter);
@@ -273,14 +273,14 @@ namespace odi {
 			return best.size();
 		}
 
-		auto decompress_data_generic_lossless(
+		auto decompress_data_exponential_golomb(
 			byte_t* data,
 			size_t size,
 			size_t compressed_byte_count
 		) -> void {
 			auto original = std::vector<byte_t>(compressed_byte_count);
 			std::memcpy(original.data(), data, compressed_byte_count);
-			auto& header = *reinterpret_cast<GenericLosslessHeader*>(original.data());
+			auto& header = *reinterpret_cast<ExponentialGolombHeader*>(original.data());
 			auto bitreader = bits::BitReader(original, header.header_length);
 			bits::decompress_data_using_exponential_golomb_coding(data, size, header.k, bitreader);
 		}
@@ -292,8 +292,8 @@ namespace odi {
 			if (compression_method == SectorDataCompressionMethod::NONE) {
 				return sizeof(sector_data);
 			}
-			if (compression_method == SectorDataCompressionMethod::GENERIC_LOSSLESS) {
-				return internal::compress_data_generic_lossless(sector_data, sizeof(sector_data));
+			if (compression_method == SectorDataCompressionMethod::EXPONENTIAL_GOLOMB) {
+				return internal::compress_data_exponential_golomb(sector_data, sizeof(sector_data));
 			}
 			if (compression_method == SectorDataCompressionMethod::LOSSLESS_STEREO_AUDIO) {
 				return internal::compress_sector_lossless_stereo_audio(sector_data);
@@ -308,8 +308,8 @@ namespace odi {
 			if (compression_method == SubchannelsDataCompressionMethod::NONE) {
 				return sizeof(subchannels_data);
 			}
-			if (compression_method == SubchannelsDataCompressionMethod::GENERIC_LOSSLESS) {
-				return internal::compress_data_generic_lossless(subchannels_data, sizeof(subchannels_data));
+			if (compression_method == SubchannelsDataCompressionMethod::EXPONENTIAL_GOLOMB) {
+				return internal::compress_data_exponential_golomb(subchannels_data, sizeof(subchannels_data));
 			}
 			OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
 		}
@@ -349,8 +349,8 @@ namespace odi {
 		if (compression_method == SectorDataCompressionMethod::NONE) {
 			return;
 		}
-		if (compression_method == SectorDataCompressionMethod::GENERIC_LOSSLESS) {
-			return internal::decompress_data_generic_lossless(sector_data, sizeof(sector_data), compressed_byte_count);
+		if (compression_method == SectorDataCompressionMethod::EXPONENTIAL_GOLOMB) {
+			return internal::decompress_data_exponential_golomb(sector_data, sizeof(sector_data), compressed_byte_count);
 		}
 		if (compression_method == SectorDataCompressionMethod::LOSSLESS_STEREO_AUDIO) {
 			return internal::decompress_sector_lossless_stereo_audio(sector_data, compressed_byte_count);
@@ -391,8 +391,8 @@ namespace odi {
 		if (compression_method == SubchannelsDataCompressionMethod::NONE) {
 			return;
 		}
-		if (compression_method == SubchannelsDataCompressionMethod::GENERIC_LOSSLESS) {
-			return internal::decompress_data_generic_lossless(subchannels_data, sizeof(subchannels_data), compressed_byte_count);
+		if (compression_method == SubchannelsDataCompressionMethod::EXPONENTIAL_GOLOMB) {
+			return internal::decompress_data_exponential_golomb(subchannels_data, sizeof(subchannels_data), compressed_byte_count);
 		}
 		OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
 	}

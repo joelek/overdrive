@@ -15,7 +15,7 @@ namespace odi {
 		using type = ui08_t;
 
 		const auto NONE = type(0x00);
-		const auto GENERIC_LOSSLESS = type(0x01);
+		const auto EXPONENTIAL_GOLOMB = type(0x01);
 		const auto LOSSLESS_STEREO_AUDIO = type(0x80);
 
 		auto name(
@@ -27,7 +27,7 @@ namespace odi {
 		using type = ui08_t;
 
 		const auto NONE = type(0x00);
-		const auto GENERIC_LOSSLESS = type(0x01);
+		const auto EXPONENTIAL_GOLOMB = type(0x01);
 
 		auto name(
 			type value
@@ -145,13 +145,13 @@ namespace odi {
 
 	static_assert(sizeof(LosslessStereoAudioHeader) == 8);
 
-	struct GenericLosslessHeader {
-		ui16_t header_length = sizeof(GenericLosslessHeader);
+	struct ExponentialGolombHeader {
+		ui16_t header_length = sizeof(ExponentialGolombHeader);
 		ui08_t k;
 		ui08_t : 8;
 	};
 
-	static_assert(sizeof(GenericLosslessHeader) == 4);
+	static_assert(sizeof(ExponentialGolombHeader) == 4);
 
 	#pragma pack(pop)
 
