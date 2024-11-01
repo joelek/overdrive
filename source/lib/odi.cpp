@@ -11,12 +11,27 @@
 
 namespace overdrive {
 namespace odi {
-	auto CompressionMethod::name(
+	auto SectorDataCompressionMethod::name(
 		type value
 	) -> const std::string& {
 		static const auto names = std::map<type, std::string>({
 			{ NONE, "NONE" },
-			{ LOSSLESS_STEREO_AUDIO, "LOSSLESS_STEREO_AUDIO" },
+			{ GENERIC_LOSSLESS, "GENERIC_LOSSLESS" },
+			{ LOSSLESS_STEREO_AUDIO, "LOSSLESS_STEREO_AUDIO" }
+		});
+		static const auto fallback = std::string("???");
+		auto iterator = names.find(value);
+		if (iterator == names.end()) {
+			return fallback;
+		}
+		return iterator->second;
+	}
+
+	auto SubchannelsDataCompressionMethod::name(
+		type value
+	) -> const std::string& {
+		static const auto names = std::map<type, std::string>({
+			{ NONE, "NONE" },
 			{ GENERIC_LOSSLESS, "GENERIC_LOSSLESS" },
 		});
 		static const auto fallback = std::string("???");
@@ -272,31 +287,28 @@ namespace odi {
 
 		auto do_compress_sector_data(
 			array<cd::SECTOR_LENGTH, byte_t>& sector_data,
-			CompressionMethod::type compression_method
+			SectorDataCompressionMethod::type compression_method
 		) -> size_t {
-			if (compression_method == CompressionMethod::NONE) {
+			if (compression_method == SectorDataCompressionMethod::NONE) {
 				return sizeof(sector_data);
 			}
-			if (compression_method == CompressionMethod::LOSSLESS_STEREO_AUDIO) {
-				return internal::compress_sector_lossless_stereo_audio(sector_data);
-			}
-			if (compression_method == CompressionMethod::GENERIC_LOSSLESS) {
+			if (compression_method == SectorDataCompressionMethod::GENERIC_LOSSLESS) {
 				return internal::compress_data_generic_lossless(sector_data, sizeof(sector_data));
+			}
+			if (compression_method == SectorDataCompressionMethod::LOSSLESS_STEREO_AUDIO) {
+				return internal::compress_sector_lossless_stereo_audio(sector_data);
 			}
 			OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
 		}
 
 		auto do_compress_subchannels_data(
 			array<cd::SUBCHANNELS_LENGTH, byte_t>& subchannels_data,
-			CompressionMethod::type compression_method
+			SubchannelsDataCompressionMethod::type compression_method
 		) -> size_t {
-			if (compression_method == CompressionMethod::NONE) {
+			if (compression_method == SubchannelsDataCompressionMethod::NONE) {
 				return sizeof(subchannels_data);
 			}
-			if (compression_method == CompressionMethod::LOSSLESS_STEREO_AUDIO) {
-				OVERDRIVE_THROW(exceptions::CompressionException("Expected compression method to be supported for data type!"));
-			}
-			if (compression_method == CompressionMethod::GENERIC_LOSSLESS) {
+			if (compression_method == SubchannelsDataCompressionMethod::GENERIC_LOSSLESS) {
 				return internal::compress_data_generic_lossless(subchannels_data, sizeof(subchannels_data));
 			}
 			OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
@@ -307,7 +319,7 @@ namespace odi {
 #ifdef DEBUG
 	auto compress_sector_data(
 		array<cd::SECTOR_LENGTH, byte_t>& sector_data,
-		CompressionMethod::type compression_method
+		SectorDataCompressionMethod::type compression_method
 	) -> size_t {
 		array<cd::SECTOR_LENGTH, byte_t> uncompressed_sector_data;
 		std::memcpy(&uncompressed_sector_data, &sector_data, cd::SECTOR_LENGTH);
@@ -323,7 +335,7 @@ namespace odi {
 #else
 	auto compress_sector_data(
 		array<cd::SECTOR_LENGTH, byte_t>& sector_data,
-		CompressionMethod::type compression_method
+		SectorDataCompressionMethod::type compression_method
 	) -> size_t {
 		return internal::do_compress_sector_data(sector_data, compression_method);
 	}
@@ -332,16 +344,16 @@ namespace odi {
 	auto decompress_sector_data(
 		array<cd::SECTOR_LENGTH, byte_t>& sector_data,
 		size_t compressed_byte_count,
-		CompressionMethod::type compression_method
+		SectorDataCompressionMethod::type compression_method
 	) -> void {
-		if (compression_method == CompressionMethod::NONE) {
+		if (compression_method == SectorDataCompressionMethod::NONE) {
 			return;
 		}
-		if (compression_method == CompressionMethod::LOSSLESS_STEREO_AUDIO) {
-			return internal::decompress_sector_lossless_stereo_audio(sector_data, compressed_byte_count);
-		}
-		if (compression_method == CompressionMethod::GENERIC_LOSSLESS) {
+		if (compression_method == SectorDataCompressionMethod::GENERIC_LOSSLESS) {
 			return internal::decompress_data_generic_lossless(sector_data, sizeof(sector_data), compressed_byte_count);
+		}
+		if (compression_method == SectorDataCompressionMethod::LOSSLESS_STEREO_AUDIO) {
+			return internal::decompress_sector_lossless_stereo_audio(sector_data, compressed_byte_count);
 		}
 		OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
 	}
@@ -349,7 +361,7 @@ namespace odi {
 #ifdef DEBUG
 	auto compress_subchannels_data(
 		array<cd::SUBCHANNELS_LENGTH, byte_t>& subchannels_data,
-		CompressionMethod::type compression_method
+		SubchannelsDataCompressionMethod::type compression_method
 	) -> size_t {
 		array<cd::SUBCHANNELS_LENGTH, byte_t> uncompressed_subchannels_data;
 		std::memcpy(&uncompressed_subchannels_data, &subchannels_data, cd::SUBCHANNELS_LENGTH);
@@ -365,7 +377,7 @@ namespace odi {
 #else
 	auto compress_subchannels_data(
 		array<cd::SUBCHANNELS_LENGTH, byte_t>& subchannels_data,
-		CompressionMethod::type compression_method
+		SubchannelsDataCompressionMethod::type compression_method
 	) -> size_t {
 		return internal::do_compress_subchannels_data(subchannels_data, compression_method);
 	}
@@ -374,15 +386,12 @@ namespace odi {
 	auto decompress_subchannels_data(
 		array<cd::SUBCHANNELS_LENGTH, byte_t>& subchannels_data,
 		size_t compressed_byte_count,
-		CompressionMethod::type compression_method
+		SubchannelsDataCompressionMethod::type compression_method
 	) -> void {
-		if (compression_method == CompressionMethod::NONE) {
+		if (compression_method == SubchannelsDataCompressionMethod::NONE) {
 			return;
 		}
-		if (compression_method == CompressionMethod::LOSSLESS_STEREO_AUDIO) {
-			OVERDRIVE_THROW(exceptions::CompressionException("Expected compression method to be supported for data type!"));
-		}
-		if (compression_method == CompressionMethod::GENERIC_LOSSLESS) {
+		if (compression_method == SubchannelsDataCompressionMethod::GENERIC_LOSSLESS) {
 			return internal::decompress_data_generic_lossless(subchannels_data, sizeof(subchannels_data), compressed_byte_count);
 		}
 		OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
