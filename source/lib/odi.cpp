@@ -105,11 +105,6 @@ namespace odi {
 		) -> void {
 			for (auto group_index = size_t(0); group_index < GROUPS_PER_SECTOR; group_index += 1) {
 				auto first_sample = group_index * SAMPLES_PER_GROUP;
-				if (first_sample < 3) {
-					group_predictor_indices_l[group_index] = 0;
-					group_predictor_indices_r[group_index] = 0;
-					continue;
-				}
 				auto last_sample = first_sample + SAMPLES_PER_GROUP;
 				last_sample = last_sample < cdda::STEREO_SAMPLES_PER_SECTOR ? last_sample : cdda::STEREO_SAMPLES_PER_SECTOR;
 				auto absolute_differences_l = std::array<size_t, PREDICTORS.size()>();
@@ -119,6 +114,9 @@ namespace odi {
 					auto absolute_difference_l = size_t(0);
 					auto absolute_difference_r = size_t(0);
 					for (auto sample_index = first_sample; sample_index < last_sample; sample_index += 1) {
+						if (sample_index < 3) {
+							continue;
+						}
 						auto& sample_m3 = stereo_sector.samples[sample_index - 3];
 						auto& sample_m2 = stereo_sector.samples[sample_index - 2];
 						auto& sample_m1 = stereo_sector.samples[sample_index - 1];
@@ -157,14 +155,14 @@ namespace odi {
 		) -> void {
 			for (auto group_index = si_t(GROUPS_PER_SECTOR - 1); group_index >= si_t(0); group_index -= 1) {
 				auto first_sample = group_index * SAMPLES_PER_GROUP;
-				if (first_sample < 3) {
-					continue;
-				}
 				auto last_sample = first_sample + SAMPLES_PER_GROUP;
 				last_sample = last_sample < cdda::STEREO_SAMPLES_PER_SECTOR ? last_sample : cdda::STEREO_SAMPLES_PER_SECTOR;
 				auto& l_predictor = PREDICTORS.at(group_predictor_indices_l[group_index]);
 				auto& r_predictor = PREDICTORS.at(group_predictor_indices_r[group_index]);
 				for (auto sample_index = si_t(last_sample - 1); sample_index >= si_t(first_sample); sample_index -= 1) {
+					if (sample_index < 3) {
+						continue;
+					}
 					auto& sample_m3 = stereo_sector.samples[sample_index - 3];
 					auto& sample_m2 = stereo_sector.samples[sample_index - 2];
 					auto& sample_m1 = stereo_sector.samples[sample_index - 1];
@@ -184,14 +182,14 @@ namespace odi {
 		) -> void {
 			for (auto group_index = size_t(0); group_index < GROUPS_PER_SECTOR; group_index += 1) {
 				auto first_sample = group_index * SAMPLES_PER_GROUP;
-				if (first_sample < 3) {
-					continue;
-				}
 				auto last_sample = first_sample + SAMPLES_PER_GROUP;
 				last_sample = last_sample < cdda::STEREO_SAMPLES_PER_SECTOR ? last_sample : cdda::STEREO_SAMPLES_PER_SECTOR;
 				auto& l_predictor = PREDICTORS.at(group_predictor_indices_l[group_index]);
 				auto& r_predictor = PREDICTORS.at(group_predictor_indices_r[group_index]);
 				for (auto sample_index = first_sample; sample_index < last_sample; sample_index += 1) {
+					if (sample_index < 3) {
+						continue;
+					}
 					auto& sample_m3 = stereo_sector.samples[sample_index - 3];
 					auto& sample_m2 = stereo_sector.samples[sample_index - 2];
 					auto& sample_m1 = stereo_sector.samples[sample_index - 1];
