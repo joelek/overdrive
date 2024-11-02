@@ -69,10 +69,11 @@ namespace odi {
 			protected:
 		};
 
-		const auto PREDICTORS = std::array<Predictor, 3>({
-			{ 1, -2, 2 }, // Quadratic
+		const auto PREDICTORS = std::array<Predictor, 4>({
+			{ 0, 0, 0 }, // None
+			{ 0, 0, 1 }, // Repeat
 			{ 0, -1, 2 }, // Linear
-			{ 0, 0, 1 } // Repeat
+			{ 1, -3, 3 } // Quadratic
 		});
 
 		auto decorrelate_spatially(
