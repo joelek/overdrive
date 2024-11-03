@@ -63,6 +63,23 @@ namespace bits {
 		}
 	}
 
+	auto BitWriter::append_one(
+	) -> void {
+		this->current_byte |= 1 << (8 - bits_in_byte - 1);
+		this->bits_in_byte += 1;
+		if (this->bits_in_byte == 8) {
+			this->flush_bits();
+		}
+	}
+
+	auto BitWriter::append_zero(
+	) -> void {
+		this->bits_in_byte += 1;
+		if (this->bits_in_byte == 8) {
+			this->flush_bits();
+		}
+	}
+
 	auto BitWriter::flush_bits(
 	) -> void {
 		if (this->bits_in_byte > 0) {

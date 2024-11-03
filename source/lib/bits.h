@@ -40,6 +40,12 @@ namespace bits {
 			size_t width
 		) -> void;
 
+		auto append_one(
+		) -> void;
+
+		auto append_zero(
+		) -> void;
+
 		auto flush_bits(
 		) -> void;
 
