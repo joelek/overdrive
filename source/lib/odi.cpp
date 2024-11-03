@@ -5,6 +5,7 @@
 #include <bit>
 #include <cstring>
 #include <map>
+#include <thread>
 #include <vector>
 #include "bits.h"
 #include "cdda.h"
@@ -236,20 +237,27 @@ namespace odi {
 			transform_into_optimized_representation(sector);
 			auto samples = reinterpret_cast<ui16_t*>(&sector_data);
 			auto compressed_sectors = std::array<std::vector<byte_t>, 16>();
+			auto threads = std::array<std::thread, 16>();
 			for (auto k = size_t(0); k < 16; k += 1) {
-				auto& compressed_sector = compressed_sectors.at(k);
-				compressed_sector.resize(sizeof(LosslessStereoAudioHeader));
-				auto& header = *reinterpret_cast<LosslessStereoAudioHeader*>(compressed_sector.data());
-				header = LosslessStereoAudioHeader();
-				header.k = k;
-				auto bitwriter = bits::BitWriter(compressed_sector);
-				for (auto group_index = size_t(0); group_index < GROUPS_PER_SECTOR; group_index += 1) {
-					auto group_predictor_index_l = group_predictor_indices_l[group_index];
-					auto group_predictor_index_r = group_predictor_indices_r[group_index];
-					bitwriter.append_bits(group_predictor_index_l, BITS_PER_PREDICTOR_INDEX);
-					bitwriter.append_bits(group_predictor_index_r, BITS_PER_PREDICTOR_INDEX);
-				}
-				bits::compress_data_using_exponential_golomb_coding(samples, cdda::SAMPLES_PER_SECTOR, k, bitwriter);
+				auto thread = std::thread([&, k]() -> void {
+					auto& compressed_sector = compressed_sectors.at(k);
+					compressed_sector.resize(sizeof(LosslessStereoAudioHeader));
+					auto& header = *reinterpret_cast<LosslessStereoAudioHeader*>(compressed_sector.data());
+					header = LosslessStereoAudioHeader();
+					header.k = k;
+					auto bitwriter = bits::BitWriter(compressed_sector);
+					for (auto group_index = size_t(0); group_index < GROUPS_PER_SECTOR; group_index += 1) {
+						auto group_predictor_index_l = group_predictor_indices_l[group_index];
+						auto group_predictor_index_r = group_predictor_indices_r[group_index];
+						bitwriter.append_bits(group_predictor_index_l, BITS_PER_PREDICTOR_INDEX);
+						bitwriter.append_bits(group_predictor_index_r, BITS_PER_PREDICTOR_INDEX);
+					}
+					bits::compress_data_using_exponential_golomb_coding(samples, cdda::SAMPLES_PER_SECTOR, k, bitwriter);
+				});
+				threads.at(k) = std::move(thread);
+			}
+			for (auto thread_index = size_t(0); thread_index < threads.size(); thread_index += 1) {
+				threads.at(thread_index).join();
 			}
 			std::sort(compressed_sectors.begin(), compressed_sectors.end(), [](const std::vector<byte_t>& one, const std::vector<byte_t>& two) -> bool_t {
 				return one.size() < two.size();
