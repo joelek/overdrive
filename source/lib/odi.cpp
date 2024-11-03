@@ -253,7 +253,7 @@ namespace odi {
 							bitwriter.append_bits(group_predictor_index_l, BITS_PER_PREDICTOR_INDEX);
 							bitwriter.append_bits(group_predictor_index_r, BITS_PER_PREDICTOR_INDEX);
 						}
-						bits::compress_data_using_exponential_golomb_coding(samples, cdda::SAMPLES_PER_SECTOR, k, bitwriter);
+						bits::compress_data_using_rice_coding(samples, cdda::SAMPLES_PER_SECTOR, k, bitwriter);
 					} catch (const exceptions::BitWriterSizeExceededError& e) {}
 				});
 				threads.at(k) = std::move(thread);
@@ -289,7 +289,7 @@ namespace odi {
 				group_predictor_indices_l[group_index] = bitreader.decode_bits(BITS_PER_PREDICTOR_INDEX);
 				group_predictor_indices_r[group_index] = bitreader.decode_bits(BITS_PER_PREDICTOR_INDEX);
 			}
-			bits::decompress_data_using_exponential_golomb_coding(samples, cdda::SAMPLES_PER_SECTOR, header.k, bitreader);
+			bits::decompress_data_using_rice_coding(samples, cdda::SAMPLES_PER_SECTOR, header.k, bitreader);
 			transform_from_optimized_representation(sector);
 			recorrelate_temporally(stereo_sector, group_predictor_indices_l, group_predictor_indices_r);
 			recorrelate_spatially(stereo_sector);
