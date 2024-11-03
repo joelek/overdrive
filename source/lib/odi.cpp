@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cstring>
 #include <map>
 #include <vector>
@@ -78,7 +79,7 @@ namespace odi {
 
 		const auto SAMPLES_PER_GROUP = size_t(1);
 		const auto GROUPS_PER_SECTOR = size_t((cdda::STEREO_SAMPLES_PER_SECTOR + SAMPLES_PER_GROUP - 1) / SAMPLES_PER_GROUP);
-		const auto BITS_PER_PREDICTOR_INDEX = size_t(2);
+		const auto BITS_PER_PREDICTOR_INDEX = size_t(sizeof(PREDICTORS.size()) * 8 - std::countl_zero(PREDICTORS.size() - 1));
 
 		auto decorrelate_spatially(
 			cdda::StereoSector& stereo_sector
