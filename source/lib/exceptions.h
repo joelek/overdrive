@@ -352,6 +352,16 @@ namespace exceptions {
 
 		protected:
 	};
+
+	class BitWriterSizeExceededError: public OverdriveException {
+		public:
+
+		BitWriterSizeExceededError(
+			size_t max_size
+		);
+
+		protected:
+	};
 }
 }
 

@@ -131,5 +131,9 @@ namespace exceptions {
 
 	CompressionValidationError::CompressionValidationError(
 	): CompressionException(std::format("Expected the decompressed data to be identical to the uncompressed data!")) {}
+
+	BitWriterSizeExceededError::BitWriterSizeExceededError(
+		size_t max_size
+	): OverdriveException(std::format("Expected BitWriter size not to exceed {} bytes!", max_size)) {}
 }
 }

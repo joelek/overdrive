@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <vector>
 #include "shared.h"
 
@@ -32,7 +33,8 @@ namespace bits {
 		public:
 
 		BitWriter(
-			std::vector<byte_t>& data
+			std::vector<byte_t>& data,
+			std::optional<size_t> max_size
 		);
 
 		auto append_bits(
@@ -52,6 +54,7 @@ namespace bits {
 		protected:
 
 		std::vector<byte_t>& data;
+		std::optional<size_t> max_size;
 		byte_t current_byte;
 		size_t bits_in_byte;
 	};

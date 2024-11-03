@@ -2,6 +2,7 @@
 
 #include <bit>
 #include <cstring>
+#include "exceptions.h"
 
 namespace overdrive {
 namespace bits {
@@ -37,9 +38,11 @@ namespace bits {
 	}
 
 	BitWriter::BitWriter(
-		std::vector<byte_t>& data
+		std::vector<byte_t>& data,
+		std::optional<size_t> max_size
 	):
 		data(data),
+		max_size(max_size),
 		current_byte(0),
 		bits_in_byte(0)
 	{
@@ -86,6 +89,9 @@ namespace bits {
 			this->data.push_back(this->current_byte);
 			this->current_byte = 0;
 			this->bits_in_byte = 0;
+			if (this->max_size && this->data.size() > this->max_size.value()) {
+				OVERDRIVE_THROW(exceptions::BitWriterSizeExceededError(this->max_size.value()));
+			}
 		}
 	}
 

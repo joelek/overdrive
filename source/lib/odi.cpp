@@ -240,19 +240,21 @@ namespace odi {
 			auto threads = std::array<std::thread, 16>();
 			for (auto k = size_t(0); k < 16; k += 1) {
 				auto thread = std::thread([&, k]() -> void {
-					auto& compressed_sector = compressed_sectors.at(k);
-					compressed_sector.resize(sizeof(LosslessStereoAudioHeader));
-					auto& header = *reinterpret_cast<LosslessStereoAudioHeader*>(compressed_sector.data());
-					header = LosslessStereoAudioHeader();
-					header.k = k;
-					auto bitwriter = bits::BitWriter(compressed_sector);
-					for (auto group_index = size_t(0); group_index < GROUPS_PER_SECTOR; group_index += 1) {
-						auto group_predictor_index_l = group_predictor_indices_l[group_index];
-						auto group_predictor_index_r = group_predictor_indices_r[group_index];
-						bitwriter.append_bits(group_predictor_index_l, BITS_PER_PREDICTOR_INDEX);
-						bitwriter.append_bits(group_predictor_index_r, BITS_PER_PREDICTOR_INDEX);
-					}
-					bits::compress_data_using_exponential_golomb_coding(samples, cdda::SAMPLES_PER_SECTOR, k, bitwriter);
+					try {
+						auto& compressed_sector = compressed_sectors.at(k);
+						compressed_sector.resize(sizeof(LosslessStereoAudioHeader));
+						auto& header = *reinterpret_cast<LosslessStereoAudioHeader*>(compressed_sector.data());
+						header = LosslessStereoAudioHeader();
+						header.k = k;
+						auto bitwriter = bits::BitWriter(compressed_sector, cd::SECTOR_LENGTH);
+						for (auto group_index = size_t(0); group_index < GROUPS_PER_SECTOR; group_index += 1) {
+							auto group_predictor_index_l = group_predictor_indices_l[group_index];
+							auto group_predictor_index_r = group_predictor_indices_r[group_index];
+							bitwriter.append_bits(group_predictor_index_l, BITS_PER_PREDICTOR_INDEX);
+							bitwriter.append_bits(group_predictor_index_r, BITS_PER_PREDICTOR_INDEX);
+						}
+						bits::compress_data_using_exponential_golomb_coding(samples, cdda::SAMPLES_PER_SECTOR, k, bitwriter);
+					} catch (const exceptions::BitWriterSizeExceededError& e) {}
 				});
 				threads.at(k) = std::move(thread);
 			}
@@ -304,7 +306,7 @@ namespace odi {
 				auto& header = *reinterpret_cast<ExponentialGolombHeader*>(compressed_buffer.data());
 				header = ExponentialGolombHeader();
 				header.k = k;
-				auto bitwriter = bits::BitWriter(compressed_buffer);
+				auto bitwriter = bits::BitWriter(compressed_buffer, cd::SECTOR_LENGTH);
 				bits::compress_data_using_exponential_golomb_coding(data, size, k, bitwriter);
 			}
 			std::sort(compressed_buffers.begin(), compressed_buffers.end(), [](const std::vector<byte_t>& one, const std::vector<byte_t>& two) -> bool_t {
