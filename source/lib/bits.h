@@ -70,6 +70,13 @@ namespace bits {
 		BitWriter& bitwriter
 	) -> void;
 
+	auto compress_data_using_rice_coding(
+		const ui16_t* values,
+		size_t size,
+		size_t k,
+		BitWriter& bitwriter
+	) -> void;
+
 	auto decompress_data_using_exponential_golomb_coding(
 		ui08_t* values,
 		size_t size,
@@ -78,6 +85,13 @@ namespace bits {
 	) -> void;
 
 	auto decompress_data_using_exponential_golomb_coding(
+		ui16_t* values,
+		size_t size,
+		size_t k,
+		BitReader& bitreader
+	) -> void;
+
+	auto decompress_data_using_rice_coding(
 		ui16_t* values,
 		size_t size,
 		size_t k,

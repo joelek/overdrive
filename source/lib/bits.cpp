@@ -123,6 +123,26 @@ namespace bits {
 		bitwriter.flush_bits();
 	}
 
+	auto compress_data_using_rice_coding(
+		const ui16_t* values,
+		size_t size,
+		size_t k,
+		BitWriter& bitwriter
+	) -> void {
+		auto mask = size_t((1 << k) - 1);
+		for (auto value_index = size_t(0); value_index < size; value_index += 1) {
+			auto value = values[value_index];
+			auto quotient = size_t(value >> k);
+			auto remainder = size_t(value & mask);
+			for (auto bit_index = size_t(0); bit_index < quotient; bit_index += 1) {
+				bitwriter.append_zero();
+			}
+			bitwriter.append_one();
+			bitwriter.append_bits(remainder, k);
+		}
+		bitwriter.flush_bits();
+	}
+
 	auto decompress_data_using_exponential_golomb_coding(
 		ui08_t* values,
 		size_t size,
@@ -170,6 +190,27 @@ namespace bits {
 				exponential_value = (exponential_value << width) | bitreader.decode_bits(width);
 			}
 			values[value_index] = exponential_value - power;
+		}
+	}
+
+	auto decompress_data_using_rice_coding(
+		ui16_t* values,
+		size_t size,
+		size_t k,
+		BitReader& bitreader
+	) -> void {
+		for (auto value_index = size_t(0); value_index < size; value_index += 1) {
+			auto quotient = size_t(0);
+			while (true) {
+				auto bit = bitreader.decode_bits(1);
+				if (bit != 0) {
+					break;
+				}
+				quotient += 1;
+			}
+			auto remainder = bitreader.decode_bits(k);
+			auto value = (quotient << k) | remainder;
+			values[value_index] = value;
 		}
 	}
 }
