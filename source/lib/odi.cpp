@@ -155,22 +155,19 @@ namespace odi {
 			array<GROUPS_PER_SECTOR, byte_t>& group_predictor_indices_l,
 			array<GROUPS_PER_SECTOR, byte_t>& group_predictor_indices_r
 		) -> void {
+			auto null_sample = cdda::StereoSample();
 			for (auto group_index = si_t(GROUPS_PER_SECTOR - 1); group_index >= si_t(0); group_index -= 1) {
 				auto first_sample = group_index * SAMPLES_PER_GROUP;
-				auto last_sample = first_sample + SAMPLES_PER_GROUP;
-				last_sample = last_sample < cdda::STEREO_SAMPLES_PER_SECTOR ? last_sample : cdda::STEREO_SAMPLES_PER_SECTOR;
+				auto last_sample = first_sample + SAMPLES_PER_GROUP < cdda::STEREO_SAMPLES_PER_SECTOR ? first_sample + SAMPLES_PER_GROUP : cdda::STEREO_SAMPLES_PER_SECTOR;
 				auto& l_predictor = PREDICTORS.at(group_predictor_indices_l[group_index]);
 				auto& r_predictor = PREDICTORS.at(group_predictor_indices_r[group_index]);
 				for (auto sample_index = si_t(last_sample - 1); sample_index >= si_t(first_sample); sample_index -= 1) {
-					if (sample_index < 3) {
-						continue;
-					}
-					auto& sample_m3 = stereo_sector.samples[sample_index - 3];
-					auto& sample_m2 = stereo_sector.samples[sample_index - 2];
-					auto& sample_m1 = stereo_sector.samples[sample_index - 1];
+					auto& sample_m3 = sample_index >= 3 ? stereo_sector.samples[sample_index - 3] : null_sample;
+					auto& sample_m2 = sample_index >= 2 ? stereo_sector.samples[sample_index - 2] : null_sample;
+					auto& sample_m1 = sample_index >= 1 ? stereo_sector.samples[sample_index - 1] : null_sample;
 					auto& sample = stereo_sector.samples[sample_index];
-					auto l_prediction = (l_predictor.m3 * sample_m3.l.si + l_predictor.m2 * sample_m2.l.si + l_predictor.m1 * sample_m1.l.si);
-					auto r_prediction = (r_predictor.m3 * sample_m3.r.si + r_predictor.m2 * sample_m2.r.si + r_predictor.m1 * sample_m1.r.si);
+					auto l_prediction = l_predictor.m3 * sample_m3.l.si + l_predictor.m2 * sample_m2.l.si + l_predictor.m1 * sample_m1.l.si;
+					auto r_prediction = r_predictor.m3 * sample_m3.r.si + r_predictor.m2 * sample_m2.r.si + r_predictor.m1 * sample_m1.r.si;
 					sample.l.si -= l_prediction;
 					sample.r.si -= r_prediction;
 				}
@@ -182,22 +179,19 @@ namespace odi {
 			array<GROUPS_PER_SECTOR, byte_t>& group_predictor_indices_l,
 			array<GROUPS_PER_SECTOR, byte_t>& group_predictor_indices_r
 		) -> void {
+			auto null_sample = cdda::StereoSample();
 			for (auto group_index = size_t(0); group_index < GROUPS_PER_SECTOR; group_index += 1) {
 				auto first_sample = group_index * SAMPLES_PER_GROUP;
-				auto last_sample = first_sample + SAMPLES_PER_GROUP;
-				last_sample = last_sample < cdda::STEREO_SAMPLES_PER_SECTOR ? last_sample : cdda::STEREO_SAMPLES_PER_SECTOR;
+				auto last_sample = first_sample + SAMPLES_PER_GROUP < cdda::STEREO_SAMPLES_PER_SECTOR ? first_sample + SAMPLES_PER_GROUP : cdda::STEREO_SAMPLES_PER_SECTOR;
 				auto& l_predictor = PREDICTORS.at(group_predictor_indices_l[group_index]);
 				auto& r_predictor = PREDICTORS.at(group_predictor_indices_r[group_index]);
 				for (auto sample_index = first_sample; sample_index < last_sample; sample_index += 1) {
-					if (sample_index < 3) {
-						continue;
-					}
-					auto& sample_m3 = stereo_sector.samples[sample_index - 3];
-					auto& sample_m2 = stereo_sector.samples[sample_index - 2];
-					auto& sample_m1 = stereo_sector.samples[sample_index - 1];
+					auto& sample_m3 = sample_index >= 3 ? stereo_sector.samples[sample_index - 3] : null_sample;
+					auto& sample_m2 = sample_index >= 2 ? stereo_sector.samples[sample_index - 2] : null_sample;
+					auto& sample_m1 = sample_index >= 1 ? stereo_sector.samples[sample_index - 1] : null_sample;
 					auto& sample = stereo_sector.samples[sample_index];
-					auto l_prediction = (l_predictor.m3 * sample_m3.l.si + l_predictor.m2 * sample_m2.l.si + l_predictor.m1 * sample_m1.l.si);
-					auto r_prediction = (r_predictor.m3 * sample_m3.r.si + r_predictor.m2 * sample_m2.r.si + r_predictor.m1 * sample_m1.r.si);
+					auto l_prediction = l_predictor.m3 * sample_m3.l.si + l_predictor.m2 * sample_m2.l.si + l_predictor.m1 * sample_m1.l.si;
+					auto r_prediction = r_predictor.m3 * sample_m3.r.si + r_predictor.m2 * sample_m2.r.si + r_predictor.m1 * sample_m1.r.si;
 					sample.l.si += l_prediction;
 					sample.r.si += r_prediction;
 				}
