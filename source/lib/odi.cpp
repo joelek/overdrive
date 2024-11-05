@@ -162,12 +162,16 @@ namespace odi {
 				auto& l_predictor = PREDICTORS.at(group_predictor_indices_l[group_index]);
 				auto& r_predictor = PREDICTORS.at(group_predictor_indices_r[group_index]);
 				for (auto sample_index = si_t(last_sample - 1); sample_index >= si_t(first_sample); sample_index -= 1) {
-					auto& sample_m3 = sample_index >= 3 ? stereo_sector.samples[sample_index - 3] : null_sample;
-					auto& sample_m2 = sample_index >= 2 ? stereo_sector.samples[sample_index - 2] : null_sample;
-					auto& sample_m1 = sample_index >= 1 ? stereo_sector.samples[sample_index - 1] : null_sample;
+					auto l_prediction = 0;
+					auto r_prediction = 0;
+					if (sample_index > 0) {
+						auto& sample_m3 = stereo_sector.samples[sample_index >= 3 ? sample_index - 3 : 0];
+						auto& sample_m2 = stereo_sector.samples[sample_index >= 2 ? sample_index - 2 : 0];
+						auto& sample_m1 = stereo_sector.samples[sample_index >= 1 ? sample_index - 1 : 0];
+						l_prediction = l_predictor.m3 * sample_m3.l.si + l_predictor.m2 * sample_m2.l.si + l_predictor.m1 * sample_m1.l.si;
+						r_prediction = r_predictor.m3 * sample_m3.r.si + r_predictor.m2 * sample_m2.r.si + r_predictor.m1 * sample_m1.r.si;
+					}
 					auto& sample = stereo_sector.samples[sample_index];
-					auto l_prediction = l_predictor.m3 * sample_m3.l.si + l_predictor.m2 * sample_m2.l.si + l_predictor.m1 * sample_m1.l.si;
-					auto r_prediction = r_predictor.m3 * sample_m3.r.si + r_predictor.m2 * sample_m2.r.si + r_predictor.m1 * sample_m1.r.si;
 					sample.l.si -= l_prediction;
 					sample.r.si -= r_prediction;
 				}
@@ -186,12 +190,16 @@ namespace odi {
 				auto& l_predictor = PREDICTORS.at(group_predictor_indices_l[group_index]);
 				auto& r_predictor = PREDICTORS.at(group_predictor_indices_r[group_index]);
 				for (auto sample_index = first_sample; sample_index < last_sample; sample_index += 1) {
-					auto& sample_m3 = sample_index >= 3 ? stereo_sector.samples[sample_index - 3] : null_sample;
-					auto& sample_m2 = sample_index >= 2 ? stereo_sector.samples[sample_index - 2] : null_sample;
-					auto& sample_m1 = sample_index >= 1 ? stereo_sector.samples[sample_index - 1] : null_sample;
+					auto l_prediction = 0;
+					auto r_prediction = 0;
+					if (sample_index > 0) {
+						auto& sample_m3 = stereo_sector.samples[sample_index >= 3 ? sample_index - 3 : 0];
+						auto& sample_m2 = stereo_sector.samples[sample_index >= 2 ? sample_index - 2 : 0];
+						auto& sample_m1 = stereo_sector.samples[sample_index >= 1 ? sample_index - 1 : 0];
+						l_prediction = l_predictor.m3 * sample_m3.l.si + l_predictor.m2 * sample_m2.l.si + l_predictor.m1 * sample_m1.l.si;
+						r_prediction = r_predictor.m3 * sample_m3.r.si + r_predictor.m2 * sample_m2.r.si + r_predictor.m1 * sample_m1.r.si;
+					}
 					auto& sample = stereo_sector.samples[sample_index];
-					auto l_prediction = l_predictor.m3 * sample_m3.l.si + l_predictor.m2 * sample_m2.l.si + l_predictor.m1 * sample_m1.l.si;
-					auto r_prediction = r_predictor.m3 * sample_m3.r.si + r_predictor.m2 * sample_m2.r.si + r_predictor.m1 * sample_m1.r.si;
 					sample.l.si += l_prediction;
 					sample.r.si += r_prediction;
 				}
