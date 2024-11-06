@@ -12,7 +12,10 @@ namespace bits {
 		public:
 
 		BitReader(
-			const std::vector<byte_t>& data,
+		) = default;
+
+		BitReader(
+			const std::vector<byte_t>& buffer,
 			size_t offset
 		);
 
@@ -22,7 +25,7 @@ namespace bits {
 
 		protected:
 
-		const std::vector<byte_t>& data;
+		const std::vector<byte_t>& buffer;
 		size_t offset;
 		byte_t current_byte;
 		size_t bits_in_byte;
@@ -33,7 +36,9 @@ namespace bits {
 		public:
 
 		BitWriter(
-			std::vector<byte_t>& data,
+		) = default;
+
+		BitWriter(
 			std::optional<size_t> max_size
 		);
 
@@ -51,9 +56,15 @@ namespace bits {
 		auto flush_bits(
 		) -> void;
 
+		auto get_buffer(
+		) -> std::vector<byte_t>&;
+
+		auto get_size(
+		) const -> size_t;
+
 		protected:
 
-		std::vector<byte_t>& data;
+		std::vector<byte_t> buffer;
 		std::optional<size_t> max_size;
 		byte_t current_byte;
 		size_t bits_in_byte;

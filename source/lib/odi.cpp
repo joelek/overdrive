@@ -236,17 +236,18 @@ namespace odi {
 			auto& sector = *reinterpret_cast<cdda::Sector*>(&sector_data);
 			transform_into_optimized_representation(sector);
 			auto samples = reinterpret_cast<ui16_t*>(&sector_data);
-			auto compressed_sectors = std::array<std::vector<byte_t>, 16>();
+			auto bitwriters = std::array<bits::BitWriter, 16>();
 			auto threads = std::array<std::thread, 16>();
 			for (auto k = size_t(0); k < 16; k += 1) {
 				auto thread = std::thread([&, k]() -> void {
+					auto& bitwriter = bitwriters.at(k);
+					bitwriter = std::move(bits::BitWriter(cd::SECTOR_LENGTH));
+					auto& buffer = bitwriter.get_buffer();
+					buffer.resize(sizeof(LosslessStereoAudioHeader));
+					auto& header = *reinterpret_cast<LosslessStereoAudioHeader*>(buffer.data());
+					header = LosslessStereoAudioHeader();
+					header.k = k;
 					try {
-						auto& compressed_sector = compressed_sectors.at(k);
-						compressed_sector.resize(sizeof(LosslessStereoAudioHeader));
-						auto& header = *reinterpret_cast<LosslessStereoAudioHeader*>(compressed_sector.data());
-						header = LosslessStereoAudioHeader();
-						header.k = k;
-						auto bitwriter = bits::BitWriter(compressed_sector, cd::SECTOR_LENGTH);
 						for (auto group_index = size_t(0); group_index < GROUPS_PER_SECTOR; group_index += 1) {
 							auto group_predictor_index_l = group_predictor_indices_l[group_index];
 							auto group_predictor_index_r = group_predictor_indices_r[group_index];
@@ -255,21 +256,24 @@ namespace odi {
 						}
 						bits::compress_data_using_rice_coding(samples, cdda::SAMPLES_PER_SECTOR, k, bitwriter);
 					} catch (const exceptions::BitWriterSizeExceededError& e) {}
+					try {
+						bitwriter.flush_bits();
+					} catch (const exceptions::BitWriterSizeExceededError& e) {}
 				});
 				threads.at(k) = std::move(thread);
 			}
 			for (auto thread_index = size_t(0); thread_index < threads.size(); thread_index += 1) {
 				threads.at(thread_index).join();
 			}
-			std::sort(compressed_sectors.begin(), compressed_sectors.end(), [](const std::vector<byte_t>& one, const std::vector<byte_t>& two) -> bool_t {
-				return one.size() < two.size();
+			std::sort(bitwriters.begin(), bitwriters.end(), [](const bits::BitWriter& one, const bits::BitWriter& two) -> bool_t {
+				return one.get_size() < two.get_size();
 			});
-			auto& best = compressed_sectors.front();
-			if (best.size() >= cd::SECTOR_LENGTH) {
-				OVERDRIVE_THROW(exceptions::CompressedSizeExceededUncompressedSizeException(best.size(), cd::SECTOR_LENGTH));
+			auto& best = bitwriters.front();
+			if (best.get_buffer().size() >= cd::SECTOR_LENGTH) {
+				OVERDRIVE_THROW(exceptions::CompressedSizeExceededUncompressedSizeException(best.get_buffer().size(), cd::SECTOR_LENGTH));
 			}
-			std::memcpy(&target_sector_data, best.data(), best.size());
-			return best.size();
+			std::memcpy(&target_sector_data, best.get_buffer().data(), best.get_buffer().size());
+			return best.get_buffer().size();
 		}
 
 		auto decompress_sector_lossless_stereo_audio(
@@ -299,25 +303,31 @@ namespace odi {
 			byte_t* data,
 			size_t size
 		) -> size_t {
-			auto compressed_buffers = std::array<std::vector<byte_t>, 8>();
+			auto bitwriters = std::array<bits::BitWriter, 8>();
 			for (auto k = size_t(0); k < 8; k += 1) {
-				auto& compressed_buffer = compressed_buffers.at(k);
-				compressed_buffer.resize(sizeof(ExponentialGolombHeader));
-				auto& header = *reinterpret_cast<ExponentialGolombHeader*>(compressed_buffer.data());
+				auto& bitwriter = bitwriters.at(k);
+				bitwriter = std::move(bits::BitWriter(size));
+				auto& buffer = bitwriter.get_buffer();
+				buffer.resize(sizeof(ExponentialGolombHeader));
+				auto& header = *reinterpret_cast<ExponentialGolombHeader*>(buffer.data());
 				header = ExponentialGolombHeader();
 				header.k = k;
-				auto bitwriter = bits::BitWriter(compressed_buffer, cd::SECTOR_LENGTH);
-				bits::compress_data_using_exponential_golomb_coding(data, size, k, bitwriter);
+				try {
+					bits::compress_data_using_exponential_golomb_coding(data, size, k, bitwriter);
+				} catch (const exceptions::BitWriterSizeExceededError& e) {}
+				try {
+					bitwriter.flush_bits();
+				} catch (const exceptions::BitWriterSizeExceededError& e) {}
 			}
-			std::sort(compressed_buffers.begin(), compressed_buffers.end(), [](const std::vector<byte_t>& one, const std::vector<byte_t>& two) -> bool_t {
-				return one.size() < two.size();
+			std::sort(bitwriters.begin(), bitwriters.end(), [](const bits::BitWriter& one, const bits::BitWriter& two) -> bool_t {
+				return one.get_size() < two.get_size();
 			});
-			auto& best = compressed_buffers.front();
-			if (best.size() >= size) {
-				OVERDRIVE_THROW(exceptions::CompressedSizeExceededUncompressedSizeException(best.size(), size));
+			auto& best = bitwriters.front();
+			if (best.get_buffer().size() >= size) {
+				OVERDRIVE_THROW(exceptions::CompressedSizeExceededUncompressedSizeException(best.get_buffer().size(), size));
 			}
-			std::memcpy(data, best.data(), best.size());
-			return best.size();
+			std::memcpy(data, best.get_buffer().data(), best.get_buffer().size());
+			return best.get_buffer().size();
 		}
 
 		auto decompress_data_exponential_golomb(

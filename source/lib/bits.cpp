@@ -7,10 +7,10 @@
 namespace overdrive {
 namespace bits {
 	BitReader::BitReader(
-		const std::vector<byte_t>& data,
+		const std::vector<byte_t>& buffer,
 		size_t offset
 	):
-		data(data),
+		buffer(buffer),
 		offset(offset),
 		current_byte(0),
 		bits_in_byte(0),
@@ -25,7 +25,7 @@ namespace bits {
 		auto value = size_t(0);
 		for (auto bit = size_t(0); bit < width; bit += 1) {
 			if (this->bits_in_byte == 0) {
-				this->current_byte = this->data.at(offset);
+				this->current_byte = this->buffer.at(offset);
 				this->bits_in_byte = 8;
 				this->offset += 1;
 				this->mask = 0b10000000;
@@ -38,10 +38,9 @@ namespace bits {
 	}
 
 	BitWriter::BitWriter(
-		std::vector<byte_t>& data,
 		std::optional<size_t> max_size
 	):
-		data(data),
+		buffer(std::vector<byte_t>()),
 		max_size(max_size),
 		current_byte(0),
 		bits_in_byte(0)
@@ -86,13 +85,23 @@ namespace bits {
 	auto BitWriter::flush_bits(
 	) -> void {
 		if (this->bits_in_byte > 0) {
-			this->data.push_back(this->current_byte);
+			this->buffer.push_back(this->current_byte);
 			this->current_byte = 0;
 			this->bits_in_byte = 0;
-			if (this->max_size && this->data.size() > this->max_size.value()) {
+			if (this->max_size && this->buffer.size() > this->max_size.value()) {
 				OVERDRIVE_THROW(exceptions::BitWriterSizeExceededError(this->max_size.value()));
 			}
 		}
+	}
+
+	auto BitWriter::get_buffer(
+	) -> std::vector<byte_t>& {
+		return this->buffer;
+	}
+
+	auto BitWriter::get_size(
+	) const -> size_t {
+		return this->buffer.size() * 8 + this->bits_in_byte;
 	}
 
 	auto compress_data_using_exponential_golomb_coding(
@@ -109,7 +118,6 @@ namespace bits {
 			bitwriter.append_bits(0, width - 1 - k);
 			bitwriter.append_bits(exponential_value , width);
 		}
-		bitwriter.flush_bits();
 	}
 
 	auto compress_data_using_exponential_golomb_coding(
@@ -126,7 +134,6 @@ namespace bits {
 			bitwriter.append_bits(0, width - 1 - k);
 			bitwriter.append_bits(exponential_value, width);
 		}
-		bitwriter.flush_bits();
 	}
 
 	auto compress_data_using_rice_coding(
@@ -146,7 +153,6 @@ namespace bits {
 			bitwriter.append_one();
 			bitwriter.append_bits(remainder, k);
 		}
-		bitwriter.flush_bits();
 	}
 
 	auto decompress_data_using_exponential_golomb_coding(
