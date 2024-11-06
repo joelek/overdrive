@@ -342,6 +342,159 @@ namespace odi {
 			bits::decompress_data_using_exponential_golomb_coding(data, size, header.k, bitreader);
 		}
 
+		auto decompress_sector_lossless_stereo_audio_opt(
+			array<cd::SECTOR_LENGTH, byte_t>& target_sector_data,
+			size_t compressed_byte_count
+		) -> void {
+			auto& stereo_sector = *reinterpret_cast<cdda::StereoSector*>(&target_sector_data);
+			auto original = std::vector<byte_t>(compressed_byte_count);
+			std::memcpy(original.data(), &target_sector_data, compressed_byte_count);
+			auto& header = *reinterpret_cast<LosslessStereoAudioHeader*>(original.data());
+			auto bitreader = bits::BitReader(original, header.header_length);
+			for (auto group_index = size_t(0); group_index < GROUPS_PER_SECTOR; group_index += 1) {
+				auto first_sample = group_index * SAMPLES_PER_GROUP;
+				auto last_sample = first_sample + SAMPLES_PER_GROUP < cdda::STEREO_SAMPLES_PER_SECTOR ? first_sample + SAMPLES_PER_GROUP : cdda::STEREO_SAMPLES_PER_SECTOR;
+				{
+					auto predictor_index = bitreader.decode_bits(BITS_PER_PREDICTOR_INDEX);
+					auto& predictor = PREDICTORS.at(predictor_index);
+					for (auto sample_index = first_sample; sample_index < last_sample; sample_index += 1) {
+						auto prediction = 0;
+						if (sample_index > 0) {
+							auto sample_m3 = stereo_sector.samples[sample_index >= 3 ? sample_index - 3 : 0].l.si;
+							auto sample_m2 = stereo_sector.samples[sample_index >= 2 ? sample_index - 2 : 0].l.si;
+							auto sample_m1 = stereo_sector.samples[sample_index >= 1 ? sample_index - 1 : 0].l.si;
+							prediction = predictor.m3 * sample_m3 + predictor.m2 * sample_m2 + predictor.m1 * sample_m1;
+						}
+						auto decoded = ui16_t(0);
+						bits::decompress_data_using_rice_coding(&decoded, 1, header.k, bitreader);
+						auto residual = si16_t(decoded & 1) ? 0 - ((decoded + 1) >> 1) : decoded >> 1;
+						auto sample = si16_t(residual + prediction);
+						stereo_sector.samples[sample_index].l.si = sample;
+					}
+				}
+				{
+					auto predictor_index = bitreader.decode_bits(BITS_PER_PREDICTOR_INDEX);
+					auto& predictor = PREDICTORS.at(predictor_index);
+					for (auto sample_index = first_sample; sample_index < last_sample; sample_index += 1) {
+						auto prediction = 0;
+						if (sample_index > 0) {
+							auto sample_m3 = stereo_sector.samples[sample_index >= 3 ? sample_index - 3 : 0].r.si;
+							auto sample_m2 = stereo_sector.samples[sample_index >= 2 ? sample_index - 2 : 0].r.si;
+							auto sample_m1 = stereo_sector.samples[sample_index >= 1 ? sample_index - 1 : 0].r.si;
+							prediction = predictor.m3 * sample_m3 + predictor.m2 * sample_m2 + predictor.m1 * sample_m1;
+						}
+						auto decoded = ui16_t(0);
+						bits::decompress_data_using_rice_coding(&decoded, 1, header.k, bitreader);
+						auto residual = si16_t(decoded & 1) ? 0 - ((decoded + 1) >> 1) : decoded >> 1;
+						auto sample = si16_t(residual + prediction);
+						stereo_sector.samples[sample_index].r.si = sample;
+					}
+				}
+			}
+			recorrelate_spatially(stereo_sector);
+		}
+
+		auto compress_sector_lossless_stereo_audio_opt(
+			array<cd::SECTOR_LENGTH, byte_t>& target_sector_data
+		) -> size_t {
+			auto sector_data = std::array<byte_t, cd::SECTOR_LENGTH>();
+			std::memcpy(&sector_data, &target_sector_data, cd::SECTOR_LENGTH);
+			auto& stereo_sector = *reinterpret_cast<cdda::StereoSector*>(&sector_data);
+			decorrelate_spatially(stereo_sector);
+			auto bitwriters = std::array<bits::BitWriter, 16>();
+			auto threads = std::array<std::thread, 16>();
+			for (auto k = size_t(0); k < 16; k += 1) {
+				auto thread = std::thread([&, k]() -> void {
+					auto& bitwriter = bitwriters.at(k);
+					bitwriter = bits::BitWriter(cd::SECTOR_LENGTH);
+					auto& buffer = bitwriter.get_buffer();
+					buffer.resize(sizeof(LosslessStereoAudioHeader));
+					auto& header = *reinterpret_cast<LosslessStereoAudioHeader*>(buffer.data());
+					header = LosslessStereoAudioHeader();
+					header.k = k;
+					auto& shortest_coding = bitwriter;
+					for (auto group_index = size_t(0); group_index < GROUPS_PER_SECTOR; group_index += 1) {
+						auto first_sample = group_index * SAMPLES_PER_GROUP;
+						auto last_sample = first_sample + SAMPLES_PER_GROUP < cdda::STEREO_SAMPLES_PER_SECTOR ? first_sample + SAMPLES_PER_GROUP : cdda::STEREO_SAMPLES_PER_SECTOR;
+						{
+							auto bitwriters = std::array<bits::BitWriter, PREDICTORS.size()>();
+							for (auto predictor_index = size_t(0); predictor_index < PREDICTORS.size(); predictor_index += 1) {
+								auto& predictor = PREDICTORS.at(predictor_index);
+								auto& bitwriter = bitwriters.at(predictor_index);
+								bitwriter = std::move(bits::BitWriter(shortest_coding));
+								try {
+									bitwriter.append_bits(predictor_index, BITS_PER_PREDICTOR_INDEX);
+									for (auto sample_index = first_sample; sample_index < last_sample; sample_index += 1) {
+										auto sample = stereo_sector.samples[sample_index].l.si;
+										auto prediction = 0;
+										if (sample_index > 0) {
+											auto sample_m3 = stereo_sector.samples[sample_index >= 3 ? sample_index - 3 : 0].l.si;
+											auto sample_m2 = stereo_sector.samples[sample_index >= 2 ? sample_index - 2 : 0].l.si;
+											auto sample_m1 = stereo_sector.samples[sample_index >= 1 ? sample_index - 1 : 0].l.si;
+											prediction = predictor.m3 * sample_m3 + predictor.m2 * sample_m2 + predictor.m1 * sample_m1;
+										}
+										auto residual = si16_t(sample - prediction);
+										auto encoded = ui16_t(residual < 0 ? 0 - (residual << 1) - 1 : residual << 1);
+										bits::compress_data_using_rice_coding(&encoded, 1, k, bitwriter);
+									}
+								} catch (const exceptions::BitWriterSizeExceededError& e) {}
+							}
+							std::sort(bitwriters.begin(), bitwriters.end(), [](const bits::BitWriter& one, const bits::BitWriter& two) -> bool_t {
+								return one.get_size() < two.get_size();
+							});
+							auto& best = bitwriters.front();
+							shortest_coding = std::move(best);
+						}
+						{
+							auto bitwriters = std::array<bits::BitWriter, PREDICTORS.size()>();
+							for (auto predictor_index = size_t(0); predictor_index < PREDICTORS.size(); predictor_index += 1) {
+								auto& predictor = PREDICTORS.at(predictor_index);
+								auto& bitwriter = bitwriters.at(predictor_index);
+								bitwriter = std::move(bits::BitWriter(shortest_coding));
+								try {
+									bitwriter.append_bits(predictor_index, BITS_PER_PREDICTOR_INDEX);
+									for (auto sample_index = first_sample; sample_index < last_sample; sample_index += 1) {
+										auto sample = stereo_sector.samples[sample_index].r.si;
+										auto prediction = 0;
+										if (sample_index > 0) {
+											auto sample_m3 = stereo_sector.samples[sample_index >= 3 ? sample_index - 3 : 0].r.si;
+											auto sample_m2 = stereo_sector.samples[sample_index >= 2 ? sample_index - 2 : 0].r.si;
+											auto sample_m1 = stereo_sector.samples[sample_index >= 1 ? sample_index - 1 : 0].r.si;
+											prediction = predictor.m3 * sample_m3 + predictor.m2 * sample_m2 + predictor.m1 * sample_m1;
+										}
+										auto residual = si16_t(sample - prediction);
+										auto encoded = ui16_t(residual < 0 ? 0 - (residual << 1) - 1 : residual << 1);
+										bits::compress_data_using_rice_coding(&encoded, 1, k, bitwriter);
+									}
+								} catch (const exceptions::BitWriterSizeExceededError& e) {}
+							}
+							std::sort(bitwriters.begin(), bitwriters.end(), [](const bits::BitWriter& one, const bits::BitWriter& two) -> bool_t {
+								return one.get_size() < two.get_size();
+							});
+							auto& best = bitwriters.front();
+							shortest_coding = std::move(best);
+						}
+					}
+					try {
+						shortest_coding.flush_bits();
+					} catch (const exceptions::BitWriterSizeExceededError& e) {}
+				});
+				threads.at(k) = std::move(thread);
+			}
+			for (auto thread_index = size_t(0); thread_index < threads.size(); thread_index += 1) {
+				threads.at(thread_index).join();
+			}
+			std::sort(bitwriters.begin(), bitwriters.end(), [](const bits::BitWriter& one, const bits::BitWriter& two) -> bool_t {
+				return one.get_size() < two.get_size();
+			});
+			auto& best = bitwriters.front();
+			if (best.get_buffer().size() >= cd::SECTOR_LENGTH) {
+				OVERDRIVE_THROW(exceptions::CompressedSizeExceededUncompressedSizeException(best.get_buffer().size(), cd::SECTOR_LENGTH));
+			}
+			std::memcpy(&target_sector_data, best.get_buffer().data(), best.get_buffer().size());
+			return best.get_buffer().size();
+		}
+
 		auto do_compress_sector_data(
 			array<cd::SECTOR_LENGTH, byte_t>& sector_data,
 			SectorDataCompressionMethod::type compression_method
@@ -353,7 +506,7 @@ namespace odi {
 				return internal::compress_data_exponential_golomb(sector_data, sizeof(sector_data));
 			}
 			if (compression_method == SectorDataCompressionMethod::LOSSLESS_STEREO_AUDIO) {
-				return internal::compress_sector_lossless_stereo_audio(sector_data);
+				return internal::compress_sector_lossless_stereo_audio_opt(sector_data);
 			}
 			OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
 		}
@@ -410,7 +563,7 @@ namespace odi {
 			return internal::decompress_data_exponential_golomb(sector_data, sizeof(sector_data), compressed_byte_count);
 		}
 		if (compression_method == SectorDataCompressionMethod::LOSSLESS_STEREO_AUDIO) {
-			return internal::decompress_sector_lossless_stereo_audio(sector_data, compressed_byte_count);
+			return internal::decompress_sector_lossless_stereo_audio_opt(sector_data, compressed_byte_count);
 		}
 		OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
 	}
