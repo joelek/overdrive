@@ -155,7 +155,6 @@ namespace odi {
 			array<GROUPS_PER_SECTOR, byte_t>& group_predictor_indices_l,
 			array<GROUPS_PER_SECTOR, byte_t>& group_predictor_indices_r
 		) -> void {
-			auto null_sample = cdda::StereoSample();
 			for (auto group_index = si_t(GROUPS_PER_SECTOR - 1); group_index >= si_t(0); group_index -= 1) {
 				auto first_sample = group_index * SAMPLES_PER_GROUP;
 				auto last_sample = first_sample + SAMPLES_PER_GROUP < cdda::STEREO_SAMPLES_PER_SECTOR ? first_sample + SAMPLES_PER_GROUP : cdda::STEREO_SAMPLES_PER_SECTOR;
@@ -183,7 +182,6 @@ namespace odi {
 			array<GROUPS_PER_SECTOR, byte_t>& group_predictor_indices_l,
 			array<GROUPS_PER_SECTOR, byte_t>& group_predictor_indices_r
 		) -> void {
-			auto null_sample = cdda::StereoSample();
 			for (auto group_index = size_t(0); group_index < GROUPS_PER_SECTOR; group_index += 1) {
 				auto first_sample = group_index * SAMPLES_PER_GROUP;
 				auto last_sample = first_sample + SAMPLES_PER_GROUP < cdda::STEREO_SAMPLES_PER_SECTOR ? first_sample + SAMPLES_PER_GROUP : cdda::STEREO_SAMPLES_PER_SECTOR;
