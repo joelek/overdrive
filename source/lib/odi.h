@@ -15,7 +15,6 @@ namespace odi {
 		using type = ui08_t;
 
 		const auto NONE = type(0x00);
-		const auto EXPONENTIAL_GOLOMB = type(0x01);
 		const auto LOSSLESS_STEREO_AUDIO = type(0x80);
 
 		auto name(
@@ -27,7 +26,6 @@ namespace odi {
 		using type = ui08_t;
 
 		const auto NONE = type(0x00);
-		const auto EXPONENTIAL_GOLOMB = type(0x01);
 
 		auto name(
 			type value
@@ -132,13 +130,6 @@ namespace odi {
 	};
 
 	static_assert(sizeof(PointTableHeader) == 16);
-
-	struct ExponentialGolombHeader {
-		ui08_t header_length = sizeof(ExponentialGolombHeader);
-		ui08_t k;
-	};
-
-	static_assert(sizeof(ExponentialGolombHeader) == 2);
 
 	#pragma pack(pop)
 

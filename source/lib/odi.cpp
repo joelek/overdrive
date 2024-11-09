@@ -18,7 +18,6 @@ namespace odi {
 	) -> const std::string& {
 		static const auto names = std::map<type, std::string>({
 			{ NONE, "NONE" },
-			{ EXPONENTIAL_GOLOMB, "EXPONENTIAL_GOLOMB" },
 			{ LOSSLESS_STEREO_AUDIO, "LOSSLESS_STEREO_AUDIO" }
 		});
 		static const auto fallback = std::string("???");
@@ -33,8 +32,7 @@ namespace odi {
 		type value
 	) -> const std::string& {
 		static const auto names = std::map<type, std::string>({
-			{ NONE, "NONE" },
-			{ EXPONENTIAL_GOLOMB, "EXPONENTIAL_GOLOMB" },
+			{ NONE, "NONE" }
 		});
 		static const auto fallback = std::string("???");
 		auto iterator = names.find(value);
@@ -265,58 +263,12 @@ namespace odi {
 			reinterleave_channels(sector, channel_a, channel_b);
 		}
 
-		auto compress_data_exponential_golomb(
-			byte_t* data,
-			size_t size
-		) -> size_t {
-			auto bitwriters = std::array<bits::BitWriter, 8>();
-			for (auto k = size_t(0); k < 8; k += 1) {
-				auto& bitwriter = bitwriters.at(k);
-				bitwriter = std::move(bits::BitWriter(size));
-				auto& buffer = bitwriter.get_buffer();
-				buffer.resize(sizeof(ExponentialGolombHeader));
-				auto& header = *reinterpret_cast<ExponentialGolombHeader*>(buffer.data());
-				header = ExponentialGolombHeader();
-				header.k = k;
-				try {
-					bits::compress_data_using_exponential_golomb_coding(data, size, k, bitwriter);
-				} catch (const exceptions::BitWriterSizeExceededError& e) {}
-				try {
-					bitwriter.flush_bits();
-				} catch (const exceptions::BitWriterSizeExceededError& e) {}
-			}
-			std::sort(bitwriters.begin(), bitwriters.end(), [](const bits::BitWriter& one, const bits::BitWriter& two) -> bool_t {
-				return one.get_size() < two.get_size();
-			});
-			auto& best = bitwriters.front();
-			if (best.get_buffer().size() >= size) {
-				OVERDRIVE_THROW(exceptions::CompressedSizeExceededUncompressedSizeException(best.get_buffer().size(), size));
-			}
-			std::memcpy(data, best.get_buffer().data(), best.get_buffer().size());
-			return best.get_buffer().size();
-		}
-
-		auto decompress_data_exponential_golomb(
-			byte_t* data,
-			size_t size,
-			size_t compressed_byte_count
-		) -> void {
-			auto original = std::vector<byte_t>(compressed_byte_count);
-			std::memcpy(original.data(), data, compressed_byte_count);
-			auto& header = *reinterpret_cast<ExponentialGolombHeader*>(original.data());
-			auto bitreader = bits::BitReader(original, header.header_length);
-			bits::decompress_data_using_exponential_golomb_coding(data, size, header.k, bitreader);
-		}
-
 		auto do_compress_sector_data(
 			array<cd::SECTOR_LENGTH, byte_t>& sector_data,
 			SectorDataCompressionMethod::type compression_method
 		) -> size_t {
 			if (compression_method == SectorDataCompressionMethod::NONE) {
 				return sizeof(sector_data);
-			}
-			if (compression_method == SectorDataCompressionMethod::EXPONENTIAL_GOLOMB) {
-				return internal::compress_data_exponential_golomb(sector_data, sizeof(sector_data));
 			}
 			if (compression_method == SectorDataCompressionMethod::LOSSLESS_STEREO_AUDIO) {
 				return internal::compress_sector_lossless_stereo_audio(sector_data);
@@ -330,9 +282,6 @@ namespace odi {
 		) -> size_t {
 			if (compression_method == SubchannelsDataCompressionMethod::NONE) {
 				return sizeof(subchannels_data);
-			}
-			if (compression_method == SubchannelsDataCompressionMethod::EXPONENTIAL_GOLOMB) {
-				return internal::compress_data_exponential_golomb(subchannels_data, sizeof(subchannels_data));
 			}
 			OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
 		}
@@ -372,9 +321,6 @@ namespace odi {
 		if (compression_method == SectorDataCompressionMethod::NONE) {
 			return;
 		}
-		if (compression_method == SectorDataCompressionMethod::EXPONENTIAL_GOLOMB) {
-			return internal::decompress_data_exponential_golomb(sector_data, sizeof(sector_data), compressed_byte_count);
-		}
 		if (compression_method == SectorDataCompressionMethod::LOSSLESS_STEREO_AUDIO) {
 			return internal::decompress_sector_lossless_stereo_audio(sector_data, compressed_byte_count);
 		}
@@ -413,9 +359,6 @@ namespace odi {
 	) -> void {
 		if (compression_method == SubchannelsDataCompressionMethod::NONE) {
 			return;
-		}
-		if (compression_method == SubchannelsDataCompressionMethod::EXPONENTIAL_GOLOMB) {
-			return internal::decompress_data_exponential_golomb(subchannels_data, sizeof(subchannels_data), compressed_byte_count);
 		}
 		OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
 	}
