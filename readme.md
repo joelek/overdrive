@@ -77,6 +77,7 @@ The [AccurateRip drive database](https://www.accuraterip.com/driveoffsets.htm) p
 * Optimize commands to not store 150 sectors of silence between data and audio tracks on mixed-mode CD-ROMs.
 * Document utility.
 * Document ODI format.
+* Add compression settings options.
 
 ## References
 
