@@ -78,225 +78,188 @@ namespace odi {
 			{ 1, -3, 3 } // Quadratic extrapolation
 		});
 
-		const auto SAMPLES_PER_GROUP = size_t(1);
-		const auto GROUPS_PER_SECTOR = size_t((cdda::STEREO_SAMPLES_PER_SECTOR + SAMPLES_PER_GROUP - 1) / SAMPLES_PER_GROUP);
 		const auto BITS_PER_PREDICTOR_INDEX = size_t(sizeof(PREDICTORS.size()) * 8 - std::countl_zero(PREDICTORS.size() - 1));
+		const auto MAX_RICE_PARAMETER = size_t(16);
+		const auto BITS_PER_RICE_PARAMETER = size_t(sizeof(MAX_RICE_PARAMETER) * 8 - std::countl_zero(MAX_RICE_PARAMETER - 1));
 
-		auto decorrelate_spatially(
-			cdda::StereoSector& stereo_sector
+		auto deinterleave_channels(
+			const cdda::Sector& sector,
+			array<cdda::STEREO_SAMPLES_PER_SECTOR, cdda::Sample>& channel_a,
+			array<cdda::STEREO_SAMPLES_PER_SECTOR, cdda::Sample>& channel_b
 		) -> void {
 			for (auto sample_index = size_t(0); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
-				auto& sample = stereo_sector.samples[sample_index];
-				sample.r.si = sample.r.si - sample.l.si;
+				channel_a[sample_index] = sector.samples[sample_index * 2 + 0];
+				channel_b[sample_index] = sector.samples[sample_index * 2 + 1];
+			}
+		}
+
+		auto reinterleave_channels(
+			cdda::Sector& sector,
+			array<cdda::STEREO_SAMPLES_PER_SECTOR, const cdda::Sample>& channel_a,
+			array<cdda::STEREO_SAMPLES_PER_SECTOR, const cdda::Sample>& channel_b
+		) -> void {
+			for (auto sample_index = size_t(0); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
+				sector.samples[sample_index * 2 + 0] = channel_a[sample_index];
+				sector.samples[sample_index * 2 + 1] = channel_b[sample_index];
+			}
+		}
+
+		auto decorrelate_spatially(
+			array<cdda::STEREO_SAMPLES_PER_SECTOR, cdda::Sample> channel_a,
+			array<cdda::STEREO_SAMPLES_PER_SECTOR, cdda::Sample> channel_b
+		) -> void {
+			for (auto sample_index = size_t(0); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
+				channel_b[sample_index].si -= channel_a[sample_index].si;
 			}
 		}
 
 		auto recorrelate_spatially(
-			cdda::StereoSector& stereo_sector
+			array<cdda::STEREO_SAMPLES_PER_SECTOR, cdda::Sample> channel_a,
+			array<cdda::STEREO_SAMPLES_PER_SECTOR, cdda::Sample> channel_b
 		) -> void {
 			for (auto sample_index = size_t(0); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
-				auto& sample = stereo_sector.samples[sample_index];
-				sample.r.si = sample.r.si + sample.l.si;
-			}
-		}
-
-		auto find_optimal_group_predictors(
-			cdda::StereoSector& stereo_sector,
-			array<GROUPS_PER_SECTOR, byte_t>& group_predictor_indices_l,
-			array<GROUPS_PER_SECTOR, byte_t>& group_predictor_indices_r
-		) -> void {
-			for (auto group_index = size_t(0); group_index < GROUPS_PER_SECTOR; group_index += 1) {
-				auto first_sample = group_index * SAMPLES_PER_GROUP;
-				auto last_sample = first_sample + SAMPLES_PER_GROUP;
-				last_sample = last_sample < cdda::STEREO_SAMPLES_PER_SECTOR ? last_sample : cdda::STEREO_SAMPLES_PER_SECTOR;
-				auto absolute_differences_l = std::array<size_t, PREDICTORS.size()>();
-				auto absolute_differences_r = std::array<size_t, PREDICTORS.size()>();
-				for (auto predictor_index = size_t(0); predictor_index < PREDICTORS.size(); predictor_index += 1) {
-					auto& predictor = PREDICTORS.at(predictor_index);
-					auto absolute_difference_l = size_t(0);
-					auto absolute_difference_r = size_t(0);
-					for (auto sample_index = first_sample; sample_index < last_sample; sample_index += 1) {
-						if (sample_index < 3) {
-							continue;
-						}
-						auto& sample_m3 = stereo_sector.samples[sample_index - 3];
-						auto& sample_m2 = stereo_sector.samples[sample_index - 2];
-						auto& sample_m1 = stereo_sector.samples[sample_index - 1];
-						auto& sample = stereo_sector.samples[sample_index];
-						auto prediction_l = (predictor.m3 * sample_m3.l.si + predictor.m2 * sample_m2.l.si + predictor.m1 * sample_m1.l.si);
-						auto residual_l = si16_t(sample.l.si - prediction_l);
-						absolute_difference_l += residual_l < 0 ? 0 - residual_l : residual_l;
-						auto prediction_r = (predictor.m3 * sample_m3.r.si + predictor.m2 * sample_m2.r.si + predictor.m1 * sample_m1.r.si);
-						auto residual_r = si16_t(sample.r.si - prediction_r);
-						absolute_difference_r += residual_r < 0 ? 0 - residual_r : residual_r;
-					}
-					absolute_differences_l.at(predictor_index) = absolute_difference_l;
-					absolute_differences_r.at(predictor_index) = absolute_difference_r;
-				}
-				auto group_predictor_index_l = size_t(0);
-				for (auto absolute_differences_l_index = size_t(1); absolute_differences_l_index < absolute_differences_l.size(); absolute_differences_l_index += 1) {
-					if (absolute_differences_l.at(absolute_differences_l_index) < absolute_differences_l.at(group_predictor_index_l)) {
-						group_predictor_index_l = absolute_differences_l_index;
-					}
-				}
-				group_predictor_indices_l[group_index] = group_predictor_index_l;
-				auto group_predictor_index_r = size_t(0);
-				for (auto absolute_differences_r_index = size_t(1); absolute_differences_r_index < absolute_differences_r.size(); absolute_differences_r_index += 1) {
-					if (absolute_differences_r.at(absolute_differences_r_index) < absolute_differences_r.at(group_predictor_index_r)) {
-						group_predictor_index_r = absolute_differences_r_index;
-					}
-				}
-				group_predictor_indices_r[group_index] = group_predictor_index_r;
+				channel_b[sample_index].si += channel_a[sample_index].si;
 			}
 		}
 
 		auto decorrelate_temporally(
-			cdda::StereoSector& stereo_sector,
-			array<GROUPS_PER_SECTOR, byte_t>& group_predictor_indices_l,
-			array<GROUPS_PER_SECTOR, byte_t>& group_predictor_indices_r
+			array<cdda::STEREO_SAMPLES_PER_SECTOR, const cdda::Sample>& samples,
+			array<cdda::STEREO_SAMPLES_PER_SECTOR, cdda::Sample>& residuals,
+			const Predictor& predictor
 		) -> void {
-			for (auto group_index = si_t(GROUPS_PER_SECTOR - 1); group_index >= si_t(0); group_index -= 1) {
-				auto first_sample = group_index * SAMPLES_PER_GROUP;
-				auto last_sample = first_sample + SAMPLES_PER_GROUP < cdda::STEREO_SAMPLES_PER_SECTOR ? first_sample + SAMPLES_PER_GROUP : cdda::STEREO_SAMPLES_PER_SECTOR;
-				auto& l_predictor = PREDICTORS.at(group_predictor_indices_l[group_index]);
-				auto& r_predictor = PREDICTORS.at(group_predictor_indices_r[group_index]);
-				for (auto sample_index = si_t(last_sample - 1); sample_index >= si_t(first_sample); sample_index -= 1) {
-					auto l_prediction = 0;
-					auto r_prediction = 0;
-					if (sample_index > 0) {
-						auto& sample_m3 = stereo_sector.samples[sample_index >= 3 ? sample_index - 3 : 0];
-						auto& sample_m2 = stereo_sector.samples[sample_index >= 2 ? sample_index - 2 : 0];
-						auto& sample_m1 = stereo_sector.samples[sample_index >= 1 ? sample_index - 1 : 0];
-						l_prediction = l_predictor.m3 * sample_m3.l.si + l_predictor.m2 * sample_m2.l.si + l_predictor.m1 * sample_m1.l.si;
-						r_prediction = r_predictor.m3 * sample_m3.r.si + r_predictor.m2 * sample_m2.r.si + r_predictor.m1 * sample_m1.r.si;
-					}
-					auto& sample = stereo_sector.samples[sample_index];
-					sample.l.si -= l_prediction;
-					sample.r.si -= r_prediction;
+			for (auto sample_index = size_t(0); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
+				auto sample_index_reverse = cdda::STEREO_SAMPLES_PER_SECTOR - (sample_index + 1);
+				auto prediction = 0;
+				if (sample_index_reverse > 0) {
+					auto sample_m3 = samples[sample_index_reverse >= 3 ? sample_index_reverse - 3 : 0].si;
+					auto sample_m2 = samples[sample_index_reverse >= 2 ? sample_index_reverse - 2 : 0].si;
+					auto sample_m1 = samples[sample_index_reverse >= 1 ? sample_index_reverse - 1 : 0].si;
+					prediction = predictor.m3 * sample_m3 + predictor.m2 * sample_m2 + predictor.m1 * sample_m1;
 				}
+				auto sample = samples[sample_index_reverse].si;
+				auto residual = si16_t(sample - prediction);
+				residuals[sample_index_reverse].si = residual;
 			}
 		}
 
 		auto recorrelate_temporally(
-			cdda::StereoSector& stereo_sector,
-			array<GROUPS_PER_SECTOR, byte_t>& group_predictor_indices_l,
-			array<GROUPS_PER_SECTOR, byte_t>& group_predictor_indices_r
+			array<cdda::STEREO_SAMPLES_PER_SECTOR, cdda::Sample>& samples,
+			array<cdda::STEREO_SAMPLES_PER_SECTOR, const cdda::Sample>& residuals,
+			const Predictor& predictor
 		) -> void {
-			for (auto group_index = size_t(0); group_index < GROUPS_PER_SECTOR; group_index += 1) {
-				auto first_sample = group_index * SAMPLES_PER_GROUP;
-				auto last_sample = first_sample + SAMPLES_PER_GROUP < cdda::STEREO_SAMPLES_PER_SECTOR ? first_sample + SAMPLES_PER_GROUP : cdda::STEREO_SAMPLES_PER_SECTOR;
-				auto& l_predictor = PREDICTORS.at(group_predictor_indices_l[group_index]);
-				auto& r_predictor = PREDICTORS.at(group_predictor_indices_r[group_index]);
-				for (auto sample_index = first_sample; sample_index < last_sample; sample_index += 1) {
-					auto l_prediction = 0;
-					auto r_prediction = 0;
-					if (sample_index > 0) {
-						auto& sample_m3 = stereo_sector.samples[sample_index >= 3 ? sample_index - 3 : 0];
-						auto& sample_m2 = stereo_sector.samples[sample_index >= 2 ? sample_index - 2 : 0];
-						auto& sample_m1 = stereo_sector.samples[sample_index >= 1 ? sample_index - 1 : 0];
-						l_prediction = l_predictor.m3 * sample_m3.l.si + l_predictor.m2 * sample_m2.l.si + l_predictor.m1 * sample_m1.l.si;
-						r_prediction = r_predictor.m3 * sample_m3.r.si + r_predictor.m2 * sample_m2.r.si + r_predictor.m1 * sample_m1.r.si;
+			for (auto sample_index = size_t(0); sample_index < cdda::STEREO_SAMPLES_PER_SECTOR; sample_index += 1) {
+				auto prediction = 0;
+				if (sample_index > 0) {
+					auto sample_m3 = samples[sample_index >= 3 ? sample_index - 3 : 0].si;
+					auto sample_m2 = samples[sample_index >= 2 ? sample_index - 2 : 0].si;
+					auto sample_m1 = samples[sample_index >= 1 ? sample_index - 1 : 0].si;
+					prediction = predictor.m3 * sample_m3 + predictor.m2 * sample_m2 + predictor.m1 * sample_m1;
+				}
+				auto residual = residuals[sample_index].si;
+				auto sample = si16_t(residual + prediction);
+				samples[sample_index].si = sample;
+			}
+		}
+
+		auto compress_sector_lossless_stereo_audio_channel(
+			const bits::BitWriter& bitwriter,
+			array<cdda::STEREO_SAMPLES_PER_SECTOR, const cdda::Sample>& channel
+		) -> bits::BitWriter {
+			auto thread_bitwriters = std::array<bits::BitWriter, MAX_RICE_PARAMETER>();
+			for (auto thread_bitwriter_index = size_t(0); thread_bitwriter_index < thread_bitwriters.size(); thread_bitwriter_index += 1) {
+				thread_bitwriters.at(thread_bitwriter_index) = std::move(bits::BitWriter(bitwriter));
+			}
+			auto threads = std::array<std::thread, MAX_RICE_PARAMETER>();
+			for (auto thread_index = size_t(0); thread_index < MAX_RICE_PARAMETER; thread_index += 1) {
+				auto thread = std::thread([&, thread_index]() -> void {
+					auto rice_parameter = thread_index;
+					auto bitwriters = std::array<bits::BitWriter, PREDICTORS.size()>();
+					for (auto bitwriter_index = size_t(0); bitwriter_index < bitwriters.size(); bitwriter_index += 1) {
+						bitwriters.at(bitwriter_index) = std::move(bits::BitWriter(bitwriter));
 					}
-					auto& sample = stereo_sector.samples[sample_index];
-					sample.l.si += l_prediction;
-					sample.r.si += r_prediction;
+					for (auto predictor_index = size_t(0); predictor_index < PREDICTORS.size(); predictor_index += 1) {
+						auto& predictor = PREDICTORS.at(predictor_index);
+						array<cdda::STEREO_SAMPLES_PER_SECTOR, cdda::Sample> residuals;
+						decorrelate_temporally(channel, residuals, predictor);
+						try {
+							auto& bitwriter = bitwriters.at(predictor_index);
+							bitwriter.append_bits(rice_parameter, BITS_PER_RICE_PARAMETER);
+							bitwriter.append_bits(predictor_index, BITS_PER_PREDICTOR_INDEX);
+							bits::compress_data_using_rice_coding(reinterpret_cast<si16_t*>(&residuals), cdda::STEREO_SAMPLES_PER_SECTOR, thread_index, bitwriter);
+						} catch (const exceptions::BitWriterSizeExceededError& e) {}
+					}
+					auto best_bitwriter_index = size_t(0);
+					for (auto bitwriter_index = size_t(1); bitwriter_index < bitwriters.size(); bitwriter_index += 1) {
+						if (bitwriters.at(bitwriter_index).get_size() < bitwriters.at(best_bitwriter_index).get_size()) {
+							best_bitwriter_index = bitwriter_index;
+						}
+					}
+					auto& best_bitwriter = bitwriters.at(best_bitwriter_index);
+					thread_bitwriters.at(thread_index) = std::move(best_bitwriter);
+				});
+				threads.at(thread_index) = std::move(thread);
+			}
+			for (auto thread_index = size_t(0); thread_index < threads.size(); thread_index += 1) {
+				threads.at(thread_index).join();
+			}
+			auto best_bitwriter_index = size_t(0);
+			for (auto thread_bitwriter_index = size_t(1); thread_bitwriter_index < thread_bitwriters.size(); thread_bitwriter_index += 1) {
+				if (thread_bitwriters.at(thread_bitwriter_index).get_size() < thread_bitwriters.at(best_bitwriter_index).get_size()) {
+					best_bitwriter_index = thread_bitwriter_index;
 				}
 			}
-		}
-
-		auto transform_into_optimized_representation(
-			cdda::Sector& sector
-		) -> void {
-			for (auto sample_index = size_t(0); sample_index < cdda::SAMPLES_PER_SECTOR; sample_index += 1) {
-				auto& sample = sector.samples[sample_index];
-				sample.ui = sample.si < 0 ? 0 - (sample.si << 1) - 1 : sample.si << 1;
-			}
-		}
-
-		auto transform_from_optimized_representation(
-			cdda::Sector& sector
-		) -> void {
-			for (auto sample_index = size_t(0); sample_index < cdda::SAMPLES_PER_SECTOR; sample_index += 1) {
-				auto& sample = sector.samples[sample_index];
-				sample.si = (sample.ui & 1) ? 0 - ((sample.ui + 1) >> 1) : sample.ui >> 1;
-			}
+			auto& best_bitwriter = thread_bitwriters.at(best_bitwriter_index);
+			return best_bitwriter;
 		}
 
 		auto compress_sector_lossless_stereo_audio(
 			array<cd::SECTOR_LENGTH, byte_t>& target_sector_data
 		) -> size_t {
-			auto sector_data = std::array<byte_t, cd::SECTOR_LENGTH>();
-			std::memcpy(&sector_data, &target_sector_data, cd::SECTOR_LENGTH);
-			auto& stereo_sector = *reinterpret_cast<cdda::StereoSector*>(&sector_data);
-			decorrelate_spatially(stereo_sector);
-			array<GROUPS_PER_SECTOR, byte_t> group_predictor_indices_l;
-			array<GROUPS_PER_SECTOR, byte_t> group_predictor_indices_r;
-			find_optimal_group_predictors(stereo_sector, group_predictor_indices_l, group_predictor_indices_r);
-			decorrelate_temporally(stereo_sector, group_predictor_indices_l, group_predictor_indices_r);
-			auto& sector = *reinterpret_cast<cdda::Sector*>(&sector_data);
-			transform_into_optimized_representation(sector);
-			auto samples = reinterpret_cast<ui16_t*>(&sector_data);
-			auto bitwriters = std::array<bits::BitWriter, 16>();
-			auto threads = std::array<std::thread, 16>();
-			for (auto k = size_t(0); k < 16; k += 1) {
-				auto thread = std::thread([&, k]() -> void {
-					auto& bitwriter = bitwriters.at(k);
-					bitwriter = std::move(bits::BitWriter(cd::SECTOR_LENGTH));
-					auto& buffer = bitwriter.get_buffer();
-					buffer.resize(sizeof(LosslessStereoAudioHeader));
-					auto& header = *reinterpret_cast<LosslessStereoAudioHeader*>(buffer.data());
-					header = LosslessStereoAudioHeader();
-					header.k = k;
-					try {
-						for (auto group_index = size_t(0); group_index < GROUPS_PER_SECTOR; group_index += 1) {
-							auto group_predictor_index_l = group_predictor_indices_l[group_index];
-							auto group_predictor_index_r = group_predictor_indices_r[group_index];
-							bitwriter.append_bits(group_predictor_index_l, BITS_PER_PREDICTOR_INDEX);
-							bitwriter.append_bits(group_predictor_index_r, BITS_PER_PREDICTOR_INDEX);
-						}
-						bits::compress_data_using_rice_coding(samples, cdda::SAMPLES_PER_SECTOR, k, bitwriter);
-					} catch (const exceptions::BitWriterSizeExceededError& e) {}
-					try {
-						bitwriter.flush_bits();
-					} catch (const exceptions::BitWriterSizeExceededError& e) {}
-				});
-				threads.at(k) = std::move(thread);
+			auto& sector = *reinterpret_cast<cdda::Sector*>(&target_sector_data);
+			array<cdda::STEREO_SAMPLES_PER_SECTOR, cdda::Sample> channel_a;
+			array<cdda::STEREO_SAMPLES_PER_SECTOR, cdda::Sample> channel_b;
+			deinterleave_channels(sector, channel_a, channel_b);
+			decorrelate_spatially(channel_a, channel_b);
+			auto bitwriter = bits::BitWriter(cd::SECTOR_LENGTH);
+			bitwriter = std::move(compress_sector_lossless_stereo_audio_channel(bitwriter, channel_a));
+			bitwriter = std::move(compress_sector_lossless_stereo_audio_channel(bitwriter, channel_b));
+			try {
+				bitwriter.flush_bits();
+			} catch (const exceptions::BitWriterSizeExceededError& e) {}
+			auto& buffer = bitwriter.get_buffer();
+			if (buffer.size() >= cd::SECTOR_LENGTH) {
+				OVERDRIVE_THROW(exceptions::CompressedSizeExceededUncompressedSizeException(buffer.size(), cd::SECTOR_LENGTH));
 			}
-			for (auto thread_index = size_t(0); thread_index < threads.size(); thread_index += 1) {
-				threads.at(thread_index).join();
-			}
-			std::sort(bitwriters.begin(), bitwriters.end(), [](const bits::BitWriter& one, const bits::BitWriter& two) -> bool_t {
-				return one.get_size() < two.get_size();
-			});
-			auto& best = bitwriters.front();
-			if (best.get_buffer().size() >= cd::SECTOR_LENGTH) {
-				OVERDRIVE_THROW(exceptions::CompressedSizeExceededUncompressedSizeException(best.get_buffer().size(), cd::SECTOR_LENGTH));
-			}
-			std::memcpy(&target_sector_data, best.get_buffer().data(), best.get_buffer().size());
-			return best.get_buffer().size();
+			std::memcpy(&target_sector_data, buffer.data(), buffer.size());
+			return buffer.size();
+		}
+
+		auto decompress_sector_lossless_stereo_audio_channel(
+			bits::BitReader& bitreader,
+			array<cdda::STEREO_SAMPLES_PER_SECTOR, cdda::Sample>& samples
+		) -> void {
+			auto rice_parameter = bitreader.decode_bits(BITS_PER_RICE_PARAMETER);
+			auto predictor_index = bitreader.decode_bits(BITS_PER_PREDICTOR_INDEX);
+			auto& predictor = PREDICTORS.at(predictor_index);
+			array<cdda::STEREO_SAMPLES_PER_SECTOR, cdda::Sample> residuals;
+			bits::decompress_data_using_rice_coding(reinterpret_cast<si16_t*>(&residuals), cdda::STEREO_SAMPLES_PER_SECTOR, rice_parameter, bitreader);
+			recorrelate_temporally(samples, residuals, predictor);
 		}
 
 		auto decompress_sector_lossless_stereo_audio(
 			array<cd::SECTOR_LENGTH, byte_t>& target_sector_data,
 			size_t compressed_byte_count
 		) -> void {
-			auto& stereo_sector = *reinterpret_cast<cdda::StereoSector*>(&target_sector_data);
 			auto& sector = *reinterpret_cast<cdda::Sector*>(&target_sector_data);
-			auto samples = reinterpret_cast<ui16_t*>(&target_sector_data);
 			auto original = std::vector<byte_t>(compressed_byte_count);
 			std::memcpy(original.data(), &target_sector_data, compressed_byte_count);
-			auto& header = *reinterpret_cast<LosslessStereoAudioHeader*>(original.data());
-			auto bitreader = bits::BitReader(original, header.header_length);
-			array<GROUPS_PER_SECTOR, byte_t> group_predictor_indices_l;
-			array<GROUPS_PER_SECTOR, byte_t> group_predictor_indices_r;
-			for (auto group_index = size_t(0); group_index < GROUPS_PER_SECTOR; group_index += 1) {
-				group_predictor_indices_l[group_index] = bitreader.decode_bits(BITS_PER_PREDICTOR_INDEX);
-				group_predictor_indices_r[group_index] = bitreader.decode_bits(BITS_PER_PREDICTOR_INDEX);
-			}
-			bits::decompress_data_using_rice_coding(samples, cdda::SAMPLES_PER_SECTOR, header.k, bitreader);
-			transform_from_optimized_representation(sector);
-			recorrelate_temporally(stereo_sector, group_predictor_indices_l, group_predictor_indices_r);
-			recorrelate_spatially(stereo_sector);
+			array<cdda::STEREO_SAMPLES_PER_SECTOR, cdda::Sample> channel_a;
+			array<cdda::STEREO_SAMPLES_PER_SECTOR, cdda::Sample> channel_b;
+			auto bitreader = bits::BitReader(original, 0);
+			decompress_sector_lossless_stereo_audio_channel(bitreader, channel_a);
+			decompress_sector_lossless_stereo_audio_channel(bitreader, channel_b);
+			recorrelate_spatially(channel_a, channel_b);
+			reinterleave_channels(sector, channel_a, channel_b);
 		}
 
 		auto compress_data_exponential_golomb(
@@ -342,159 +305,6 @@ namespace odi {
 			bits::decompress_data_using_exponential_golomb_coding(data, size, header.k, bitreader);
 		}
 
-		auto decompress_sector_lossless_stereo_audio_opt(
-			array<cd::SECTOR_LENGTH, byte_t>& target_sector_data,
-			size_t compressed_byte_count
-		) -> void {
-			auto& stereo_sector = *reinterpret_cast<cdda::StereoSector*>(&target_sector_data);
-			auto original = std::vector<byte_t>(compressed_byte_count);
-			std::memcpy(original.data(), &target_sector_data, compressed_byte_count);
-			auto& header = *reinterpret_cast<LosslessStereoAudioHeader*>(original.data());
-			auto bitreader = bits::BitReader(original, header.header_length);
-			for (auto group_index = size_t(0); group_index < GROUPS_PER_SECTOR; group_index += 1) {
-				auto first_sample = group_index * SAMPLES_PER_GROUP;
-				auto last_sample = first_sample + SAMPLES_PER_GROUP < cdda::STEREO_SAMPLES_PER_SECTOR ? first_sample + SAMPLES_PER_GROUP : cdda::STEREO_SAMPLES_PER_SECTOR;
-				{
-					auto predictor_index = bitreader.decode_bits(BITS_PER_PREDICTOR_INDEX);
-					auto& predictor = PREDICTORS.at(predictor_index);
-					for (auto sample_index = first_sample; sample_index < last_sample; sample_index += 1) {
-						auto prediction = 0;
-						if (sample_index > 0) {
-							auto sample_m3 = stereo_sector.samples[sample_index >= 3 ? sample_index - 3 : 0].l.si;
-							auto sample_m2 = stereo_sector.samples[sample_index >= 2 ? sample_index - 2 : 0].l.si;
-							auto sample_m1 = stereo_sector.samples[sample_index >= 1 ? sample_index - 1 : 0].l.si;
-							prediction = predictor.m3 * sample_m3 + predictor.m2 * sample_m2 + predictor.m1 * sample_m1;
-						}
-						auto decoded = ui16_t(0);
-						bits::decompress_data_using_rice_coding(&decoded, 1, header.k, bitreader);
-						auto residual = si16_t(decoded & 1) ? 0 - ((decoded + 1) >> 1) : decoded >> 1;
-						auto sample = si16_t(residual + prediction);
-						stereo_sector.samples[sample_index].l.si = sample;
-					}
-				}
-				{
-					auto predictor_index = bitreader.decode_bits(BITS_PER_PREDICTOR_INDEX);
-					auto& predictor = PREDICTORS.at(predictor_index);
-					for (auto sample_index = first_sample; sample_index < last_sample; sample_index += 1) {
-						auto prediction = 0;
-						if (sample_index > 0) {
-							auto sample_m3 = stereo_sector.samples[sample_index >= 3 ? sample_index - 3 : 0].r.si;
-							auto sample_m2 = stereo_sector.samples[sample_index >= 2 ? sample_index - 2 : 0].r.si;
-							auto sample_m1 = stereo_sector.samples[sample_index >= 1 ? sample_index - 1 : 0].r.si;
-							prediction = predictor.m3 * sample_m3 + predictor.m2 * sample_m2 + predictor.m1 * sample_m1;
-						}
-						auto decoded = ui16_t(0);
-						bits::decompress_data_using_rice_coding(&decoded, 1, header.k, bitreader);
-						auto residual = si16_t(decoded & 1) ? 0 - ((decoded + 1) >> 1) : decoded >> 1;
-						auto sample = si16_t(residual + prediction);
-						stereo_sector.samples[sample_index].r.si = sample;
-					}
-				}
-			}
-			recorrelate_spatially(stereo_sector);
-		}
-
-		auto compress_sector_lossless_stereo_audio_opt(
-			array<cd::SECTOR_LENGTH, byte_t>& target_sector_data
-		) -> size_t {
-			auto sector_data = std::array<byte_t, cd::SECTOR_LENGTH>();
-			std::memcpy(&sector_data, &target_sector_data, cd::SECTOR_LENGTH);
-			auto& stereo_sector = *reinterpret_cast<cdda::StereoSector*>(&sector_data);
-			decorrelate_spatially(stereo_sector);
-			auto bitwriters = std::array<bits::BitWriter, 16>();
-			auto threads = std::array<std::thread, 16>();
-			for (auto k = size_t(0); k < 16; k += 1) {
-				auto thread = std::thread([&, k]() -> void {
-					auto& bitwriter = bitwriters.at(k);
-					bitwriter = bits::BitWriter(cd::SECTOR_LENGTH);
-					auto& buffer = bitwriter.get_buffer();
-					buffer.resize(sizeof(LosslessStereoAudioHeader));
-					auto& header = *reinterpret_cast<LosslessStereoAudioHeader*>(buffer.data());
-					header = LosslessStereoAudioHeader();
-					header.k = k;
-					auto& shortest_coding = bitwriter;
-					for (auto group_index = size_t(0); group_index < GROUPS_PER_SECTOR; group_index += 1) {
-						auto first_sample = group_index * SAMPLES_PER_GROUP;
-						auto last_sample = first_sample + SAMPLES_PER_GROUP < cdda::STEREO_SAMPLES_PER_SECTOR ? first_sample + SAMPLES_PER_GROUP : cdda::STEREO_SAMPLES_PER_SECTOR;
-						{
-							auto bitwriters = std::array<bits::BitWriter, PREDICTORS.size()>();
-							for (auto predictor_index = size_t(0); predictor_index < PREDICTORS.size(); predictor_index += 1) {
-								auto& predictor = PREDICTORS.at(predictor_index);
-								auto& bitwriter = bitwriters.at(predictor_index);
-								bitwriter = std::move(bits::BitWriter(shortest_coding));
-								try {
-									bitwriter.append_bits(predictor_index, BITS_PER_PREDICTOR_INDEX);
-									for (auto sample_index = first_sample; sample_index < last_sample; sample_index += 1) {
-										auto sample = stereo_sector.samples[sample_index].l.si;
-										auto prediction = 0;
-										if (sample_index > 0) {
-											auto sample_m3 = stereo_sector.samples[sample_index >= 3 ? sample_index - 3 : 0].l.si;
-											auto sample_m2 = stereo_sector.samples[sample_index >= 2 ? sample_index - 2 : 0].l.si;
-											auto sample_m1 = stereo_sector.samples[sample_index >= 1 ? sample_index - 1 : 0].l.si;
-											prediction = predictor.m3 * sample_m3 + predictor.m2 * sample_m2 + predictor.m1 * sample_m1;
-										}
-										auto residual = si16_t(sample - prediction);
-										auto encoded = ui16_t(residual < 0 ? 0 - (residual << 1) - 1 : residual << 1);
-										bits::compress_data_using_rice_coding(&encoded, 1, k, bitwriter);
-									}
-								} catch (const exceptions::BitWriterSizeExceededError& e) {}
-							}
-							std::sort(bitwriters.begin(), bitwriters.end(), [](const bits::BitWriter& one, const bits::BitWriter& two) -> bool_t {
-								return one.get_size() < two.get_size();
-							});
-							auto& best = bitwriters.front();
-							shortest_coding = std::move(best);
-						}
-						{
-							auto bitwriters = std::array<bits::BitWriter, PREDICTORS.size()>();
-							for (auto predictor_index = size_t(0); predictor_index < PREDICTORS.size(); predictor_index += 1) {
-								auto& predictor = PREDICTORS.at(predictor_index);
-								auto& bitwriter = bitwriters.at(predictor_index);
-								bitwriter = std::move(bits::BitWriter(shortest_coding));
-								try {
-									bitwriter.append_bits(predictor_index, BITS_PER_PREDICTOR_INDEX);
-									for (auto sample_index = first_sample; sample_index < last_sample; sample_index += 1) {
-										auto sample = stereo_sector.samples[sample_index].r.si;
-										auto prediction = 0;
-										if (sample_index > 0) {
-											auto sample_m3 = stereo_sector.samples[sample_index >= 3 ? sample_index - 3 : 0].r.si;
-											auto sample_m2 = stereo_sector.samples[sample_index >= 2 ? sample_index - 2 : 0].r.si;
-											auto sample_m1 = stereo_sector.samples[sample_index >= 1 ? sample_index - 1 : 0].r.si;
-											prediction = predictor.m3 * sample_m3 + predictor.m2 * sample_m2 + predictor.m1 * sample_m1;
-										}
-										auto residual = si16_t(sample - prediction);
-										auto encoded = ui16_t(residual < 0 ? 0 - (residual << 1) - 1 : residual << 1);
-										bits::compress_data_using_rice_coding(&encoded, 1, k, bitwriter);
-									}
-								} catch (const exceptions::BitWriterSizeExceededError& e) {}
-							}
-							std::sort(bitwriters.begin(), bitwriters.end(), [](const bits::BitWriter& one, const bits::BitWriter& two) -> bool_t {
-								return one.get_size() < two.get_size();
-							});
-							auto& best = bitwriters.front();
-							shortest_coding = std::move(best);
-						}
-					}
-					try {
-						shortest_coding.flush_bits();
-					} catch (const exceptions::BitWriterSizeExceededError& e) {}
-				});
-				threads.at(k) = std::move(thread);
-			}
-			for (auto thread_index = size_t(0); thread_index < threads.size(); thread_index += 1) {
-				threads.at(thread_index).join();
-			}
-			std::sort(bitwriters.begin(), bitwriters.end(), [](const bits::BitWriter& one, const bits::BitWriter& two) -> bool_t {
-				return one.get_size() < two.get_size();
-			});
-			auto& best = bitwriters.front();
-			if (best.get_buffer().size() >= cd::SECTOR_LENGTH) {
-				OVERDRIVE_THROW(exceptions::CompressedSizeExceededUncompressedSizeException(best.get_buffer().size(), cd::SECTOR_LENGTH));
-			}
-			std::memcpy(&target_sector_data, best.get_buffer().data(), best.get_buffer().size());
-			return best.get_buffer().size();
-		}
-
 		auto do_compress_sector_data(
 			array<cd::SECTOR_LENGTH, byte_t>& sector_data,
 			SectorDataCompressionMethod::type compression_method
@@ -506,7 +316,7 @@ namespace odi {
 				return internal::compress_data_exponential_golomb(sector_data, sizeof(sector_data));
 			}
 			if (compression_method == SectorDataCompressionMethod::LOSSLESS_STEREO_AUDIO) {
-				return internal::compress_sector_lossless_stereo_audio_opt(sector_data);
+				return internal::compress_sector_lossless_stereo_audio(sector_data);
 			}
 			OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
 		}
@@ -563,7 +373,7 @@ namespace odi {
 			return internal::decompress_data_exponential_golomb(sector_data, sizeof(sector_data), compressed_byte_count);
 		}
 		if (compression_method == SectorDataCompressionMethod::LOSSLESS_STEREO_AUDIO) {
-			return internal::decompress_sector_lossless_stereo_audio_opt(sector_data, compressed_byte_count);
+			return internal::decompress_sector_lossless_stereo_audio(sector_data, compressed_byte_count);
 		}
 		OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
 	}

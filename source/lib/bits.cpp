@@ -137,7 +137,7 @@ namespace bits {
 	}
 
 	auto compress_data_using_rice_coding(
-		const ui16_t* values,
+		const si16_t* values,
 		size_t size,
 		size_t k,
 		BitWriter& bitwriter
@@ -145,8 +145,9 @@ namespace bits {
 		auto mask = size_t((1 << k) - 1);
 		for (auto value_index = size_t(0); value_index < size; value_index += 1) {
 			auto value = values[value_index];
-			auto quotient = size_t(value >> k);
-			auto remainder = size_t(value & mask);
+			auto unsigned_value = ui16_t(value < 0 ? 0 - (value << 1) - 1 : value << 1);
+			auto quotient = size_t(unsigned_value >> k);
+			auto remainder = size_t(unsigned_value & mask);
 			for (auto bit_index = size_t(0); bit_index < quotient; bit_index += 1) {
 				bitwriter.append_zero();
 			}
@@ -206,7 +207,7 @@ namespace bits {
 	}
 
 	auto decompress_data_using_rice_coding(
-		ui16_t* values,
+		si16_t* values,
 		size_t size,
 		size_t k,
 		BitReader& bitreader
@@ -221,7 +222,8 @@ namespace bits {
 				quotient += 1;
 			}
 			auto remainder = bitreader.decode_bits(k);
-			auto value = (quotient << k) | remainder;
+			auto unsigned_value = (quotient << k) | remainder;
+			auto value = si16_t((unsigned_value & 1) ? 0 - ((unsigned_value + 1) >> 1) : unsigned_value >> 1);
 			values[value_index] = value;
 		}
 	}

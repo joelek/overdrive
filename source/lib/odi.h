@@ -133,13 +133,6 @@ namespace odi {
 
 	static_assert(sizeof(PointTableHeader) == 16);
 
-	struct LosslessStereoAudioHeader {
-		ui08_t header_length = sizeof(LosslessStereoAudioHeader);
-		ui08_t k;
-	};
-
-	static_assert(sizeof(LosslessStereoAudioHeader) == 2);
-
 	struct ExponentialGolombHeader {
 		ui08_t header_length = sizeof(ExponentialGolombHeader);
 		ui08_t k;
