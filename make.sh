@@ -7,7 +7,7 @@ else
 	exit 1
 fi
 
-COMPILER_OPTIONS="-std=c++20 -static -pedantic -Wall -Wextra -O3"
+COMPILER_OPTIONS="-std=c++20 -static -pedantic -Wall -Wextra -Werror=return-type -O3"
 
 if [ $1 = "debug" ]; then
 	echo "[configuration: debug]"
