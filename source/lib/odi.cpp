@@ -161,32 +161,35 @@ namespace odi {
 			}
 		}
 
+		auto compress_sector_lossless_stereo_audio_channel_with_parameters(
+			bits::BitWriter bitwriter,
+			array<cdda::STEREO_SAMPLES_PER_SECTOR, const cdda::Sample>& samples,
+			size_t rice_parameter,
+			size_t predictor_index
+		) -> bits::BitWriter {
+			auto& predictor = PREDICTORS.at(predictor_index);
+			array<cdda::STEREO_SAMPLES_PER_SECTOR, cdda::Sample> residuals;
+			decorrelate_temporally(samples, residuals, predictor);
+			try {
+				bitwriter.append_bits(rice_parameter, BITS_PER_RICE_PARAMETER);
+				bitwriter.append_bits(predictor_index, BITS_PER_PREDICTOR_INDEX);
+				bits::compress_data_using_rice_coding(reinterpret_cast<si16_t*>(&residuals), cdda::STEREO_SAMPLES_PER_SECTOR, rice_parameter, bitwriter);
+			} catch (const exceptions::BitWriterSizeExceededError& e) {}
+			return bitwriter;
+		}
+
 		auto compress_sector_lossless_stereo_audio_channel(
-			const bits::BitWriter& bitwriter,
-			array<cdda::STEREO_SAMPLES_PER_SECTOR, const cdda::Sample>& channel
+			bits::BitWriter bitwriter,
+			array<cdda::STEREO_SAMPLES_PER_SECTOR, const cdda::Sample>& samples
 		) -> bits::BitWriter {
 			auto thread_bitwriters = std::array<bits::BitWriter, MAX_RICE_PARAMETER>();
-			for (auto thread_bitwriter_index = size_t(0); thread_bitwriter_index < thread_bitwriters.size(); thread_bitwriter_index += 1) {
-				thread_bitwriters.at(thread_bitwriter_index) = std::move(bits::BitWriter(bitwriter));
-			}
 			auto threads = std::array<std::thread, MAX_RICE_PARAMETER>();
 			for (auto thread_index = size_t(0); thread_index < MAX_RICE_PARAMETER; thread_index += 1) {
 				auto thread = std::thread([&, thread_index]() -> void {
 					auto rice_parameter = thread_index;
 					auto bitwriters = std::array<bits::BitWriter, PREDICTORS.size()>();
-					for (auto bitwriter_index = size_t(0); bitwriter_index < bitwriters.size(); bitwriter_index += 1) {
-						bitwriters.at(bitwriter_index) = std::move(bits::BitWriter(bitwriter));
-					}
-					for (auto predictor_index = size_t(0); predictor_index < PREDICTORS.size(); predictor_index += 1) {
-						auto& predictor = PREDICTORS.at(predictor_index);
-						array<cdda::STEREO_SAMPLES_PER_SECTOR, cdda::Sample> residuals;
-						decorrelate_temporally(channel, residuals, predictor);
-						try {
-							auto& bitwriter = bitwriters.at(predictor_index);
-							bitwriter.append_bits(rice_parameter, BITS_PER_RICE_PARAMETER);
-							bitwriter.append_bits(predictor_index, BITS_PER_PREDICTOR_INDEX);
-							bits::compress_data_using_rice_coding(reinterpret_cast<si16_t*>(&residuals), cdda::STEREO_SAMPLES_PER_SECTOR, thread_index, bitwriter);
-						} catch (const exceptions::BitWriterSizeExceededError& e) {}
+					for (auto predictor_index = size_t(0); predictor_index < bitwriters.size(); predictor_index += 1) {
+						bitwriters.at(predictor_index) = std::move(compress_sector_lossless_stereo_audio_channel_with_parameters(bitwriter, samples, rice_parameter, predictor_index));
 					}
 					auto best_bitwriter_index = size_t(0);
 					for (auto bitwriter_index = size_t(1); bitwriter_index < bitwriters.size(); bitwriter_index += 1) {
