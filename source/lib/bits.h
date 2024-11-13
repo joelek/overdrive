@@ -23,6 +23,9 @@ namespace bits {
 			size_t width
 		) -> size_t;
 
+		auto get_size(
+		) const -> size_t;
+
 		protected:
 
 		const std::vector<byte_t>& buffer;

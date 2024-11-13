@@ -37,6 +37,11 @@ namespace bits {
 		return value;
 	}
 
+	auto BitReader::get_size(
+	) const -> size_t {
+		return this->buffer.size() * 8;
+	}
+
 	BitWriter::BitWriter(
 		std::optional<size_t> max_size
 	):
