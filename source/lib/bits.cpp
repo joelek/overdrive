@@ -110,6 +110,22 @@ namespace bits {
 	}
 
 	auto compress_data_using_exponential_golomb_coding(
+		const ui16_t* values,
+		size_t size,
+		size_t k,
+		BitWriter& bitwriter
+	) -> void {
+		auto power = size_t(1) << k;
+		for (auto value_index = size_t(0); value_index < size; value_index += 1) {
+			auto unsigned_value = values[value_index];
+			auto exponential_value = unsigned_value + power;
+			auto width = sizeof(exponential_value) * 8 - std::countl_zero(exponential_value);
+			bitwriter.append_bits(0, width - 1 - k);
+			bitwriter.append_bits(exponential_value, width);
+		}
+	}
+
+	auto compress_data_using_exponential_golomb_coding(
 		const si16_t* values,
 		size_t size,
 		size_t k,
@@ -123,6 +139,25 @@ namespace bits {
 			auto width = sizeof(exponential_value) * 8 - std::countl_zero(exponential_value);
 			bitwriter.append_bits(0, width - 1 - k);
 			bitwriter.append_bits(exponential_value, width);
+		}
+	}
+
+	auto compress_data_using_rice_coding(
+		const ui16_t* values,
+		size_t size,
+		size_t k,
+		BitWriter& bitwriter
+	) -> void {
+		auto mask = size_t((1 << k) - 1);
+		for (auto value_index = size_t(0); value_index < size; value_index += 1) {
+			auto unsigned_value = values[value_index];
+			auto quotient = size_t(unsigned_value >> k);
+			auto remainder = size_t(unsigned_value & mask);
+			for (auto bit_index = size_t(0); bit_index < quotient; bit_index += 1) {
+				bitwriter.append_zero();
+			}
+			bitwriter.append_one();
+			bitwriter.append_bits(remainder, k);
 		}
 	}
 
@@ -146,6 +181,31 @@ namespace bits {
 		}
 	}
 
+	auto decompress_data_using_exponential_golomb_coding(
+		ui16_t* values,
+		size_t size,
+		size_t k,
+		BitReader& bitreader
+	) -> void {
+		auto power = size_t(1) << k;
+		for (auto value_index = size_t(0); value_index < size; value_index += 1) {
+			auto width = size_t(k + 1);
+			auto exponential_value = size_t(0);
+			while (true) {
+				exponential_value = bitreader.decode_bits(1);
+				if (exponential_value != 0) {
+					break;
+				}
+				width += 1;
+			}
+			width -= 1;
+			if (width > 0) {
+				exponential_value = (exponential_value << width) | bitreader.decode_bits(width);
+			}
+			auto unsigned_value = exponential_value - power;
+			values[value_index] = unsigned_value;
+		}
+	}
 
 	auto decompress_data_using_exponential_golomb_coding(
 		si16_t* values,
@@ -174,6 +234,26 @@ namespace bits {
 		}
 	}
 
+	auto decompress_data_using_rice_coding(
+		ui16_t* values,
+		size_t size,
+		size_t k,
+		BitReader& bitreader
+	) -> void {
+		for (auto value_index = size_t(0); value_index < size; value_index += 1) {
+			auto quotient = size_t(0);
+			while (true) {
+				auto bit = bitreader.decode_bits(1);
+				if (bit != 0) {
+					break;
+				}
+				quotient += 1;
+			}
+			auto remainder = bitreader.decode_bits(k);
+			auto unsigned_value = (quotient << k) | remainder;
+			values[value_index] = unsigned_value;
+		}
+	}
 	auto decompress_data_using_rice_coding(
 		si16_t* values,
 		size_t size,
