@@ -101,6 +101,12 @@ namespace bits {
 		BitWriter& bitwriter
 	) -> void;
 
+	auto compress_data_using_rle_coding(
+		const byte_t* bytes,
+		size_t size,
+		BitWriter& bitwriter
+	) -> void;
+
 	auto decompress_data_using_exponential_golomb_coding(
 		ui16_t* values,
 		size_t size,
@@ -126,6 +132,12 @@ namespace bits {
 		si16_t* values,
 		size_t size,
 		size_t k,
+		BitReader& bitreader
+	) -> void;
+
+	auto decompress_data_using_rle_coding(
+		byte_t* bytes,
+		size_t size,
 		BitReader& bitreader
 	) -> void;
 }
