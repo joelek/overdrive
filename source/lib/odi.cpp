@@ -18,7 +18,7 @@ namespace odi {
 	) -> const std::string& {
 		static const auto names = std::map<type, std::string>({
 			{ NONE, "NONE" },
-			{ EXP_GOLOMB, "EXP_GOLOMB" },
+			{ RLE, "RLE" },
 			{ LOSSLESS_STEREO_AUDIO, "LOSSLESS_STEREO_AUDIO" }
 		});
 		static const auto fallback = std::string("???");
@@ -34,7 +34,7 @@ namespace odi {
 	) -> const std::string& {
 		static const auto names = std::map<type, std::string>({
 			{ NONE, "NONE" },
-			{ EXP_GOLOMB, "EXP_GOLOMB" }
+			{ RLE, "RLE" }
 		});
 		static const auto fallback = std::string("???");
 		auto iterator = names.find(value);
@@ -322,6 +322,34 @@ namespace odi {
 			}
 		}
 
+		auto compress_rle(
+			byte_t* target_data,
+			size_t target_size
+		) -> size_t {
+			auto bitwriter = bits::BitWriter(target_size);
+			try {
+				bits::compress_data_using_rle_coding(target_data, target_size, bitwriter);
+				bitwriter.flush_bits();
+			} catch (exceptions::BitWriterSizeExceededError& e) {}
+			auto& buffer = bitwriter.get_buffer();
+			if (buffer.size() >= target_size) {
+				OVERDRIVE_THROW(exceptions::CompressedSizeExceededUncompressedSizeException(buffer.size(), target_size));
+			}
+			std::memcpy(target_data, buffer.data(), buffer.size());
+			return buffer.size();
+		}
+
+		auto decompress_rle(
+			byte_t* target_data,
+			size_t target_size,
+			size_t compressed_byte_count
+		) -> void {
+			auto original = std::vector<byte_t>(compressed_byte_count);
+			std::memcpy(original.data(), target_data, compressed_byte_count);
+			auto bitreader = bits::BitReader(original, 0);
+			bits::decompress_data_using_rle_coding(target_data, target_size, bitreader);
+		}
+
 		auto do_compress_sector_data(
 			array<cd::SECTOR_LENGTH, byte_t>& sector_data,
 			SectorDataCompressionMethod::type compression_method
@@ -329,8 +357,8 @@ namespace odi {
 			if (compression_method == SectorDataCompressionMethod::NONE) {
 				return sizeof(sector_data);
 			}
-			if (compression_method == SectorDataCompressionMethod::EXP_GOLOMB) {
-				return compress_exp_golomb(sector_data, cd::SECTOR_LENGTH);
+			if (compression_method == SectorDataCompressionMethod::RLE) {
+				return compress_rle(sector_data, cd::SECTOR_LENGTH);
 			}
 			if (compression_method == SectorDataCompressionMethod::LOSSLESS_STEREO_AUDIO) {
 				return compress_sector_lossless_stereo_audio(sector_data);
@@ -345,8 +373,8 @@ namespace odi {
 			if (compression_method == SubchannelsDataCompressionMethod::NONE) {
 				return sizeof(subchannels_data);
 			}
-			if (compression_method == SectorDataCompressionMethod::EXP_GOLOMB) {
-				return compress_exp_golomb(subchannels_data, cd::SUBCHANNELS_LENGTH);
+			if (compression_method == SectorDataCompressionMethod::RLE) {
+				return compress_rle(subchannels_data, cd::SUBCHANNELS_LENGTH);
 			}
 			OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
 		}
@@ -386,8 +414,8 @@ namespace odi {
 		if (compression_method == SectorDataCompressionMethod::NONE) {
 			return;
 		}
-		if (compression_method == SectorDataCompressionMethod::EXP_GOLOMB) {
-			return internal::decompress_exp_golomb(sector_data, cd::SECTOR_LENGTH, compressed_byte_count);
+		if (compression_method == SectorDataCompressionMethod::RLE) {
+			return internal::decompress_rle(sector_data, cd::SECTOR_LENGTH, compressed_byte_count);
 		}
 		if (compression_method == SectorDataCompressionMethod::LOSSLESS_STEREO_AUDIO) {
 			return internal::decompress_sector_lossless_stereo_audio(sector_data, compressed_byte_count);
@@ -428,8 +456,8 @@ namespace odi {
 		if (compression_method == SubchannelsDataCompressionMethod::NONE) {
 			return;
 		}
-		if (compression_method == SectorDataCompressionMethod::EXP_GOLOMB) {
-			return internal::decompress_exp_golomb(subchannels_data, cd::SUBCHANNELS_LENGTH, compressed_byte_count);
+		if (compression_method == SectorDataCompressionMethod::RLE) {
+			return internal::decompress_rle(subchannels_data, cd::SUBCHANNELS_LENGTH, compressed_byte_count);
 		}
 		OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
 	}
