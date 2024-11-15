@@ -63,15 +63,15 @@ namespace odi {
 	static_assert(sizeof(FileHeader) == 32);
 
 	struct SectorDataCompressionHeader {
-		ui16_t compressed_byte_count;
 		SectorDataCompressionMethod::type compression_method;
+		ui16_t compressed_byte_count;
 	};
 
 	static_assert(sizeof(SectorDataCompressionHeader) == 3);
 
 	struct SubchannelsDataCompressionHeader {
-		ui16_t compressed_byte_count;
 		SubchannelsDataCompressionMethod::type compression_method;
+		ui16_t compressed_byte_count;
 	};
 
 	static_assert(sizeof(SubchannelsDataCompressionHeader) == 3);
