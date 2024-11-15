@@ -265,63 +265,6 @@ namespace odi {
 			reinterleave_channels(sector, channel_a, channel_b);
 		}
 
-		auto compress_exp_golomb(
-			byte_t* target_data,
-			size_t target_size
-		) -> size_t {
-			auto values = std::vector<ui16_t>(target_size);
-			for (auto byte_index = size_t(0); byte_index < target_size; byte_index += 1) {
-				values.at(byte_index) = target_data[byte_index];
-			}
-			auto thread_bitwriters = std::array<bits::BitWriter, MAX_RICE_PARAMETER>();
-			auto threads = std::array<std::thread, MAX_RICE_PARAMETER>();
-			for (auto thread_index = size_t(0); thread_index < MAX_RICE_PARAMETER; thread_index += 1) {
-				auto thread = std::thread([&, thread_index]() -> void {
-					auto rice_parameter = thread_index;
-					auto bitwriter = bits::BitWriter(target_size);
-					try {
-						bitwriter.append_bits(rice_parameter, BITS_PER_RICE_PARAMETER);
-						bits::compress_data_using_exponential_golomb_coding(values.data(), target_size, rice_parameter, bitwriter);
-						bitwriter.flush_bits();
-					} catch (exceptions::BitWriterSizeExceededError& e) {}
-					thread_bitwriters.at(thread_index) = std::move(bitwriter);
-				});
-				threads.at(thread_index) = std::move(thread);
-			}
-			for (auto thread_index = size_t(0); thread_index < threads.size(); thread_index += 1) {
-				threads.at(thread_index).join();
-			}
-			auto best_bitwriter_index = size_t(0);
-			for (auto thread_bitwriter_index = size_t(1); thread_bitwriter_index < thread_bitwriters.size(); thread_bitwriter_index += 1) {
-				if (thread_bitwriters.at(thread_bitwriter_index).get_size() < thread_bitwriters.at(best_bitwriter_index).get_size()) {
-					best_bitwriter_index = thread_bitwriter_index;
-				}
-			}
-			auto& best_bitwriter = thread_bitwriters.at(best_bitwriter_index);
-			auto& buffer = best_bitwriter.get_buffer();
-			if (buffer.size() >= target_size) {
-				OVERDRIVE_THROW(exceptions::CompressedSizeExceededUncompressedSizeException(buffer.size(), target_size));
-			}
-			std::memcpy(target_data, buffer.data(), buffer.size());
-			return buffer.size();
-		}
-
-		auto decompress_exp_golomb(
-			byte_t* target_data,
-			size_t target_size,
-			size_t compressed_byte_count
-		) -> void {
-			auto original = std::vector<byte_t>(compressed_byte_count);
-			std::memcpy(original.data(), target_data, compressed_byte_count);
-			auto bitreader = bits::BitReader(original, 0);
-			auto rice_parameter = bitreader.decode_bits(BITS_PER_RICE_PARAMETER);
-			auto values = std::vector<ui16_t>(target_size);
-			bits::decompress_data_using_exponential_golomb_coding(values.data(), target_size, rice_parameter, bitreader);
-			for (auto byte_index = size_t(0); byte_index < target_size; byte_index += 1) {
-				target_data[byte_index] = values.at(byte_index);
-			}
-		}
-
 		auto compress_rle(
 			byte_t* target_data,
 			size_t target_size
