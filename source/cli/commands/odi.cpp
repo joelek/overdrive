@@ -29,6 +29,8 @@ namespace commands {
 			odi::SectorDataCompressionMethod::type sector_data_method,
 			odi::SubchannelsDataCompressionMethod::type subchannels_method
 		) -> odi::SectorTableEntry {
+			auto& subchannels = *reinterpret_cast<cd::Subchannels*>(&extracted_sector.subchannels_data);
+			subchannels = cd::deinterleave_subchannels(subchannels);
 			auto sector_table_entry = odi::SectorTableEntry();
 			sector_table_entry.readability = extracted_sector.counter == 0 ? odi::Readability::UNREADABLE : odi::Readability::READABLE;
 			sector_table_entry.sector_data.compressed_byte_count = cd::SECTOR_LENGTH;
