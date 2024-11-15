@@ -78,6 +78,7 @@ The [AccurateRip drive database](https://www.accuraterip.com/driveoffsets.htm) p
 * Document utility.
 * Document ODI format.
 * Add compression settings options.
+* Add compression method for unreadable empty sectors.
 
 ## References
 
