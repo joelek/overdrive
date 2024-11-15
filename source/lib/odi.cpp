@@ -333,7 +333,7 @@ namespace odi {
 				return compress_exp_golomb(sector_data, cd::SECTOR_LENGTH);
 			}
 			if (compression_method == SectorDataCompressionMethod::LOSSLESS_STEREO_AUDIO) {
-				return internal::compress_sector_lossless_stereo_audio(sector_data);
+				return compress_sector_lossless_stereo_audio(sector_data);
 			}
 			OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
 		}
