@@ -73,7 +73,7 @@ namespace commands {
 				auto& extracted_sectors = extracted_sectors_vector.at(sector_index);
 				auto& extracted_sector = extracted_sectors.at(0);
 				auto& sector_table_entry = sector_table_entries.at(sector_index);
-				sector_table_entry = compress_sector(extracted_sector, odi::SectorDataCompressionMethod::NONE, odi::SubchannelsDataCompressionMethod::NONE);
+				sector_table_entry = compress_sector(extracted_sector, odi::SectorDataCompressionMethod::EXP_GOLOMB, odi::SubchannelsDataCompressionMethod::EXP_GOLOMB);
 				sector_table_entry.compressed_data_absolute_offset = std::ftell(handle);
 				if (std::fwrite(extracted_sector.sector_data, sector_table_entry.sector_data.compressed_byte_count, 1, handle) != 1) {
 					OVERDRIVE_THROW(exceptions::IOWriteException(path));
@@ -124,8 +124,8 @@ namespace commands {
 							auto& extracted_sectors = extracted_sectors_vector.at(sector_index);
 							auto& extracted_sector = extracted_sectors.at(0);
 							auto& sector_table_entry = track_sector_table_entries.at(sector_index);
-							auto sector_data_method = track.type == disc::TrackType::AUDIO_2_CHANNELS ? odi::SectorDataCompressionMethod::LOSSLESS_STEREO_AUDIO : odi::SectorDataCompressionMethod::NONE;
-							auto subchannels_data_method = odi::SubchannelsDataCompressionMethod::NONE;
+							auto sector_data_method = track.type == disc::TrackType::AUDIO_2_CHANNELS ? odi::SectorDataCompressionMethod::LOSSLESS_STEREO_AUDIO : odi::SectorDataCompressionMethod::EXP_GOLOMB;
+							auto subchannels_data_method = odi::SubchannelsDataCompressionMethod::EXP_GOLOMB;
 							sector_table_entry = compress_sector(extracted_sector, sector_data_method, subchannels_data_method);
 						}
 						for (auto sector_index = size_t(0); sector_index < extracted_sectors_vector.size(); sector_index += 1) {

@@ -15,6 +15,7 @@ namespace odi {
 		using type = ui08_t;
 
 		const auto NONE = type(0x00);
+		const auto EXP_GOLOMB = type(0x01);
 		const auto LOSSLESS_STEREO_AUDIO = type(0x80);
 
 		auto name(
@@ -26,6 +27,7 @@ namespace odi {
 		using type = ui08_t;
 
 		const auto NONE = type(0x00);
+		const auto EXP_GOLOMB = type(0x01);
 
 		auto name(
 			type value
