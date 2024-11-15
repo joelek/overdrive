@@ -76,8 +76,15 @@ namespace cd {
 
 	static_assert(sizeof(SectorAddress) == 3);
 
-	struct Subchannels {
-		byte_t channels[SUBCHANNEL_COUNT][SUBCHANNEL_LENGTH];
+	struct Subchannel {
+		byte_t data[SUBCHANNEL_LENGTH];
+	};
+
+	static_assert(sizeof(Subchannel) == SUBCHANNEL_LENGTH);
+
+	union Subchannels {
+		Subchannel channels[SUBCHANNEL_COUNT];
+		byte_t data[SUBCHANNELS_LENGTH];
 	};
 
 	static_assert(sizeof(Subchannels) == SUBCHANNELS_LENGTH);
@@ -164,8 +171,12 @@ namespace cd {
 		si_t sector
 	) -> SectorAddress;
 
-	auto deinterleave_subchannel_data(
-		reference<array<SUBCHANNELS_LENGTH, byte_t>> data
+	auto deinterleave_subchannels(
+		const Subchannels& subchannels
+	) -> Subchannels;
+
+	auto reinterleave_subchannels(
+		const Subchannels& subchannels
 	) -> Subchannels;
 
 	auto get_track_category(

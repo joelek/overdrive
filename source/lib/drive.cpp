@@ -38,8 +38,8 @@ namespace drive {
 		auto deltas_index = size_t(0);
 		for (auto sector_index = size_t(0); sector_index < size_t(10); sector_index += 1) {
 			this->read_absolute_sector(cd::get_absolute_sector_index(sector_index), nullptr, &data.subchannels_data, nullptr);
-			auto subchannels = cd::deinterleave_subchannel_data(data.subchannels_data);
-			auto& q = *reinterpret_cast<cd::SubchannelQ*>(subchannels.channels[cd::SUBCHANNEL_Q_INDEX]);
+			auto subchannels = cd::deinterleave_subchannels(*reinterpret_cast<cd::Subchannels*>(&data.subchannels_data));
+			auto& q = *reinterpret_cast<cd::SubchannelQ*>(subchannels.channels[cd::SUBCHANNEL_Q_INDEX].data);
 			if (q.adr == 1) {
 				auto decoded_sector_index = cd::get_sector_from_address(bcd::decode_address(q.mode1.absolute_address_bcd)) - cd::RELATIVE_SECTOR_OFFSET;
 				auto delta = static_cast<si_t>(sector_index) - static_cast<si_t>(decoded_sector_index);
