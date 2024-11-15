@@ -91,9 +91,9 @@ namespace odi {
 	static_assert(sizeof(SectorTableEntry) == 16);
 
 	struct SectorTableHeader {
-		ui32_t entry_count;
-		ui16_t entry_length = sizeof(SectorTableEntry);
 		ui16_t header_length = sizeof(SectorTableHeader);
+		ui16_t entry_length = sizeof(SectorTableEntry);
+		ui32_t entry_count;
 		ui08_t : 8;
 		ui08_t : 8;
 		ui08_t : 8;
@@ -118,9 +118,9 @@ namespace odi {
 	static_assert(sizeof(PointTableEntry) == 16);
 
 	struct PointTableHeader {
-		ui32_t entry_count;
-		ui16_t entry_length = sizeof(PointTableEntry);
 		ui16_t header_length = sizeof(PointTableHeader);
+		ui16_t entry_length = sizeof(PointTableEntry);
+		ui32_t entry_count;
 		ui08_t : 8;
 		ui08_t : 8;
 		ui08_t : 8;
