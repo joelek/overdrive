@@ -72,11 +72,8 @@ The [AccurateRip drive database](https://www.accuraterip.com/driveoffsets.htm) p
 * Reorganize exceptions so that enums and types can be re-used.
 * Improve copier to better extract subchannels.
 * Detect indices in audio tracks including index 00 in pregap.
-* Investigate possibility of reading lead-in and lead-out when cdrom error correction is turned off.
-* Optimize commands to not store 150 sectors of silence between data and audio tracks on mixed-mode CD-ROMs.
 * Document utility.
 * Document ODI format.
-* Add compression settings options.
 
 ## References
 
