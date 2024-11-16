@@ -4,6 +4,8 @@ namespace commands {
 	class ODIptions: public options::Options {
 		public:
 
+		bool_t compress;
+
 		protected:
 	};
 
@@ -14,6 +16,20 @@ namespace commands {
 		) -> ODIptions {
 			auto options = ODIptions();
 			auto parsers = options::get_default_parsers(options);
+			parsers.push_back(parser::Parser({
+				"compress",
+				{},
+				"Specify whether to compress extracted data.",
+				std::regex("^(true|false)$"),
+				"boolean",
+				false,
+				std::optional<std::string>("true"),
+				1,
+				1,
+				[&](const std::vector<std::string>& matches) -> void {
+					options.compress = matches.at(0) == "true";
+				}
+			}));
 			parsers = parser::sort(parsers);
 			try {
 				parser::parse(arguments, parsers);
@@ -27,7 +43,8 @@ namespace commands {
 		auto compress_sector(
 			copier::ExtractedSector& extracted_sector,
 			odi::SectorDataCompressionMethod::type sector_data_method,
-			odi::SubchannelsDataCompressionMethod::type subchannels_method
+			odi::SubchannelsDataCompressionMethod::type subchannels_method,
+			const ODIptions& options
 		) -> odi::SectorTableEntry {
 			auto& subchannels = *reinterpret_cast<cd::Subchannels*>(&extracted_sector.subchannels_data);
 			subchannels = cd::deinterleave_subchannels(subchannels);
@@ -37,14 +54,16 @@ namespace commands {
 			sector_table_entry.sector_data.compression_method = odi::SectorDataCompressionMethod::NONE;
 			sector_table_entry.subchannels_data.compressed_byte_count = cd::SUBCHANNELS_LENGTH;
 			sector_table_entry.subchannels_data.compression_method = odi::SubchannelsDataCompressionMethod::NONE;
-			try {
-				sector_table_entry.sector_data.compressed_byte_count = odi::compress_sector_data(extracted_sector.sector_data, sector_data_method);
-				sector_table_entry.sector_data.compression_method = sector_data_method;
-			} catch (const exceptions::CompressedSizeExceededUncompressedSizeException& e) {}
-			try {
-				sector_table_entry.subchannels_data.compressed_byte_count = odi::compress_subchannels_data(extracted_sector.subchannels_data, subchannels_method);
-				sector_table_entry.subchannels_data.compression_method = subchannels_method;
-			} catch (const exceptions::CompressedSizeExceededUncompressedSizeException& e) {}
+			if (options.compress) {
+				try {
+					sector_table_entry.sector_data.compressed_byte_count = odi::compress_sector_data(extracted_sector.sector_data, sector_data_method);
+					sector_table_entry.sector_data.compression_method = sector_data_method;
+				} catch (const exceptions::CompressedSizeExceededUncompressedSizeException& e) {}
+				try {
+					sector_table_entry.subchannels_data.compressed_byte_count = odi::compress_subchannels_data(extracted_sector.subchannels_data, subchannels_method);
+					sector_table_entry.subchannels_data.compression_method = subchannels_method;
+				} catch (const exceptions::CompressedSizeExceededUncompressedSizeException& e) {}
+			}
 			return sector_table_entry;
 		}
 
@@ -73,7 +92,7 @@ namespace commands {
 				auto& extracted_sectors = extracted_sectors_vector.at(sector_index);
 				auto& extracted_sector = extracted_sectors.at(0);
 				auto& sector_table_entry = sector_table_entries.at(sector_index);
-				sector_table_entry = compress_sector(extracted_sector, odi::SectorDataCompressionMethod::RLE, odi::SubchannelsDataCompressionMethod::RLE);
+				sector_table_entry = compress_sector(extracted_sector, odi::SectorDataCompressionMethod::RLE, odi::SubchannelsDataCompressionMethod::RLE, options);
 				sector_table_entry.compressed_data_absolute_offset = std::ftell(handle);
 				if (std::fwrite(extracted_sector.sector_data, sector_table_entry.sector_data.compressed_byte_count, 1, handle) != 1) {
 					OVERDRIVE_THROW(exceptions::IOWriteException(path));
@@ -126,7 +145,7 @@ namespace commands {
 							auto& sector_table_entry = track_sector_table_entries.at(sector_index);
 							auto sector_data_method = track.type == disc::TrackType::AUDIO_2_CHANNELS ? odi::SectorDataCompressionMethod::LOSSLESS_STEREO_AUDIO : odi::SectorDataCompressionMethod::RLE;
 							auto subchannels_data_method = odi::SubchannelsDataCompressionMethod::RLE;
-							sector_table_entry = compress_sector(extracted_sector, sector_data_method, subchannels_data_method);
+							sector_table_entry = compress_sector(extracted_sector, sector_data_method, subchannels_data_method, options);
 						}
 						for (auto sector_index = size_t(0); sector_index < extracted_sectors_vector.size(); sector_index += 1) {
 							auto& extracted_sectors = extracted_sectors_vector.at(sector_index);
