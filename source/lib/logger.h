@@ -19,7 +19,7 @@ namespace logger {
 		template <typename... A>
 		auto log(
 			const std::string& format,
-			A... arguments
+			A&&... arguments
 		) const -> void;
 
 		protected:
@@ -30,9 +30,9 @@ namespace logger {
 	template <typename... A>
 	auto Logger::log(
 		const std::string& format,
-		A... arguments
+		A&&... arguments
 	) const -> void {
-		fprintf(this->handle, "%s\n", std::format(format, arguments...).c_str());
+		fprintf(this->handle, "%s\n", std::vformat(format, std::make_format_args(arguments...)).c_str());
 	}
 }
 }
