@@ -15,7 +15,7 @@ namespace odi {
 		using type = ui08_t;
 
 		const auto NONE = type(0x00);
-		const auto RLE = type(0x01);
+		const auto RUN_LENGTH_ENCODING = type(0x01);
 		const auto LOSSLESS_STEREO_AUDIO = type(0x80);
 
 		auto name(
@@ -27,7 +27,7 @@ namespace odi {
 		using type = ui08_t;
 
 		const auto NONE = type(0x00);
-		const auto RLE = type(0x01);
+		const auto RUN_LENGTH_ENCODING = type(0x01);
 
 		auto name(
 			type value
@@ -48,7 +48,7 @@ namespace odi {
 	#pragma pack(push, 1)
 
 	struct FileHeader {
-		ch08_t identifier[16] = "OVERDRIVE IMAGE";
+		ch08_t identifier[16] = "OVERDRIVE IMAGE"; // Zero-terminated.
 		ui08_t major_version = MAJOR_VERSION;
 		ui08_t minor_version = MINOR_VERSION;
 		ui16_t header_length = sizeof(FileHeader);

@@ -18,7 +18,7 @@ namespace odi {
 	) -> const std::string& {
 		static const auto names = std::map<type, std::string>({
 			{ NONE, "NONE" },
-			{ RLE, "RLE" },
+			{ RUN_LENGTH_ENCODING, "RUN_LENGTH_ENCODING" },
 			{ LOSSLESS_STEREO_AUDIO, "LOSSLESS_STEREO_AUDIO" }
 		});
 		static const auto fallback = std::string("???");
@@ -34,7 +34,7 @@ namespace odi {
 	) -> const std::string& {
 		static const auto names = std::map<type, std::string>({
 			{ NONE, "NONE" },
-			{ RLE, "RLE" }
+			{ RUN_LENGTH_ENCODING, "RUN_LENGTH_ENCODING" }
 		});
 		static const auto fallback = std::string("???");
 		auto iterator = names.find(value);
@@ -265,7 +265,7 @@ namespace odi {
 			reinterleave_channels(sector, channel_a, channel_b);
 		}
 
-		auto compress_rle(
+		auto compress_run_length_encoding(
 			byte_t* target_data,
 			size_t target_size
 		) -> size_t {
@@ -282,7 +282,7 @@ namespace odi {
 			return buffer.size();
 		}
 
-		auto decompress_rle(
+		auto decompress_run_length_encoding(
 			byte_t* target_data,
 			size_t target_size,
 			size_t compressed_byte_count
@@ -300,8 +300,8 @@ namespace odi {
 			if (compression_method == SectorDataCompressionMethod::NONE) {
 				return sizeof(sector_data);
 			}
-			if (compression_method == SectorDataCompressionMethod::RLE) {
-				return compress_rle(sector_data, cd::SECTOR_LENGTH);
+			if (compression_method == SectorDataCompressionMethod::RUN_LENGTH_ENCODING) {
+				return compress_run_length_encoding(sector_data, cd::SECTOR_LENGTH);
 			}
 			if (compression_method == SectorDataCompressionMethod::LOSSLESS_STEREO_AUDIO) {
 				return compress_sector_lossless_stereo_audio(sector_data);
@@ -316,8 +316,8 @@ namespace odi {
 			if (compression_method == SubchannelsDataCompressionMethod::NONE) {
 				return sizeof(subchannels_data);
 			}
-			if (compression_method == SectorDataCompressionMethod::RLE) {
-				return compress_rle(subchannels_data, cd::SUBCHANNELS_LENGTH);
+			if (compression_method == SectorDataCompressionMethod::RUN_LENGTH_ENCODING) {
+				return compress_run_length_encoding(subchannels_data, cd::SUBCHANNELS_LENGTH);
 			}
 			OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
 		}
@@ -357,8 +357,8 @@ namespace odi {
 		if (compression_method == SectorDataCompressionMethod::NONE) {
 			return;
 		}
-		if (compression_method == SectorDataCompressionMethod::RLE) {
-			return internal::decompress_rle(sector_data, cd::SECTOR_LENGTH, compressed_byte_count);
+		if (compression_method == SectorDataCompressionMethod::RUN_LENGTH_ENCODING) {
+			return internal::decompress_run_length_encoding(sector_data, cd::SECTOR_LENGTH, compressed_byte_count);
 		}
 		if (compression_method == SectorDataCompressionMethod::LOSSLESS_STEREO_AUDIO) {
 			return internal::decompress_sector_lossless_stereo_audio(sector_data, compressed_byte_count);
@@ -399,8 +399,8 @@ namespace odi {
 		if (compression_method == SubchannelsDataCompressionMethod::NONE) {
 			return;
 		}
-		if (compression_method == SectorDataCompressionMethod::RLE) {
-			return internal::decompress_rle(subchannels_data, cd::SUBCHANNELS_LENGTH, compressed_byte_count);
+		if (compression_method == SectorDataCompressionMethod::RUN_LENGTH_ENCODING) {
+			return internal::decompress_run_length_encoding(subchannels_data, cd::SUBCHANNELS_LENGTH, compressed_byte_count);
 		}
 		OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
 	}
