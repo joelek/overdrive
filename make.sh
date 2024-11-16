@@ -44,6 +44,7 @@ SOURCES=(
 	"lib/exceptions.cpp"
 	"lib/idiv.cpp"
 	"lib/iso9660.cpp"
+	"lib/logger.cpp"
 	"lib/mds.cpp"
 	"lib/memory.cpp"
 	"lib/odi.cpp"
