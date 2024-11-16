@@ -4,10 +4,10 @@
 #include <string>
 #include <vector>
 #include "../lib/overdrive.h"
-#include "commands/cue.h"
-#include "commands/iso.h"
-#include "commands/mds.h"
-#include "commands/odi.h"
+#include "tasks/cue.h"
+#include "tasks/iso.h"
+#include "tasks/mds.h"
+#include "tasks/odi.h"
 
 using namespace overdrive;
 using namespace shared;
@@ -18,36 +18,36 @@ auto main(
 ) -> si_t {
 	try {
 		auto arguments = std::vector<std::string>(argv + std::min<size_t>(2, argc), argv + argc);
-		auto command = argc < 2 ? std::optional<std::string>() : std::string(argv[1]);
-		auto commands = std::vector<command::Command>();
-		commands.push_back(command::Command({
+		auto task = argc < 2 ? std::optional<std::string>() : std::string(argv[1]);
+		auto tasks = std::vector<task::Task>();
+		tasks.push_back(task::Task({
 			"cue",
 			"Backup discs using the BIN/CUE image format.",
-			commands::cue
+			tasks::cue
 		}));
-		commands.push_back(command::Command({
+		tasks.push_back(task::Task({
 			"iso",
 			"Backup discs using the ISO image format.",
-			commands::iso
+			tasks::iso
 		}));
-		commands.push_back(command::Command({
+		tasks.push_back(task::Task({
 			"mds",
 			"Backup discs using the MDF/MDS image format.",
-			commands::mds
+			tasks::mds
 		}));
-		commands.push_back(command::Command({
+		tasks.push_back(task::Task({
 			"odi",
 			"Backup discs using the ODI image format.",
-			commands::odi
+			tasks::odi
 		}));
-		command::sort(commands);
+		task::sort(tasks);
 		try {
 			auto start_ms = time::get_time_ms();
-			command::run(command, arguments, commands);
+			task::run(task, arguments, tasks);
 			auto duration_ms = time::get_duration_ms(start_ms);
-			OVERDRIVE_LOG("Command execution took {} ms.", duration_ms);
-		} catch (const exceptions::CommandException& e) {
-			command::print(commands);
+			OVERDRIVE_LOG("Task execution took {} ms.", duration_ms);
+		} catch (const exceptions::TaskException& e) {
+			task::print(tasks);
 			throw;
 		}
 		OVERDRIVE_LOG("Program completed successfully.");

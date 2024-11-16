@@ -6,7 +6,7 @@
 #include <optional>
 #include <regex>
 
-namespace commands {
+namespace tasks {
 	class CUEOptions: public options::Options {
 		public:
 

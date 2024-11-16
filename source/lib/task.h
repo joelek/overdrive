@@ -7,10 +7,10 @@
 #include "shared.h"
 
 namespace overdrive {
-namespace command {
+namespace task {
 	using namespace shared;
 
-	class Command {
+	class Task {
 		public:
 
 		std::string key;
@@ -23,15 +23,15 @@ namespace command {
 	auto run(
 		const std::optional<std::string>& key,
 		const std::vector<std::string>& arguments,
-		const std::vector<Command>& commands
+		const std::vector<Task>& tasks
 	) -> void;
 
 	auto print(
-		const std::vector<Command>& commands
+		const std::vector<Task>& tasks
 	) -> void;
 
 	auto sort(
-		std::vector<Command>& commands
+		std::vector<Task>& tasks
 	) -> void;
 }
 }

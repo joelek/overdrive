@@ -20,10 +20,10 @@ if [ $1 = "release" ]; then
 fi
 
 SOURCES=(
-	"cli/commands/cue.cpp"
-	"cli/commands/iso.cpp"
-	"cli/commands/mds.cpp"
-	"cli/commands/odi.cpp"
+	"cli/tasks/cue.cpp"
+	"cli/tasks/iso.cpp"
+	"cli/tasks/mds.cpp"
+	"cli/tasks/odi.cpp"
 	"lib/accuraterip.cpp"
 	"lib/app.cpp"
 	"lib/bcd.cpp"
@@ -34,7 +34,6 @@ SOURCES=(
 	"lib/cdda.cpp"
 	"lib/cdrom.cpp"
 	"lib/cdxa.cpp"
-	"lib/command.cpp"
 	"lib/copier.cpp"
 	"lib/crc.cpp"
 	"lib/detail.cpp"
@@ -55,6 +54,7 @@ SOURCES=(
 	"lib/sense.cpp"
 	"lib/shared.cpp"
 	"lib/string.cpp"
+	"lib/task.cpp"
 	"lib/time.cpp"
 	"lib/vector.cpp"
 	"lib/wav.cpp"

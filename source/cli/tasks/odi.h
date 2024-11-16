@@ -7,8 +7,8 @@
 using namespace overdrive;
 using namespace shared;
 
-namespace commands {
-	auto mds(
+namespace tasks {
+	auto odi(
 		const std::vector<std::string>& arguments
 	) -> void;
 }

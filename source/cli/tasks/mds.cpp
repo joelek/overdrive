@@ -5,7 +5,7 @@
 #include <optional>
 #include <regex>
 
-namespace commands {
+namespace tasks {
 	class MDSOptions: public options::Options {
 		public:
 

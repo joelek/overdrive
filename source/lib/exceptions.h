@@ -284,29 +284,29 @@ namespace exceptions {
 		protected:
 	};
 
-	class CommandException: public OverdriveException {
+	class TaskException: public OverdriveException {
 		public:
 
-		CommandException(
+		TaskException(
 			const std::string& message
 		);
 
 		protected:
 	};
 
-	class MissingCommandException: public CommandException {
+	class MissingTaskException: public TaskException {
 		public:
 
-		MissingCommandException(
+		MissingTaskException(
 		);
 
 		protected:
 	};
 
-	class UnrecognizedCommandException: public CommandException {
+	class UnrecognizedTaskException: public TaskException {
 		public:
 
-		UnrecognizedCommandException(
+		UnrecognizedTaskException(
 			const std::string& key
 		);
 

@@ -1,6 +1,6 @@
 #include "odi.h"
 
-namespace commands {
+namespace tasks {
 	class ODIptions: public options::Options {
 		public:
 

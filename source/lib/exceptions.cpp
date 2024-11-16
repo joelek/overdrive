@@ -105,16 +105,16 @@ namespace exceptions {
 	MemoryReadException::MemoryReadException(
 	): MemoryException(std::format("Expected memory read operation to be within bounds!")) {}
 
-	CommandException::CommandException(
+	TaskException::TaskException(
 		const std::string& message
 	): OverdriveException(message) {}
 
-	MissingCommandException::MissingCommandException(
-	): CommandException(std::format("Expected command to be specified!")) {}
+	MissingTaskException::MissingTaskException(
+	): TaskException(std::format("Expected task to be specified!")) {}
 
-	UnrecognizedCommandException::UnrecognizedCommandException(
+	UnrecognizedTaskException::UnrecognizedTaskException(
 		const std::string& key
-	): CommandException(std::format("Expected command \"{}\" to be recognized!", key)) {}
+	): TaskException(std::format("Expected task \"{}\" to be recognized!", key)) {}
 
 	WindowsException::WindowsException(
 		size_t code

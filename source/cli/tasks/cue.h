@@ -7,7 +7,7 @@
 using namespace overdrive;
 using namespace shared;
 
-namespace commands {
+namespace tasks {
 	auto cue(
 		const std::vector<std::string>& arguments
 	) -> void;
