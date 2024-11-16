@@ -29,13 +29,13 @@ namespace command {
 	auto print(
 		const std::vector<Command>& commands
 	) -> void {
-		fprintf(stderr, "%s\n", std::format("Commands:").c_str());
-		fprintf(stderr, "%s\n", std::format("").c_str());
+		OVERDRIVE_LOG("Commands:");
+		OVERDRIVE_LOG("");
 		for (auto command_index = size_t(0); command_index < commands.size(); command_index += 1) {
 			auto& command = commands.at(command_index);
-			fprintf(stderr, "%s\n", std::format("{} {}", string::lower(app::NAME), command.key).c_str());
-			fprintf(stderr, "%s\n", std::format("\t{}", command.description).c_str());
-			fprintf(stderr, "%s\n", std::format("").c_str());
+			OVERDRIVE_LOG("{} {}", string::lower(app::NAME), command.key);
+			OVERDRIVE_LOG("\t{}", command.description);
+			OVERDRIVE_LOG("");
 		}
 	}
 

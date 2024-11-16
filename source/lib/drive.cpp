@@ -315,7 +315,7 @@ namespace drive {
 		}
 		if (sense[0] == sense::ResponseCodes::FIXED_CURRENT) {
 			auto& fixed_format = *reinterpret_cast<sense::FixedFormat*>(&sense);
-			fprintf(stderr, "%s\n", std::format("Sense info 0x:{:0>2X} 0x:{:0>2X} 0x:{:0>2X}!", static_cast<ui08_t>(fixed_format.sense_key), static_cast<ui08_t>(fixed_format.additional_sense_code), static_cast<ui08_t>(fixed_format.additional_sense_code_qualifier)).c_str());
+			OVERDRIVE_LOG("Sense info 0x:{:0>2X} 0x:{:0>2X} 0x:{:0>2X}!", static_cast<ui08_t>(fixed_format.sense_key), static_cast<ui08_t>(fixed_format.additional_sense_code), static_cast<ui08_t>(fixed_format.additional_sense_code_qualifier));
 		}
 		if (sector_data != nullptr) {
 			if (!this->sector_data_offset) {

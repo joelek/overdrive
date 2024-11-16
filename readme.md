@@ -67,7 +67,6 @@ The [AccurateRip drive database](https://www.accuraterip.com/driveoffsets.htm) p
 	Set error recovery to min or max.
 	Read track in several passes and refine sector data using C2 information for all track types.
 	Apply software RSPC for data tracks.
-* Add debug logging.
 * Add support for injecting files into ISO9660 file systems.
 	Requires software RSPC generation for raw image formats.
 * Reorganize exceptions so that enums and types can be re-used.

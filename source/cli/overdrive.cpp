@@ -16,7 +16,6 @@ auto main(
 	si_t argc,
 	ch08_t** argv
 ) -> si_t {
-	auto logger = logger::Logger("stderr");
 	try {
 		auto arguments = std::vector<std::string>(argv + std::min<size_t>(2, argc), argv + argc);
 		auto command = argc < 2 ? std::optional<std::string>() : std::string(argv[1]);
@@ -46,16 +45,16 @@ auto main(
 			auto start_ms = time::get_time_ms();
 			command::run(command, arguments, commands);
 			auto duration_ms = time::get_duration_ms(start_ms);
-			logger.log("Command execution took {} ms.", duration_ms);
+			OVERDRIVE_LOG("Command execution took {} ms.", duration_ms);
 		} catch (const exceptions::CommandException& e) {
 			command::print(commands);
 			throw;
 		}
-		logger.log("Program completed successfully.");
+		OVERDRIVE_LOG("Program completed successfully.");
 		return EXIT_SUCCESS;
 	} catch (const std::exception& e) {
-		logger.log("{}", e.what());
+		OVERDRIVE_LOG("{}", e.what());
 	} catch (...) {}
-	logger.log("Program did not complete successfully!");
+	OVERDRIVE_LOG("Program did not complete successfully!");
 	return EXIT_FAILURE;
 }

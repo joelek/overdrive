@@ -20,7 +20,6 @@
 #include "exceptions.h"
 #include "idiv.h"
 #include "iso9660.h"
-#include "logger.h"
 #include "mds.h"
 #include "memory.h"
 #include "odi.h"

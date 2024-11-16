@@ -1,7 +1,5 @@
 #include "shared.h"
 
-#include <format>
-
 namespace overdrive {
 namespace shared {
 	auto create_hex_dump(

@@ -20,9 +20,9 @@ namespace copier {
 		const options::Options& options
 	) -> std::vector<std::vector<ExtractedSector>> {
 		auto read_correction_samples = options.read_correction.value_or(0);
-		fprintf(stderr, "%s\n", std::format("Using read correction [samples]: {}", read_correction_samples).c_str());
+		OVERDRIVE_LOG("Using read correction [samples]: {}", read_correction_samples);
 		auto read_correction_bytes = read_correction_samples * si_t(cdda::STEREO_SAMPLE_LENGTH);
-		fprintf(stderr, "%s\n", std::format("Using read correction [bytes]: {}", read_correction_bytes).c_str());
+		OVERDRIVE_LOG("Using read correction [bytes]: {}", read_correction_bytes);
 		auto start_offset_bytes = si_t(track.first_sector_absolute * cd::SECTOR_LENGTH) + read_correction_bytes;
 		auto end_offset_bytes = si_t(track.last_sector_absolute * cd::SECTOR_LENGTH) + read_correction_bytes;
 		auto adjusted_first_sector = idiv::floor(start_offset_bytes, cd::SECTOR_LENGTH);
@@ -30,9 +30,9 @@ namespace copier {
 		auto prefix_length = read_correction_bytes - ((adjusted_first_sector - track.first_sector_absolute) * cd::SECTOR_LENGTH);
 		auto suffix_length = cd::SECTOR_LENGTH - prefix_length;
 		if (read_correction_bytes != 0) {
-			fprintf(stderr, "%s\n", std::format("Adjusted sector range is from {} to {}", adjusted_first_sector, adjusted_last_sector).c_str());
-			fprintf(stderr, "%s\n", std::format("The first {} bytes of sector data will be discarded", prefix_length).c_str());
-			fprintf(stderr, "%s\n", std::format("The last {} bytes of sector data will be discarded", suffix_length).c_str());
+			OVERDRIVE_LOG("Adjusted sector range is from {} to {}", adjusted_first_sector, adjusted_last_sector);
+			OVERDRIVE_LOG("The first {} bytes of sector data will be discarded", prefix_length);
+			OVERDRIVE_LOG("The last {} bytes of sector data will be discarded", suffix_length);
 		}
 		auto extracted_sectors_vector = read_absolute_sector_range(
 			drive,
@@ -167,7 +167,7 @@ namespace copier {
 				return bad_sector_indices_per_path;
 			}
 		} catch (const exceptions::SCSIException& e) {
-			fprintf(stderr, "%s\n", std::format("Error reading ISO 9660 file system!").c_str());
+			OVERDRIVE_LOG("Error reading ISO 9660 file system!");
 		}
 		return std::optional<std::map<std::string, std::vector<size_t>>>();
 	}
@@ -183,11 +183,11 @@ namespace copier {
 		size_t max_copies
 	) -> std::vector<std::vector<ExtractedSector>> {
 		auto length_sectors = last_sector - first_sector;
-		fprintf(stderr, "%s\n", std::format("Extracting sector range containing {} sectors from {} to {}", length_sectors, first_sector, last_sector).c_str());
+		OVERDRIVE_LOG("Extracting sector range containing {} sectors from {} to {}", length_sectors, first_sector, last_sector);
 		auto extracted_sectors_vector = std::vector<std::vector<ExtractedSector>>(length_sectors);
 		drive.set_read_retry_count(max_retries);
 		for (auto pass_index = size_t(0); pass_index < max_passes; pass_index += 1) {
-			fprintf(stderr, "%s\n", std::format("Running pass {}", pass_index + 1).c_str());
+			OVERDRIVE_LOG("Running pass {}", pass_index + 1);
 			for (auto sector_index = first_sector; sector_index < last_sector; sector_index += 1) {
 				auto sector = ExtractedSector();
 				auto success = false;
@@ -195,10 +195,10 @@ namespace copier {
 					drive.read_absolute_sector(sector_index, &sector.sector_data, &sector.subchannels_data, &sector.c2_data);
 					success = true;
 				} catch (const exceptions::SCSIException& e) {
-					fprintf(stderr, "%s\n", std::format("Error reading sector {}!", sector_index).c_str());
+					OVERDRIVE_LOG("Error reading sector {}!", sector_index);
 				}
 				if (!memory::test(&sector.c2_data, sizeof(sector.c2_data), 0)) {
-					fprintf(stderr, "%s\n", std::format("C2 errors occured for sector {}!", sector_index).c_str());
+					OVERDRIVE_LOG("C2 errors occured for sector {}!", sector_index);
 				}
 				auto& extracted_sectors = extracted_sectors_vector.at(sector_index - first_sector);
 				auto extracted_sector_with_matching_data = pointer<ExtractedSector>(nullptr);
@@ -217,7 +217,7 @@ namespace copier {
 				}
 			}
 			auto number_of_identical_copies = get_number_of_identical_copies(extracted_sectors_vector);
-			fprintf(stderr, "%s\n", std::format("Got {} identical copies during pass {}", number_of_identical_copies, pass_index + 1).c_str());
+			OVERDRIVE_LOG("Got {} identical copies during pass {}", number_of_identical_copies, pass_index + 1);
 			if (pass_index + 1 >= min_passes && number_of_identical_copies >= max_copies) {
 				break;
 			}
@@ -234,7 +234,7 @@ namespace copier {
 		const disc::TrackInfo& track,
 		const options::Options& options
 	) -> std::vector<std::vector<ExtractedSector>> {
-		fprintf(stderr, "%s\n", std::format("Extracting track number {} containing {} sectors from {} to {}", track.number, track.length_sectors, track.first_sector_absolute, track.last_sector_absolute).c_str());
+		OVERDRIVE_LOG("Extracting track number {} containing {} sectors from {} to {}", track.number, track.length_sectors, track.first_sector_absolute, track.last_sector_absolute);
 		if (disc::is_data_track(track.type)) {
 			return read_data_track(drive, track, options);
 		} else {
@@ -251,7 +251,7 @@ namespace copier {
 		bool_t write_subchannels
 	) -> void {
 		try {
-			fprintf(stderr, "%s\n", std::format("Saving track sector data to \"{}\"", path).c_str());
+			OVERDRIVE_LOG("Saving track sector data to \"{}\"", path);
 			for (auto sector_index = size_t(0); sector_index < extracted_sectors_vector.size(); sector_index += 1) {
 				auto& extracted_sectors = extracted_sectors_vector.at(sector_index);
 				auto& extracted_sector = extracted_sectors.at(0);
@@ -309,13 +309,13 @@ namespace copier {
 			auto bad_sector_indices_per_path = copier::get_bad_sector_indices_per_path(drive, user_data_offset, user_data_length, bad_sector_indices);
 			if (bad_sector_indices_per_path) {
 				for (auto& entry : bad_sector_indices_per_path.value()) {
-					fprintf(stderr, "%s\n", std::format("File at path \"{}\" contains {} bad sectors!", std::filesystem::path(entry.first).string(), entry.second.size()).c_str());
+					OVERDRIVE_LOG("File at path \"{}\" contains {} bad sectors!", std::filesystem::path(entry.first).string(), entry.second.size());
 				}
 			} else {
-				fprintf(stderr, "%s\n", std::format("Track number {} containing data has {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
+				OVERDRIVE_LOG("Track number {} containing data has {} bad sectors!", track.number, bad_sector_indices.size());
 			}
 		} else {
-			fprintf(stderr, "%s\n", std::format("Track number {} containing audio has {} bad sectors!", track.number, bad_sector_indices.size()).c_str());
+			OVERDRIVE_LOG("Track number {} containing audio has {} bad sectors!", track.number, bad_sector_indices.size());
 		}
 	}
 }

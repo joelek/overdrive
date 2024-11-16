@@ -95,9 +95,9 @@ namespace parser {
 				OVERDRIVE_THROW(exceptions::BadArgumentOccurencesException(parser.key, parser.min_occurences, parser.max_occurences));
 			}
 			if (parser_matches.size() > 0) {
-				fprintf(stderr, "%s\n", std::format("Argument \"{}\" got values:", parser.key, parser_matches.size()).c_str());
+				OVERDRIVE_LOG("Argument \"{}\" got values:", parser.key, parser_matches.size());
 				for (auto& match : parser_matches) {
-					fprintf(stderr, "%s\n", std::format("\t\"{}\"", match).c_str());
+					OVERDRIVE_LOG("\t\"{}\"", match);
 				}
 				parser.parser(parser_matches);
 			}
@@ -107,31 +107,31 @@ namespace parser {
 	auto print(
 		const std::vector<Parser>& parsers
 	) -> void {
-		fprintf(stderr, "%s\n", std::format("Arguments:").c_str());
-		fprintf(stderr, "%s\n", std::format("").c_str());
+		OVERDRIVE_LOG("Arguments:");
+		OVERDRIVE_LOG("");
 		auto positional_counter = size_t(0);
 		for (auto parser_index = size_t(0); parser_index < parsers.size(); parser_index += 1) {
 			auto& parser = parsers.at(parser_index);
-			fprintf(stderr, "%s\n", std::format("--{}={}", parser.key, parser.format).c_str());
-			fprintf(stderr, "%s\n", std::format("\t{}", parser.description).c_str());
+			OVERDRIVE_LOG("--{}={}", parser.key, parser.format);
+			OVERDRIVE_LOG("\t{}", parser.description);
 			auto is_optional = parser.min_occurences == 0 || parser.fallback;
 			if (parser.max_occurences == 1) {
-				fprintf(stderr, "%s\n", std::format("\tValue {} be specified once.", is_optional ? "may" : "must").c_str());
+				OVERDRIVE_LOG("\tValue {} be specified once.", is_optional ? "may" : "must");
 			} else {
-				fprintf(stderr, "%s\n", std::format("\tValue {} be specified between {} and {} times using \",\" as delimiter.", is_optional ? "may" : "must", parser.min_occurences, parser.max_occurences).c_str());
+				OVERDRIVE_LOG("\tValue {} be specified between {} and {} times using \",\" as delimiter.", is_optional ? "may" : "must", parser.min_occurences, parser.max_occurences);
 			}
 			if (parser.fallback) {
-				fprintf(stderr, "%s\n", std::format("\tDefault value is \"{}\".", parser.fallback.value()).c_str());
+				OVERDRIVE_LOG("\tDefault value is \"{}\".", parser.fallback.value());
 			}
 			if (parser.positional) {
-				fprintf(stderr, "%s\n", std::format("\tMay be specified as positional argument number {}.", positional_counter + 1).c_str());
+				OVERDRIVE_LOG("\tMay be specified as positional argument number {}.", positional_counter + 1);
 				positional_counter += 1;
 			}
 			for (auto alias_index = size_t(0); alias_index < parser.aliases.size(); alias_index += 1) {
 				auto& alias = parser.aliases.at(alias_index);
-				fprintf(stderr, "%s\n", std::format("\tMay be specified using alias \"{}\".", alias).c_str());
+				OVERDRIVE_LOG("\tMay be specified using alias \"{}\".", alias);
 			}
-			fprintf(stderr, "%s\n", std::format("").c_str());
+			OVERDRIVE_LOG("");
 		}
 	}
 

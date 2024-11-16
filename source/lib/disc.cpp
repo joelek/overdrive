@@ -32,45 +32,45 @@ namespace disc {
 
 	auto DriveInfo::print(
 	) const -> void {
-		fprintf(stderr, "%s\n", std::format("Drive vendor: \"{}\"", string::trim(this->vendor)).c_str());
-		fprintf(stderr, "%s\n", std::format("Drive product: \"{}\"", string::trim(this->product)).c_str());
-		fprintf(stderr, "%s\n", std::format("Drive sector data offset: {}", this->sector_data_offset ? std::format("{}", this->sector_data_offset.value()) : "unknown").c_str());
-		fprintf(stderr, "%s\n", std::format("Drive subchannels data offset: {}", this->subchannels_data_offset ? std::format("{}", this->subchannels_data_offset.value()) : "unknown").c_str());
-		fprintf(stderr, "%s\n", std::format("Drive c2 data offset: {}", this->c2_data_offset ? std::format("{}", this->c2_data_offset.value()) : "unknown").c_str());
-		fprintf(stderr, "%s\n", std::format("Drive buffer size [bytes]: {}", this->buffer_size).c_str());
-		fprintf(stderr, "%s\n", std::format("Drive supports accurate stream: {}", this->supports_accurate_stream).c_str());
-		fprintf(stderr, "%s\n", std::format("Drive supports c2 error reporting: {}", this->supports_c2_error_reporting).c_str());
-		fprintf(stderr, "%s\n", std::format("Drive read offset correction [samples]: {}", this->read_offset_correction ? std::format("{}", this->read_offset_correction.value()) : "unknown").c_str());
+		OVERDRIVE_LOG("Drive vendor: \"{}\"", string::trim(this->vendor));
+		OVERDRIVE_LOG("Drive product: \"{}\"", string::trim(this->product));
+		OVERDRIVE_LOG("Drive sector data offset: {}", this->sector_data_offset ? std::format("{}", this->sector_data_offset.value()) : "unknown");
+		OVERDRIVE_LOG("Drive subchannels data offset: {}", this->subchannels_data_offset ? std::format("{}", this->subchannels_data_offset.value()) : "unknown");
+		OVERDRIVE_LOG("Drive c2 data offset: {}", this->c2_data_offset ? std::format("{}", this->c2_data_offset.value()) : "unknown");
+		OVERDRIVE_LOG("Drive buffer size [bytes]: {}", this->buffer_size);
+		OVERDRIVE_LOG("Drive supports accurate stream: {}", this->supports_accurate_stream);
+		OVERDRIVE_LOG("Drive supports c2 error reporting: {}", this->supports_c2_error_reporting);
+		OVERDRIVE_LOG("Drive read offset correction [samples]: {}", this->read_offset_correction ? std::format("{}", this->read_offset_correction.value()) : "unknown");
 	}
 
 	auto TrackInfo::print(
 	) const -> void {
-		fprintf(stderr, "%s\n", std::format("\t\tTrack number: {}", this->number).c_str());
-		fprintf(stderr, "%s\n", std::format("\t\tTrack type: {}", disc::TrackType::name(this->type)).c_str());
-		fprintf(stderr, "%s\n", std::format("\t\tTrack first sector: {}", this->first_sector_absolute).c_str());
-		fprintf(stderr, "%s\n", std::format("\t\tTrack last sector: {}", this->last_sector_absolute).c_str());
-		fprintf(stderr, "%s\n", std::format("\t\tTrack length [sectors]: {}", this->length_sectors).c_str());
+		OVERDRIVE_LOG("\t\tTrack number: {}", this->number);
+		OVERDRIVE_LOG("\t\tTrack type: {}", disc::TrackType::name(this->type));
+		OVERDRIVE_LOG("\t\tTrack first sector: {}", this->first_sector_absolute);
+		OVERDRIVE_LOG("\t\tTrack last sector: {}", this->last_sector_absolute);
+		OVERDRIVE_LOG("\t\tTrack length [sectors]: {}", this->length_sectors);
 	}
 
 	auto PointInfo::print(
 	) const -> void {
-		fprintf(stderr, "%s\n", std::format("\t\tPoint number: {:0>2X}", this->entry.point).c_str());
+		OVERDRIVE_LOG("\t\tPoint number: {:0>2X}", this->entry.point);
 	}
 
 	auto SessionInfo::print(
 	) const -> void {
-		fprintf(stderr, "%s\n", std::format("\tSession number: {}", this->number).c_str());
-		fprintf(stderr, "%s\n", std::format("\tSession type: {}", cdb::SessionType::name(this->type)).c_str());
-		fprintf(stderr, "%s\n", std::format("\tSession tracks: {}", this->tracks.size()).c_str());
-		fprintf(stderr, "%s\n", std::format("\tSession lead-in length [sectors]: {}", this->lead_in_length_sectors).c_str());
-		fprintf(stderr, "%s\n", std::format("\tSession pregap length [sectors]: {}", this->pregap_sectors).c_str());
-		fprintf(stderr, "%s\n", std::format("\tSession length [sectors]: {}", this->length_sectors).c_str());
-		fprintf(stderr, "%s\n", std::format("\tSession lead-out length [sectors]: {}", this->lead_out_length_sectors).c_str());
+		OVERDRIVE_LOG("\tSession number: {}", this->number);
+		OVERDRIVE_LOG("\tSession type: {}", cdb::SessionType::name(this->type));
+		OVERDRIVE_LOG("\tSession tracks: {}", this->tracks.size());
+		OVERDRIVE_LOG("\tSession lead-in length [sectors]: {}", this->lead_in_length_sectors);
+		OVERDRIVE_LOG("\tSession pregap length [sectors]: {}", this->pregap_sectors);
+		OVERDRIVE_LOG("\tSession length [sectors]: {}", this->length_sectors);
+		OVERDRIVE_LOG("\tSession lead-out length [sectors]: {}", this->lead_out_length_sectors);
 		for (auto track_index = size_t(0); track_index < this->tracks.size(); track_index += 1) {
 			auto& track = this->tracks.at(track_index);
 			track.print();
 		}
-		fprintf(stderr, "%s\n", std::format("\tSession points: {}", this->points.size()).c_str());
+		OVERDRIVE_LOG("\tSession points: {}", this->points.size());
 		for (auto point_index = size_t(0); point_index < this->points.size(); point_index += 1) {
 			auto& point = this->points.at(point_index);
 			point.print();
@@ -79,8 +79,8 @@ namespace disc {
 
 	auto DiscInfo::print(
 	) const -> void {
-		fprintf(stderr, "%s\n", std::format("Disc sessions: {}", this->sessions.size()).c_str());
-		fprintf(stderr, "%s\n", std::format("Disc length [sectors]: {}", this->length_sectors).c_str());
+		OVERDRIVE_LOG("Disc sessions: {}", this->sessions.size());
+		OVERDRIVE_LOG("Disc length [sectors]: {}", this->length_sectors);
 		for (auto session_index = size_t(0); session_index < this->sessions.size(); session_index += 1) {
 			auto& session = this->sessions.at(session_index);
 			session.print();
