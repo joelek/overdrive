@@ -173,8 +173,7 @@ namespace odi {
 			try {
 				bitwriter.append_bits(rice_parameter, BITS_PER_RICE_PARAMETER);
 				bitwriter.append_bits(predictor_index, BITS_PER_PREDICTOR_INDEX);
-				bitwriter.append_bits(residuals[0].ui, sizeof(cdda::Sample) * 8);
-				bits::compress_data_using_rice_coding(&reinterpret_cast<si16_t*>(&residuals)[1], cdda::STEREO_SAMPLES_PER_SECTOR - 1, rice_parameter, bitwriter);
+				bits::compress_data_using_rice_coding(reinterpret_cast<si16_t*>(&residuals), cdda::STEREO_SAMPLES_PER_SECTOR, rice_parameter, bitwriter);
 			} catch (const exceptions::BitWriterSizeExceededError& e) {}
 			return bitwriter;
 		}
@@ -246,8 +245,7 @@ namespace odi {
 			auto predictor_index = bitreader.decode_bits(BITS_PER_PREDICTOR_INDEX);
 			auto& predictor = PREDICTORS.at(predictor_index);
 			array<cdda::STEREO_SAMPLES_PER_SECTOR, cdda::Sample> residuals;
-			residuals[0].ui = bitreader.decode_bits(sizeof(cdda::Sample) * 8);
-			bits::decompress_data_using_rice_coding(&reinterpret_cast<si16_t*>(&residuals)[1], cdda::STEREO_SAMPLES_PER_SECTOR - 1, rice_parameter, bitreader);
+			bits::decompress_data_using_rice_coding(reinterpret_cast<si16_t*>(&residuals), cdda::STEREO_SAMPLES_PER_SECTOR, rice_parameter, bitreader);
 			recorrelate_temporally(samples, residuals, predictor);
 		}
 
