@@ -44,7 +44,7 @@ overdrive odi F: image.odi
 
 ## The ODI file format
 
-The [ODI file format](./odi.md) is Overdrive's own compact, highly-flexible and freely available disc image format. A [reference implementation](./source/lib/odi.h) is included with the Overdrive utility.
+The [ODI file format](./odi.md) is Overdrive's own compact, highly-flexible and freely available disc image format. A [reference implementation](./source/lib/odi.h) is available in Overdrive's source code.
 
 ## Sponsorship
 
