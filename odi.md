@@ -85,7 +85,7 @@ The `sector_data` member contains an embedded `SectorDataCompressionHeader` stru
 
 Valid options for the `compression_method` member are `NONE (0x00)`, `RUN_LENGTH_ENCODING (0x01)` and `LOSSLESS_STEREO_AUDIO (0x80)`. Implementations are expected to treat other values as an error.
 
-The compression method `NONE (0x00)` indicates that the data is stored uncompressed and that `compressed_byte_count` bytes can be read directly. The other compression algorithms are detailed in the `Compression methods` section of this specification.
+The compression method `NONE (0x00)` indicates that the data is stored uncompressed and that `compressed_byte_count` bytes can be read directly. The other compression algorithms are detailed in the `Compression methods` section of this specification. The compressed byte count is always less than or equal to 2352 bytes.
 
 ```c++
 struct SectorDataCompressionHeader {
@@ -98,7 +98,7 @@ The `subchannels_data` member contains an embedded `SubchannelsDataCompressionHe
 
 Valid options for the `compression_method` member are `NONE (0x00)` and `RUN_LENGTH_ENCODING (0x01)`. Implementations are expected to treat other values as an error.
 
-The compression method `NONE (0x00)` indicates that the data is stored uncompressed and that `compressed_byte_count` bytes can be read directly. The other compression algorithms are detailed in the `Compression methods` section of this specification.
+The compression method `NONE (0x00)` indicates that the data is stored uncompressed and that `compressed_byte_count` bytes can be read directly. The other compression algorithms are detailed in the `Compression methods` section of this specification. The compressed byte count is always less than or equal to 96 bytes.
 
 ```c++
 struct SubchannelsDataCompressionHeader {
