@@ -63,7 +63,7 @@ struct SectorTableHeader {
 };
 ```
 
-Each `SectorTableEntry` structure provides information about a single sector. The `compressed_data_absolute_offset` member specifies the absolute offset of the compressed data. All compressed data is stored concatenated at the offset in question. Sector data is followed by subchannels data without any padding.
+Each `SectorTableEntry` structure provides information about a single sector. The `compressed_data_absolute_offset` member specifies the absolute offset of the compressed data. All compressed data is stored concatenated at the offset in question. Sector data is followed by subchannels data without any padding. The subchannels are stored deinterleaved in P to W order.
 
 The `readability` member specifies whether or not the sector was successfully read from the optical disc. Valid options are `UNREADABLE (0x00)` and `READABLE (0x01)`. Implementations are expected to treat other values as an error.
 
