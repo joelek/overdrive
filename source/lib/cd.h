@@ -190,5 +190,9 @@ namespace cd {
 	auto is_data_category(
 		TrackCategory::type category
 	) -> bool_t;
+
+	auto compute_subchannel_q_crc(
+		const SubchannelQ& q
+	) -> ui16_t;
 }
 }

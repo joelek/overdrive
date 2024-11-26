@@ -1,5 +1,6 @@
 #include "cd.h"
 
+#include "crc.h"
 #include "exceptions.h"
 
 namespace overdrive {
@@ -152,6 +153,13 @@ namespace cd {
 			return false;
 		}
 		OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
+	}
+
+	auto compute_subchannel_q_crc(
+		const SubchannelQ& q
+	) -> ui16_t {
+		auto crc = crc::compute_crc16(reinterpret_cast<const byte_t*>(&q), offsetof(SubchannelQ, crc_be));
+		return crc;
 	}
 }
 }
