@@ -4,9 +4,7 @@
 #include <format>
 #include "exceptions.h"
 
-#if 0
-
-#elif _WIN32 || _WIN64
+#if _WIN32 || _WIN64
 
 #include <errhandlingapi.h>
 #include <fileapi.h>
@@ -90,5 +88,9 @@ namespace detail {
 	}
 }
 }
+
+#else
+
+#error Implementation in "source/lib/detail.cpp" is missing for target platform.
 
 #endif
