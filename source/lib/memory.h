@@ -7,7 +7,7 @@ namespace memory {
 	using namespace shared;
 
 	auto test(
-		void* pointer,
+		const void* pointer,
 		size_t size,
 		byte_t value
 	) -> bool_t;
