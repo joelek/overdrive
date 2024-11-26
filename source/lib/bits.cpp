@@ -1,7 +1,6 @@
 #include "bits.h"
 
 #include <bit>
-#include <cstring>
 #include "exceptions.h"
 
 namespace overdrive {

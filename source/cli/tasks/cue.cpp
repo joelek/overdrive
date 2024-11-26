@@ -1,6 +1,6 @@
 #include "cue.h"
 
-#include <algorithm>
+#include <cstdlib>
 #include <cstdio>
 #include <format>
 #include <optional>

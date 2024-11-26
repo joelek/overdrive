@@ -1,5 +1,6 @@
 #include "accuraterip.h"
 
+#include <cstdlib>
 #include "string.h"
 
 auto CSV() -> const std::string& {

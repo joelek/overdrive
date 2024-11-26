@@ -1,7 +1,6 @@
 #include "mds.h"
 
 #include <cstdio>
-#include <format>
 #include <optional>
 #include <regex>
 

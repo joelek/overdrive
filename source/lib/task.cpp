@@ -1,7 +1,6 @@
 #include "task.h"
 
 #include <algorithm>
-#include <format>
 #include "app.h"
 #include "exceptions.h"
 #include "string.h"

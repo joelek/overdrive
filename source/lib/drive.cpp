@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
-#include <format>
 #include "accuraterip.h"
 #include "bcd.h"
 #include "byteswap.h"

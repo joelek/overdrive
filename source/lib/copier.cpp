@@ -4,7 +4,6 @@
 #include <cstdio>
 #include <cstring>
 #include <filesystem>
-#include <format>
 #include "byteswap.h"
 #include "cdda.h"
 #include "exceptions.h"
