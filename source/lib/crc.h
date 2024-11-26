@@ -7,7 +7,7 @@ namespace crc {
 	using namespace shared;
 
 	auto compute_crc16(
-		byte_t* buffer,
+		const byte_t* buffer,
 		size_t size
 	) -> ui16_t;
 }
