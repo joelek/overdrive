@@ -214,7 +214,7 @@ namespace drive {
 		auto data = cdb::ModeSenseReadWriteErrorRecoveryModePageResponse();
 		cdb.page_format = 1;
 		cdb.parameter_list_length_be = byteswap::byteswap16_on_little_endian_systems(sizeof(data));
-		data.header.mode_data_length_be = sizeof(data) - sizeof(data.header.mode_data_length_be);
+		data.header.mode_data_length_be = byteswap::byteswap16_on_little_endian_systems(sizeof(data) - sizeof(data.header.mode_data_length_be));
 		data.page = page;
 		auto status = this->ioctl(handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), nullptr, true);
 		if (status != scsi::StatusCode::GOOD) {
@@ -244,7 +244,7 @@ namespace drive {
 		auto data = cdb::ModeSenseCachingModePageResponse();
 		cdb.page_format = 1;
 		cdb.parameter_list_length_be = byteswap::byteswap16_on_little_endian_systems(sizeof(data));
-		data.header.mode_data_length_be = sizeof(data) - sizeof(data.header.mode_data_length_be);
+		data.header.mode_data_length_be = byteswap::byteswap16_on_little_endian_systems(sizeof(data) - sizeof(data.header.mode_data_length_be));
 		data.page = page;
 		auto status = this->ioctl(handle, reinterpret_cast<byte_t*>(&cdb), sizeof(cdb), reinterpret_cast<byte_t*>(&data), sizeof(data), nullptr, true);
 		if (status != scsi::StatusCode::GOOD) {
