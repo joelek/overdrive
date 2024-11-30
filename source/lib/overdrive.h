@@ -15,6 +15,7 @@
 #include "detail.h"
 #include "disc.h"
 #include "drive.h"
+#include "emulator.h"
 #include "endian.h"
 #include "exceptions.h"
 #include "idiv.h"

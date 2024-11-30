@@ -39,6 +39,7 @@ SOURCES=(
 	"lib/detail.cpp"
 	"lib/disc.cpp"
 	"lib/drive.cpp"
+	"lib/emulator.cpp"
 	"lib/endian.cpp"
 	"lib/exceptions.cpp"
 	"lib/idiv.cpp"
