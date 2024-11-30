@@ -13,7 +13,7 @@ namespace options {
 			"drive",
 			{},
 			"Specify which drive to read from.",
-			std::regex("^([A-Z])[:]?$"),
+			std::regex("^(.+)$"),
 			"string",
 			true,
 			std::optional<std::string>(),

@@ -2,7 +2,10 @@
 
 #include <cstring>
 #include <format>
+#include <regex>
+#include <vector>
 #include "exceptions.h"
+#include "string.h"
 
 #if _WIN32 || _WIN64
 
@@ -25,7 +28,11 @@ namespace detail {
 		auto get_handle(
 			const std::string& drive
 		) -> void* {
-			auto filename = std::format("\\\\.\\{}:", drive);
+			auto matches = std::vector<std::string>();
+			if (!string::match(drive, matches, std::regex("^([A-Z])[:]?$"))) {
+				OVERDRIVE_THROW(exceptions::BadArgumentFormatException(drive, "letter"));
+			}
+			auto filename = std::format("\\\\.\\{}:", matches.at(0));
 			SetLastError(ERROR_SUCCESS);
 			auto handle = CreateFileA(filename.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, 0, nullptr);
 			auto status = GetLastError();
