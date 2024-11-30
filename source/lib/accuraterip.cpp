@@ -3,7 +3,8 @@
 #include <cstdlib>
 #include "string.h"
 
-auto CSV() -> const std::string& {
+auto CSV(
+) -> const std::string& {
 	static const auto csv = std::string(
 		"16X DVD-,ROM,738\n"
 		"24X     ,SATA DVDRW,6\n"
