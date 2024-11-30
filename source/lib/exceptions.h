@@ -266,6 +266,16 @@ namespace exceptions {
 		protected:
 	};
 
+	class IOReadException: public IOException {
+		public:
+
+		IOReadException(
+			const std::string& path
+		);
+
+		protected:
+	};
+
 	class MemoryException: public OverdriveException {
 		public:
 
@@ -280,6 +290,14 @@ namespace exceptions {
 		public:
 
 		MemoryReadException();
+
+		protected:
+	};
+
+	class MemoryWriteException: public MemoryException {
+		public:
+
+		MemoryWriteException();
 
 		protected:
 	};
