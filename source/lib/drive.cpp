@@ -462,7 +462,11 @@ namespace drive {
 	) const -> void {
 		auto error_recovery_mode_page = this->read_error_recovery_mode_page();
 		error_recovery_mode_page.read_retry_count = max_retry_count;
-		this->write_error_recovery_mode_page(error_recovery_mode_page);
+		try {
+			this->write_error_recovery_mode_page(error_recovery_mode_page);
+		} catch (const exceptions::InvalidSCSIModePageWriteException& e) {
+			OVERDRIVE_LOG("Error setting max retry count to {}!", max_retry_count);
+		}
 	}
 
 	auto Drive::read_all_pages_with_control(
