@@ -242,7 +242,7 @@ namespace tasks {
 		const std::vector<std::string>& arguments
 	) -> void {
 		auto options = internal::parse_options(arguments);
-		auto detail = detail::create_detail();
+		auto detail = options.drive.ends_with(".odi") ? odi::create_detail() : detail::create_detail();
 		auto drive_handle = detail.get_handle(options.drive);
 		auto drive = drive::create_drive(drive_handle, detail.ioctl);
 		auto drive_info = drive.read_drive_info();
