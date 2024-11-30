@@ -2,6 +2,7 @@
 
 #include <string>
 #include "cd.h"
+#include "detail.h"
 #include "shared.h"
 
 namespace overdrive {
@@ -156,5 +157,8 @@ namespace odi {
 		size_t compressed_byte_count,
 		SubchannelsDataCompressionMethod::type compression_method
 	) -> void;
+
+	auto create_detail(
+	) -> detail::Detail;
 }
 }

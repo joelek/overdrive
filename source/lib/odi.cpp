@@ -3,12 +3,14 @@
 #include <algorithm>
 #include <array>
 #include <bit>
+#include <cstdio>
 #include <cstring>
 #include <map>
 #include <thread>
 #include <vector>
 #include "bits.h"
 #include "cdda.h"
+#include "emulator.h"
 #include "exceptions.h"
 
 namespace overdrive {
@@ -321,6 +323,98 @@ namespace odi {
 			}
 			OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
 		}
+
+		auto do_read_point_table(
+			void* handle,
+			byte_t* data,
+			size_t data_size
+		) -> size_t {
+			auto* file = reinterpret_cast<std::FILE*>(handle);
+			std::fseek(file, 0, SEEK_SET);
+			auto file_header = FileHeader();
+			if (std::fread(reinterpret_cast<byte_t*>(&file_header), sizeof(file_header), 1, file) != 1) {
+				OVERDRIVE_THROW(exceptions::IOReadException("(image)"));
+			}
+			std::fseek(file, file_header.point_table_header_absolute_offset, SEEK_SET);
+			auto point_table_header = PointTableHeader();
+			if (std::fread(reinterpret_cast<byte_t*>(&point_table_header), sizeof(point_table_header), 1, file) != 1) {
+				OVERDRIVE_THROW(exceptions::IOReadException("(image)"));
+			}
+			auto size = point_table_header.entry_count * sizeof(PointTableEntry::entry);
+			if (data_size < size) {
+				OVERDRIVE_THROW(exceptions::MemoryWriteException());
+			}
+			std::fseek(file, file_header.point_table_header_absolute_offset + point_table_header.header_length, SEEK_SET);
+			auto offset = size_t(0);
+			auto point_table_entry = PointTableEntry();
+			for (auto point_table_index = size_t(0); point_table_index < point_table_header.entry_count; point_table_index += 1) {
+				if (std::fread(reinterpret_cast<byte_t*>(&point_table_entry), sizeof(point_table_entry), 1, file) != 1) {
+					OVERDRIVE_THROW(exceptions::IOReadException("(image)"));
+				}
+				std::memcpy(data + offset, point_table_entry.entry, sizeof(point_table_entry.entry));
+				offset += sizeof(point_table_entry.entry);
+			}
+			return point_table_header.entry_count;
+		}
+
+		auto do_read_sector_data(
+			void* handle,
+			byte_t* data,
+			size_t data_size,
+			si_t absolute_sector
+		) -> size_t {
+			auto* file = reinterpret_cast<std::FILE*>(handle);
+			std::fseek(file, 0, SEEK_SET);
+			auto file_header = FileHeader();
+			if (std::fread(reinterpret_cast<byte_t*>(&file_header), sizeof(file_header), 1, file) != 1) {
+				OVERDRIVE_THROW(exceptions::IOReadException("(image)"));
+			}
+			std::fseek(file, file_header.sector_table_header_absolute_offset, SEEK_SET);
+			auto sector_table_header = SectorTableHeader();
+			if (std::fread(reinterpret_cast<byte_t*>(&sector_table_header), sizeof(sector_table_header), 1, file) != 1) {
+				OVERDRIVE_THROW(exceptions::IOReadException("(image)"));
+			}
+			absolute_sector += cd::LEAD_IN_LENGTH;
+			if (absolute_sector < 0 || absolute_sector >= static_cast<si_t>(sector_table_header.entry_count)) {
+				OVERDRIVE_THROW(exceptions::IOReadException("(image)"));
+			}
+			std::fseek(file, file_header.sector_table_header_absolute_offset + sector_table_header.header_length + absolute_sector * sector_table_header.entry_length, SEEK_SET);
+			auto size = cd::SECTOR_LENGTH + cd::SUBCHANNELS_LENGTH;
+			if (data_size < size) {
+				OVERDRIVE_THROW(exceptions::IOReadException("(image)"));
+			}
+			auto sector_table_entry = SectorTableEntry();
+			if (std::fread(reinterpret_cast<byte_t*>(&sector_table_entry), sizeof(sector_table_entry), 1, file) != 1) {
+				OVERDRIVE_THROW(exceptions::IOReadException("(image)"));
+			}
+			if (sector_table_entry.readability != Readability::READABLE) {
+				OVERDRIVE_THROW(exceptions::IOReadException("(image)"));
+			}
+			std::fseek(file, sector_table_entry.compressed_data_absolute_offset, SEEK_SET);
+			auto& sector_data = *reinterpret_cast<pointer<array<cd::SECTOR_LENGTH, byte_t>>>(data);
+			if (std::fread(reinterpret_cast<byte_t*>(&sector_data), sector_table_entry.sector_data.compressed_byte_count, 1, file) != 1) {
+				OVERDRIVE_THROW(exceptions::IOReadException("(image)"));
+			}
+			decompress_sector_data(sector_data, sector_table_entry.sector_data.compressed_byte_count, sector_table_entry.sector_data.compression_method);
+			auto& subchannels_data = *reinterpret_cast<pointer<array<cd::SUBCHANNELS_LENGTH, byte_t>>>(data + cd::SECTOR_LENGTH);
+			if (std::fread(reinterpret_cast<byte_t*>(&subchannels_data), sector_table_entry.subchannels_data.compressed_byte_count, 1, file) != 1) {
+				OVERDRIVE_THROW(exceptions::IOReadException("(image)"));
+			}
+			decompress_subchannels_data(subchannels_data, sector_table_entry.subchannels_data.compressed_byte_count, sector_table_entry.subchannels_data.compression_method);
+			auto& subchannels = *reinterpret_cast<cd::Subchannels*>(subchannels_data);
+			subchannels = cd::reinterleave_subchannels(subchannels);
+			return size;
+		}
+
+		auto create_image_adapter(
+		) -> emulator::ImageAdapter {
+			auto read_point_table = do_read_point_table;
+			auto read_sector_data = do_read_sector_data;
+			return {
+				read_point_table,
+				read_sector_data
+			};
+		}
 	}
 	}
 
@@ -403,6 +497,12 @@ namespace odi {
 			return internal::decompress_run_length_encoding(subchannels_data, cd::SUBCHANNELS_LENGTH, compressed_byte_count);
 		}
 		OVERDRIVE_THROW(exceptions::UnreachableCodeReachedException());
+	}
+
+	auto create_detail(
+	) -> detail::Detail {
+		auto image_adapter = internal::create_image_adapter();
+		return emulator::create_detail(image_adapter);
 	}
 }
 }
