@@ -1,7 +1,6 @@
 #pragma once
 
 #include "accuraterip.h"
-#include "app.h"
 #include "archiver.h"
 #include "bcd.h"
 #include "bits.h"

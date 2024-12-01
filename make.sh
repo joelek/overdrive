@@ -25,7 +25,6 @@ SOURCES=(
 	"cli/tasks/mds.cpp"
 	"cli/tasks/odi.cpp"
 	"lib/accuraterip.cpp"
-	"lib/app.cpp"
 	"lib/archiver.cpp"
 	"lib/bcd.cpp"
 	"lib/bits.cpp"

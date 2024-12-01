@@ -1,7 +1,6 @@
 #include "task.h"
 
 #include <algorithm>
-#include "app.h"
 #include "exceptions.h"
 #include "string.h"
 
@@ -26,13 +25,14 @@ namespace task {
 	}
 
 	auto print(
+		const std::string& command,
 		const std::vector<Task>& tasks
 	) -> void {
 		OVERDRIVE_LOG("Tasks:");
 		OVERDRIVE_LOG("");
 		for (auto task_index = size_t(0); task_index < tasks.size(); task_index += 1) {
 			auto& task = tasks.at(task_index);
-			OVERDRIVE_LOG("{} {}", string::lower(app::NAME), task.key);
+			OVERDRIVE_LOG("{} {}", command, task.key);
 			OVERDRIVE_LOG("\t{}", task.description);
 			OVERDRIVE_LOG("");
 		}

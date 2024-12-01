@@ -46,7 +46,7 @@ auto main(
 			auto duration_ms = time::get_duration_ms(start_ms);
 			OVERDRIVE_LOG("Task execution took {} ms.", duration_ms);
 		} catch (const exceptions::TaskException& e) {
-			task::print(tasks);
+			task::print("overdrive", tasks);
 			throw;
 		}
 		OVERDRIVE_LOG("Program completed successfully.");

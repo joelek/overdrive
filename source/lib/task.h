@@ -27,6 +27,7 @@ namespace task {
 	) -> void;
 
 	auto print(
+		const std::string& command,
 		const std::vector<Task>& tasks
 	) -> void;
 
