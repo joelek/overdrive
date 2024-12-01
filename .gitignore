@@ -1,2 +1,8 @@
 build/
 private/
+*.iso
+*.cue
+*.bin
+*.mds
+*.mdf
+*.odi
