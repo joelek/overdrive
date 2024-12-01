@@ -12,7 +12,7 @@ Overdrive can be used to create optical disc images in several different file fo
 
 ### BIN/CUE
 
-Create a disc image with the BIN/CUE file format through the `cue` task. The format is recommended for unprotected discs containing audio tracks.
+Create a disc image with the BIN/CUE file format through the `cue` task. The format is recommended for basic discs containing audio tracks.
 
 ```
 overdrive cue F: image.cue
@@ -20,7 +20,7 @@ overdrive cue F: image.cue
 
 ### ISO
 
-Create a disc image with the ISO file format through the `iso` task. The format is recommended for unprotected discs containing a single data track.
+Create a disc image with the ISO file format through the `iso` task. The format is recommended for basic discs containing a single data track.
 
 ```
 overdrive iso F: image.iso
