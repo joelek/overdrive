@@ -93,7 +93,7 @@ namespace tasks {
 			OVERDRIVE_LOG("Sector range between {} and {} has {} bad sectors!", first_sector, last_sector, bad_sector_indices.size());
 			auto sector_table_entries = std::vector<odi::SectorTableEntry>(last_sector - first_sector);
 			for (auto sector_index = size_t(0); sector_index < extracted_sectors_vector.size(); sector_index += 1) {
-				auto is_readable = !bad_sector_indices_set.contains(sector_index);
+				auto is_readable = !bad_sector_indices_set.contains(first_sector + sector_index);
 				auto& extracted_sectors = extracted_sectors_vector.at(sector_index);
 				auto& extracted_sector = extracted_sectors.at(0);
 				auto& sector_table_entry = sector_table_entries.at(sector_index);
@@ -146,7 +146,7 @@ namespace tasks {
 						auto compressed_byte_count = size_t(0);
 						auto track_sector_table_entries = std::vector<odi::SectorTableEntry>(track.length_sectors);
 						for (auto sector_index = size_t(0); sector_index < extracted_sectors_vector.size(); sector_index += 1) {
-							auto is_readable = !bad_sector_indices_set.contains(sector_index);
+							auto is_readable = !bad_sector_indices_set.contains(track.first_sector_absolute + sector_index);
 							auto& extracted_sectors = extracted_sectors_vector.at(sector_index);
 							auto& extracted_sector = extracted_sectors.at(0);
 							auto& sector_table_entry = track_sector_table_entries.at(sector_index);
