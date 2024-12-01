@@ -344,10 +344,10 @@ namespace odi {
 			if (data_size < size) {
 				OVERDRIVE_THROW(exceptions::MemoryWriteException());
 			}
-			std::fseek(file, file_header.point_table_header_absolute_offset + point_table_header.header_length, SEEK_SET);
 			auto offset = size_t(0);
 			auto point_table_entry = PointTableEntry();
 			for (auto point_table_index = size_t(0); point_table_index < point_table_header.entry_count; point_table_index += 1) {
+				std::fseek(file, file_header.point_table_header_absolute_offset + point_table_header.header_length + point_table_index * point_table_header.entry_length, SEEK_SET);
 				if (std::fread(reinterpret_cast<byte_t*>(&point_table_entry), sizeof(point_table_entry), 1, file) != 1) {
 					OVERDRIVE_THROW(exceptions::IOReadException("(image)"));
 				}
