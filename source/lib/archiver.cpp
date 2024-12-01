@@ -219,7 +219,7 @@ namespace archiver {
 					auto computed_crc = cd::compute_subchannel_q_crc(q);
 					auto expected_crc = byteswap::byteswap16_on_little_endian_systems(q.crc_be);
 					if (computed_crc != expected_crc) {
-						OVERDRIVE_LOG("Expected CRC for sector {} subchannel Q {:0>4X} to be {:0>4X}!", sector_index, computed_crc, expected_crc);
+						OVERDRIVE_LOG("Expected CRC for sector {} subchannel Q ({:0>4X}) to be {:0>4X}!", sector_index, computed_crc, expected_crc);
 					}
 				}
 			}
