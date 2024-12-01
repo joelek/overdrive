@@ -18,6 +18,6 @@ namespace app {
 	};
 
 	const auto NAME = std::string("Overdrive");
-	const auto VERSION = Version({ 0, 0, 0 });
+	const auto VERSION = Version({ 1, 0, 0 });
 }
 }
