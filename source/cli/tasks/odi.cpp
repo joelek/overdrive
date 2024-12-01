@@ -1,5 +1,7 @@
 #include "odi.h"
 
+#include <set>
+
 namespace tasks {
 	class ODIptions: public options::Options {
 		public:
@@ -42,6 +44,7 @@ namespace tasks {
 
 		auto compress_sector(
 			copier::ExtractedSector& extracted_sector,
+			bool_t is_readable,
 			odi::SectorDataCompressionMethod::type sector_data_method,
 			odi::SubchannelsDataCompressionMethod::type subchannels_method,
 			const ODIptions& options
@@ -49,7 +52,7 @@ namespace tasks {
 			auto& subchannels = *reinterpret_cast<cd::Subchannels*>(&extracted_sector.subchannels_data);
 			subchannels = cd::deinterleave_subchannels(subchannels);
 			auto sector_table_entry = odi::SectorTableEntry();
-			sector_table_entry.readability = extracted_sector.counter == 0 ? odi::Readability::UNREADABLE : odi::Readability::READABLE;
+			sector_table_entry.readability = is_readable ? odi::Readability::READABLE : odi::Readability::UNREADABLE;
 			sector_table_entry.sector_data.compressed_byte_count = cd::SECTOR_LENGTH;
 			sector_table_entry.sector_data.compression_method = odi::SectorDataCompressionMethod::NONE;
 			sector_table_entry.subchannels_data.compressed_byte_count = cd::SUBCHANNELS_LENGTH;
@@ -86,13 +89,15 @@ namespace tasks {
 				options.max_data_copies
 			);
 			auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector, first_sector);
+			auto bad_sector_indices_set = std::set<size_t>(bad_sector_indices.begin(), bad_sector_indices.end());
 			OVERDRIVE_LOG("Sector range between {} and {} has {} bad sectors!", first_sector, last_sector, bad_sector_indices.size());
 			auto sector_table_entries = std::vector<odi::SectorTableEntry>(last_sector - first_sector);
 			for (auto sector_index = size_t(0); sector_index < extracted_sectors_vector.size(); sector_index += 1) {
+				auto is_readable = !bad_sector_indices_set.contains(sector_index);
 				auto& extracted_sectors = extracted_sectors_vector.at(sector_index);
 				auto& extracted_sector = extracted_sectors.at(0);
 				auto& sector_table_entry = sector_table_entries.at(sector_index);
-				sector_table_entry = compress_sector(extracted_sector, odi::SectorDataCompressionMethod::RUN_LENGTH_ENCODING, odi::SubchannelsDataCompressionMethod::RUN_LENGTH_ENCODING, options);
+				sector_table_entry = compress_sector(extracted_sector, is_readable, odi::SectorDataCompressionMethod::RUN_LENGTH_ENCODING, odi::SubchannelsDataCompressionMethod::RUN_LENGTH_ENCODING, options);
 				sector_table_entry.compressed_data_absolute_offset = std::ftell(handle);
 				if (std::fwrite(extracted_sector.sector_data, sector_table_entry.sector_data.compressed_byte_count, 1, handle) != 1) {
 					OVERDRIVE_THROW(exceptions::IOWriteException(path));
@@ -136,16 +141,18 @@ namespace tasks {
 						auto& track = session.tracks.at(track_index);
 						auto extracted_sectors_vector = copier::read_track(drive, track, options);
 						auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
+						auto bad_sector_indices_set = std::set<size_t>(bad_sector_indices.begin(), bad_sector_indices.end());
 						copier::log_bad_sector_indices(drive, track, bad_sector_indices);
 						auto compressed_byte_count = size_t(0);
 						auto track_sector_table_entries = std::vector<odi::SectorTableEntry>(track.length_sectors);
 						for (auto sector_index = size_t(0); sector_index < extracted_sectors_vector.size(); sector_index += 1) {
+							auto is_readable = !bad_sector_indices_set.contains(sector_index);
 							auto& extracted_sectors = extracted_sectors_vector.at(sector_index);
 							auto& extracted_sector = extracted_sectors.at(0);
 							auto& sector_table_entry = track_sector_table_entries.at(sector_index);
 							auto sector_data_method = track.type == disc::TrackType::AUDIO_2_CHANNELS ? odi::SectorDataCompressionMethod::LOSSLESS_STEREO_AUDIO : odi::SectorDataCompressionMethod::RUN_LENGTH_ENCODING;
 							auto subchannels_data_method = odi::SubchannelsDataCompressionMethod::RUN_LENGTH_ENCODING;
-							sector_table_entry = compress_sector(extracted_sector, sector_data_method, subchannels_data_method, options);
+							sector_table_entry = compress_sector(extracted_sector, is_readable, sector_data_method, subchannels_data_method, options);
 						}
 						for (auto sector_index = size_t(0); sector_index < extracted_sectors_vector.size(); sector_index += 1) {
 							auto& extracted_sectors = extracted_sectors_vector.at(sector_index);
