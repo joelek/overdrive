@@ -75,8 +75,6 @@ Ethereum contributions can be made to address `0xf1B63d95BEfEdAf70B3623B1A4Ba0D9
 * Reorganize exceptions so that enums and types can be re-used.
 * Improve copier to better extract subchannels.
 * Detect indices in audio tracks including index 00 in pregap.
-* Remove unneccessary static casts.
-* Improve error handling for ImageAdapter.
 
 ## References
 
