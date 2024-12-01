@@ -134,7 +134,7 @@ namespace tasks {
 				auto& session = disc.sessions.at(session_index);
 				absolute_offset_to_entry_table += sizeof(mds::SessionTableHeader);
 				auto session_table_header = mds::SessionTableHeader();
-				session_table_header.pregap_correction = 0 - static_cast<si32_t>(cd::RELATIVE_SECTOR_OFFSET);
+				session_table_header.pregap_correction = 0 - cd::RELATIVE_SECTOR_OFFSET;
 				session_table_header.sectors_on_disc = session.length_sectors;
 				session_table_header.session_number = session.number;
 				session_table_header.point_count = session.points.size();

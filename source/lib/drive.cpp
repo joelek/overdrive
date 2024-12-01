@@ -41,7 +41,7 @@ namespace drive {
 			auto& q = *reinterpret_cast<cd::SubchannelQ*>(subchannels.channels[cd::SUBCHANNEL_Q_INDEX].data);
 			if (q.adr == 1) {
 				auto decoded_sector_index = cd::get_sector_from_address(bcd::decode_address(q.mode1.absolute_address_bcd)) - cd::RELATIVE_SECTOR_OFFSET;
-				auto delta = static_cast<si_t>(sector_index) - static_cast<si_t>(decoded_sector_index);
+				auto delta = si_t(sector_index) - si_t(decoded_sector_index);
 				if (delta < -10 || delta > 10) {
 					OVERDRIVE_THROW(exceptions::AutoDetectFailureException("subchannel timing offset"));
 				}
@@ -314,7 +314,7 @@ namespace drive {
 		}
 		if (sense[0] == sense::ResponseCodes::FIXED_CURRENT) {
 			auto& fixed_format = *reinterpret_cast<sense::FixedFormat*>(&sense);
-			OVERDRIVE_LOG("Sense info 0x{:0>2X} 0x{:0>2X} 0x{:0>2X}!", static_cast<ui08_t>(fixed_format.sense_key), static_cast<ui08_t>(fixed_format.additional_sense_code), static_cast<ui08_t>(fixed_format.additional_sense_code_qualifier));
+			OVERDRIVE_LOG("Sense info 0x{:0>2X} 0x{:0>2X} 0x{:0>2X}!", size_t(fixed_format.sense_key), size_t(fixed_format.additional_sense_code), size_t(fixed_format.additional_sense_code_qualifier));
 		}
 		if (sector_data != nullptr) {
 			if (!this->sector_data_offset) {

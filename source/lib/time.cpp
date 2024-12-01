@@ -16,7 +16,7 @@ namespace time {
 	) -> si64_t {
 		auto now = std::chrono::high_resolution_clock::now();
 		auto since_epoch = now.time_since_epoch();
-		auto now_ms = static_cast<si64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(since_epoch).count());
+		auto now_ms = si64_t(std::chrono::duration_cast<std::chrono::milliseconds>(since_epoch).count());
 		return now_ms;
 	}
 }

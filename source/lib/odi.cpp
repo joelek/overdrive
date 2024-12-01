@@ -375,7 +375,7 @@ namespace odi {
 				OVERDRIVE_THROW(exceptions::IOReadException("(image)"));
 			}
 			absolute_sector += cd::LEAD_IN_LENGTH;
-			if (absolute_sector < 0 || absolute_sector >= static_cast<si_t>(sector_table_header.entry_count)) {
+			if (absolute_sector < 0 || absolute_sector >= si_t(sector_table_header.entry_count)) {
 				return false;
 			}
 			std::fseek(file, file_header.sector_table_header_absolute_offset + sector_table_header.header_length + absolute_sector * sector_table_header.entry_length, SEEK_SET);
