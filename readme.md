@@ -42,6 +42,12 @@ Create a disc image with the ODI file format through the `odi` task. The format 
 overdrive odi F: image.odi
 ```
 
+Overdrive includes support for mounting ODI files which is activated by specifying the path of an ODI file as the source drive. This provides a convenient way of converting ODI files into any of the other file formats supported by Overdrive.
+
+```
+overdrive cue image-to-be-mounted.odi image-to-be-written.cue
+```
+
 ## The ODI file format
 
 The [ODI file format](./odi.md) is Overdrive's own compact, highly-flexible and freely available disc image format. A [reference implementation](./source/lib/odi.h) is available in Overdrive's source code.
