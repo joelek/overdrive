@@ -131,11 +131,11 @@ struct PointTableHeader {
 };
 ```
 
-Each `PointTableEntry` structure provides information about a single point. The `entry` member encodes the bytes of a single `TOC Track Descriptor` as specified in Table 236 of [MMC-3](https://www.13thmonkey.org/documentation/SCSI/mmc3r10g.pdf).
+Each `PointTableEntry` structure provides information about a single point. The `descriptor` member encodes the bytes of a single `TOC Track Descriptor` as specified in Table 236 of [MMC-3](https://www.13thmonkey.org/documentation/SCSI/mmc3r10g.pdf).
 
 ```c++
 struct PointTableEntry {
-	byte_t entry[11];
+	byte_t descriptor[11];
 	ui08_t : 8;
 	ui08_t : 8;
 	ui08_t : 8;

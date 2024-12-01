@@ -180,7 +180,7 @@ namespace tasks {
 				for (auto point_index = size_t(0); point_index < points.size(); point_index += 1) {
 					auto& point = points.at(point_index);
 					auto point_table_entry = odi::PointTableEntry();
-					*reinterpret_cast<cdb::ReadTOCResponseFullTOCEntry*>(&point_table_entry.entry) = point.entry;
+					*reinterpret_cast<cdb::ReadTOCResponseFullTOCEntry*>(&point_table_entry.descriptor) = point.entry;
 					point_table_entries.push_back(point_table_entry);
 				}
 				std::fseek(handle, idiv::ceil(std::ftell(handle), 16) * 16, SEEK_SET);

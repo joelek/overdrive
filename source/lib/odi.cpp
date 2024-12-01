@@ -340,7 +340,7 @@ namespace odi {
 			if (std::fread(reinterpret_cast<byte_t*>(&point_table_header), sizeof(point_table_header), 1, file) != 1) {
 				OVERDRIVE_THROW(exceptions::IOReadException("(image)"));
 			}
-			auto size = point_table_header.entry_count * sizeof(PointTableEntry::entry);
+			auto size = point_table_header.entry_count * sizeof(PointTableEntry::descriptor);
 			if (data_size < size) {
 				OVERDRIVE_THROW(exceptions::MemoryWriteException());
 			}
@@ -351,8 +351,8 @@ namespace odi {
 				if (std::fread(reinterpret_cast<byte_t*>(&point_table_entry), sizeof(point_table_entry), 1, file) != 1) {
 					OVERDRIVE_THROW(exceptions::IOReadException("(image)"));
 				}
-				std::memcpy(data + offset, point_table_entry.entry, sizeof(point_table_entry.entry));
-				offset += sizeof(point_table_entry.entry);
+				std::memcpy(data + offset, point_table_entry.descriptor, sizeof(point_table_entry.descriptor));
+				offset += sizeof(point_table_entry.descriptor);
 			}
 			return point_table_header.entry_count;
 		}

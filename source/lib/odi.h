@@ -108,7 +108,7 @@ namespace odi {
 	static_assert(sizeof(SectorTableHeader) == 16);
 
 	struct PointTableEntry {
-		byte_t entry[11];
+		byte_t descriptor[11];
 		ui08_t : 8;
 		ui08_t : 8;
 		ui08_t : 8;
