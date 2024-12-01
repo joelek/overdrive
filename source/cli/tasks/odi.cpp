@@ -169,8 +169,8 @@ namespace tasks {
 						}
 						vector::append(sector_table_entries, track_sector_table_entries);
 						absolute_sector_offset += track.length_sectors;
-						auto compression_rate = float(compressed_byte_count) / (extracted_sectors_vector.size() * cd::SECTOR_LENGTH);
-						OVERDRIVE_LOG("Saved track {} with a compression rate of {:.2f}", track.number, compression_rate);
+						auto compression_ratio = float(compressed_byte_count) / (extracted_sectors_vector.size() * cd::SECTOR_LENGTH);
+						OVERDRIVE_LOG("Saved track {} with a compression ratio of {:.2f}", track.number, compression_ratio);
 					}
 					auto lead_out_sector_table_entries = save_sector_range(drive, absolute_sector_offset, absolute_sector_offset + session.lead_out_length_sectors, options, handle, path);
 					vector::append(sector_table_entries, lead_out_sector_table_entries);
