@@ -170,7 +170,7 @@ namespace options {
 			std::regex("^([0-9]|[1-9][0-9]|[1][0-9][0-9]|[2][0-4][0-9]|[2][5][0-5])$"),
 			"integer",
 			false,
-			std::optional<std::string>("1"),
+			std::optional<std::string>("0"),
 			1,
 			1,
 			[&](const std::vector<std::string>& matches) -> void {
