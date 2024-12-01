@@ -1,6 +1,6 @@
 # Overdrive
 
-Low-level utility for creating disc images from data, audio and mixed-mode optical discs and disc images.
+Low-level utility for creating archival disc images from data, audio and mixed-mode optical discs.
 
 ```
 overdrive cue F: image.cue
