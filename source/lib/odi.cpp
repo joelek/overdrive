@@ -362,7 +362,7 @@ namespace odi {
 			byte_t* data,
 			size_t data_size,
 			si_t absolute_sector
-		) -> size_t {
+		) -> bool_t {
 			auto* file = reinterpret_cast<std::FILE*>(handle);
 			std::fseek(file, 0, SEEK_SET);
 			auto file_header = FileHeader();
@@ -376,19 +376,19 @@ namespace odi {
 			}
 			absolute_sector += cd::LEAD_IN_LENGTH;
 			if (absolute_sector < 0 || absolute_sector >= static_cast<si_t>(sector_table_header.entry_count)) {
-				OVERDRIVE_THROW(exceptions::IOReadException("(image)"));
+				return false;
 			}
 			std::fseek(file, file_header.sector_table_header_absolute_offset + sector_table_header.header_length + absolute_sector * sector_table_header.entry_length, SEEK_SET);
 			auto size = cd::SECTOR_LENGTH + cd::SUBCHANNELS_LENGTH;
 			if (data_size < size) {
-				OVERDRIVE_THROW(exceptions::IOReadException("(image)"));
+				return false;
 			}
 			auto sector_table_entry = SectorTableEntry();
 			if (std::fread(reinterpret_cast<byte_t*>(&sector_table_entry), sizeof(sector_table_entry), 1, file) != 1) {
 				OVERDRIVE_THROW(exceptions::IOReadException("(image)"));
 			}
 			if (sector_table_entry.readability != Readability::READABLE) {
-				OVERDRIVE_THROW(exceptions::IOReadException("(image)"));
+				return false;
 			}
 			std::fseek(file, sector_table_entry.compressed_data_absolute_offset, SEEK_SET);
 			auto& sector_data = *reinterpret_cast<pointer<array<cd::SECTOR_LENGTH, byte_t>>>(data);
@@ -403,7 +403,7 @@ namespace odi {
 			decompress_subchannels_data(subchannels_data, sector_table_entry.subchannels_data.compressed_byte_count, sector_table_entry.subchannels_data.compression_method);
 			auto& subchannels = *reinterpret_cast<cd::Subchannels*>(subchannels_data);
 			subchannels = cd::reinterleave_subchannels(subchannels);
-			return size;
+			return true;
 		}
 
 		auto create_image_adapter(

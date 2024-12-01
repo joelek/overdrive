@@ -217,7 +217,10 @@ namespace emulator {
 			}
 			auto offset = size_t(0);
 			for (auto sector_index = start_sector; sector_index < end_sector_exclusive; sector_index += 1) {
-				image_adapter.read_sector_data(handle, data + offset, sector_size, sector_index);
+				auto success = image_adapter.read_sector_data(handle, data + offset, sector_size, sector_index);
+				if (!success) {
+					return scsi::StatusCode::CHECK_CONDITION;
+				}
 				offset += sector_size;
 			}
 			return scsi::StatusCode::GOOD;
