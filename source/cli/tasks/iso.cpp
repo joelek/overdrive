@@ -84,16 +84,16 @@ namespace tasks {
 		) -> void {
 			for (auto track_index = size_t(0); track_index < tracks.size(); track_index += 1) {
 				auto& track = tracks.at(track_index);
-				auto extracted_sectors_vector = copier::read_track(drive, track, options);
-				auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
-				copier::log_bad_sector_indices(drive, track, bad_sector_indices);
+				auto extracted_sectors_vector = archiver::read_track(drive, track, options);
+				auto bad_sector_indices = archiver::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
+				archiver::log_bad_sector_indices(drive, track, bad_sector_indices);
 				if (disc::is_data_track(track.type)) {
 					auto user_data_offset = disc::get_user_data_offset(track.type);
 					auto user_data_length = disc::get_user_data_length(track.type);
 					auto path = path::create_path(options.path)
 						.with_extension(std::format(".{:0>2}.iso", track.number))
 						.create_directories();
-					copier::write_sector_data_to_file(extracted_sectors_vector, path, user_data_offset, user_data_length, false);
+					archiver::write_sector_data_to_file(extracted_sectors_vector, path, user_data_offset, user_data_length, false);
 				} else {
 					OVERDRIVE_THROW(exceptions::ExpectedDataTrackException(track.number));
 				}

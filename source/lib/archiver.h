@@ -11,7 +11,7 @@
 #include "shared.h"
 
 namespace overdrive {
-namespace copier {
+namespace archiver {
 	using namespace shared;
 
 	class ExtractedSector {

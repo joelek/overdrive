@@ -43,7 +43,7 @@ namespace tasks {
 		}
 
 		auto compress_sector(
-			copier::ExtractedSector& extracted_sector,
+			archiver::ExtractedSector& extracted_sector,
 			bool_t is_readable,
 			odi::SectorDataCompressionMethod::type sector_data_method,
 			odi::SubchannelsDataCompressionMethod::type subchannels_method,
@@ -78,7 +78,7 @@ namespace tasks {
 			std::FILE* handle,
 			const std::string& path
 		) -> std::vector<odi::SectorTableEntry> {
-			auto extracted_sectors_vector = copier::read_absolute_sector_range(
+			auto extracted_sectors_vector = archiver::read_absolute_sector_range(
 				drive,
 				first_sector,
 				last_sector,
@@ -88,7 +88,7 @@ namespace tasks {
 				options.min_data_copies,
 				options.max_data_copies
 			);
-			auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector, first_sector);
+			auto bad_sector_indices = archiver::get_bad_sector_indices(extracted_sectors_vector, first_sector);
 			auto bad_sector_indices_set = std::set<size_t>(bad_sector_indices.begin(), bad_sector_indices.end());
 			OVERDRIVE_LOG("Sector range between {} and {} has {} bad sectors!", first_sector, last_sector, bad_sector_indices.size());
 			auto sector_table_entries = std::vector<odi::SectorTableEntry>(last_sector - first_sector);
@@ -118,7 +118,7 @@ namespace tasks {
 			auto path = path::create_path(options.path)
 				.with_extension(".odi")
 				.create_directories();
-			auto handle = copier::open_handle(path);
+			auto handle = archiver::open_handle(path);
 			try {
 				auto file_header = odi::FileHeader();
 				file_header.header_length = sizeof(odi::FileHeader);
@@ -139,10 +139,10 @@ namespace tasks {
 					absolute_sector_offset += session.pregap_sectors;
 					for (auto track_index = size_t(0); track_index < session.tracks.size(); track_index += 1) {
 						auto& track = session.tracks.at(track_index);
-						auto extracted_sectors_vector = copier::read_track(drive, track, options);
-						auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
+						auto extracted_sectors_vector = archiver::read_track(drive, track, options);
+						auto bad_sector_indices = archiver::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
 						auto bad_sector_indices_set = std::set<size_t>(bad_sector_indices.begin(), bad_sector_indices.end());
-						copier::log_bad_sector_indices(drive, track, bad_sector_indices);
+						archiver::log_bad_sector_indices(drive, track, bad_sector_indices);
 						auto compressed_byte_count = size_t(0);
 						auto track_sector_table_entries = std::vector<odi::SectorTableEntry>(track.length_sectors);
 						for (auto sector_index = size_t(0); sector_index < extracted_sectors_vector.size(); sector_index += 1) {
@@ -218,10 +218,10 @@ namespace tasks {
 					OVERDRIVE_THROW(exceptions::IOWriteException(path));
 				}
 			}  catch (...) {
-				copier::close_handle(handle);
+				archiver::close_handle(handle);
 				throw;
 			}
-			copier::close_handle(handle);
+			archiver::close_handle(handle);
 		}
 	}
 	}

@@ -2,6 +2,7 @@
 
 #include "accuraterip.h"
 #include "app.h"
+#include "archiver.h"
 #include "bcd.h"
 #include "bits.h"
 #include "byteswap.h"
@@ -10,7 +11,6 @@
 #include "cdda.h"
 #include "cdrom.h"
 #include "cdxa.h"
-#include "copier.h"
 #include "crc.h"
 #include "detail.h"
 #include "disc.h"

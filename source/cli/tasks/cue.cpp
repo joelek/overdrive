@@ -157,26 +157,26 @@ namespace tasks {
 			auto path = path::create_path(options.path)
 				.with_extension(".bin")
 				.create_directories();
-			auto handle = copier::open_handle(path);
+			auto handle = archiver::open_handle(path);
 			try {
 				for (auto track_index = size_t(0); track_index < tracks.size(); track_index += 1) {
 					auto& track = tracks.at(track_index);
-					auto extracted_sectors_vector = copier::read_track(drive, track, options);
-					auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
-					copier::log_bad_sector_indices(drive, track, bad_sector_indices);
+					auto extracted_sectors_vector = archiver::read_track(drive, track, options);
+					auto bad_sector_indices = archiver::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
+					archiver::log_bad_sector_indices(drive, track, bad_sector_indices);
 					if (disc::is_data_track(track.type)) {
 						auto sector_data_offset = options.trim_data_tracks ? disc::get_user_data_offset(track.type) : 0;
 						auto sector_data_length = options.trim_data_tracks ? disc::get_user_data_length(track.type) : cd::SECTOR_LENGTH;
-						copier::append_sector_data(extracted_sectors_vector, path, sector_data_offset, sector_data_length, handle, false);
+						archiver::append_sector_data(extracted_sectors_vector, path, sector_data_offset, sector_data_length, handle, false);
 					} else {
-						copier::append_sector_data(extracted_sectors_vector, path, 0, cd::SECTOR_LENGTH, handle, false);
+						archiver::append_sector_data(extracted_sectors_vector, path, 0, cd::SECTOR_LENGTH, handle, false);
 					}
 				}
 			}  catch (...) {
-				copier::close_handle(handle);
+				archiver::close_handle(handle);
 				throw;
 			}
-			copier::close_handle(handle);
+			archiver::close_handle(handle);
 		}
 
 		auto write_merged_cue(
@@ -186,7 +186,7 @@ namespace tasks {
 			auto path = path::create_path(options.path)
 				.with_extension(".cue")
 				.create_directories();
-			auto handle = copier::open_handle(path);
+			auto handle = archiver::open_handle(path);
 			try {
 				if (std::fprintf(handle, "%s\n", std::format("FILE \"{}\" {}", std::format("{}.bin", path.fspath.stem().string()), "BINARY").c_str()) < 0) {
 					OVERDRIVE_THROW(exceptions::IOWriteException(path));
@@ -208,10 +208,10 @@ namespace tasks {
 					offset += track.length_sectors;
 				}
 			} catch (...) {
-				copier::close_handle(handle);
+				archiver::close_handle(handle);
 				throw;
 			}
-			copier::close_handle(handle);
+			archiver::close_handle(handle);
 		}
 
 		auto write_bin(
@@ -221,24 +221,24 @@ namespace tasks {
 		) -> void {
 			for (auto track_index = size_t(0); track_index < tracks.size(); track_index += 1) {
 				auto& track = tracks.at(track_index);
-				auto extracted_sectors_vector = copier::read_track(drive, track, options);
-				auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
-				copier::log_bad_sector_indices(drive, track, bad_sector_indices);
+				auto extracted_sectors_vector = archiver::read_track(drive, track, options);
+				auto bad_sector_indices = archiver::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
+				archiver::log_bad_sector_indices(drive, track, bad_sector_indices);
 				if (disc::is_data_track(track.type)) {
 					auto sector_data_offset = options.trim_data_tracks ? disc::get_user_data_offset(track.type) : 0;
 					auto sector_data_length = options.trim_data_tracks ? disc::get_user_data_length(track.type) : cd::SECTOR_LENGTH;
 					auto path = path::create_path(options.path)
 						.with_extension(std::format(".{:0>2}.bin", track.number))
 						.create_directories();
-					auto handle = copier::open_handle(path);
-					copier::append_sector_data(extracted_sectors_vector, path, sector_data_offset, sector_data_length, handle, false);
-					copier::close_handle(handle);
+					auto handle = archiver::open_handle(path);
+					archiver::append_sector_data(extracted_sectors_vector, path, sector_data_offset, sector_data_length, handle, false);
+					archiver::close_handle(handle);
 				} else {
 					auto extension = options.audio_file_format == "wav" ? "wav" : "bin";
 					auto path = path::create_path(options.path)
 						.with_extension(std::format(".{:0>2}.{}", track.number, extension))
 						.create_directories();
-					auto handle = copier::open_handle(path);
+					auto handle = archiver::open_handle(path);
 					if (options.audio_file_format == "wav") {
 						auto header = wav::Header();
 						header.data_length = cd::SECTOR_LENGTH * track.length_sectors;
@@ -247,8 +247,8 @@ namespace tasks {
 							OVERDRIVE_THROW(exceptions::IOWriteException(path));
 						}
 					}
-					copier::append_sector_data(extracted_sectors_vector, path, 0, cd::SECTOR_LENGTH, handle, false);
-					copier::close_handle(handle);
+					archiver::append_sector_data(extracted_sectors_vector, path, 0, cd::SECTOR_LENGTH, handle, false);
+					archiver::close_handle(handle);
 				}
 			}
 		}
@@ -260,7 +260,7 @@ namespace tasks {
 			auto path = path::create_path(options.path)
 				.with_extension(".cue")
 				.create_directories();
-			auto handle = copier::open_handle(path);
+			auto handle = archiver::open_handle(path);
 			try {
 				for (auto track_index = size_t(0); track_index < tracks.size(); track_index += 1) {
 					auto& track = tracks.at(track_index);
@@ -281,10 +281,10 @@ namespace tasks {
 					}
 				}
 			} catch (...) {
-				copier::close_handle(handle);
+				archiver::close_handle(handle);
 				throw;
 			}
-			copier::close_handle(handle);
+			archiver::close_handle(handle);
 		}
 	}
 	}

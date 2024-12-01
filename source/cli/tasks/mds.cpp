@@ -74,25 +74,25 @@ namespace tasks {
 			auto path = path::create_path(options.path)
 				.with_extension(".mdf")
 				.create_directories();
-			auto handle = copier::open_handle(path);
+			auto handle = archiver::open_handle(path);
 			try {
 				for (auto track_index = size_t(0); track_index < tracks.size(); track_index += 1) {
 					auto& track = tracks.at(track_index);
-					auto extracted_sectors_vector = copier::read_track(drive, track, options);
-					auto bad_sector_indices = copier::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
-					copier::log_bad_sector_indices(drive, track, bad_sector_indices);
+					auto extracted_sectors_vector = archiver::read_track(drive, track, options);
+					auto bad_sector_indices = archiver::get_bad_sector_indices(extracted_sectors_vector, track.first_sector_absolute);
+					archiver::log_bad_sector_indices(drive, track, bad_sector_indices);
 					vector::append<size_t>(result, bad_sector_indices);
 					if (disc::is_data_track(track.type)) {
-						copier::append_sector_data(extracted_sectors_vector, path, 0, cd::SECTOR_LENGTH, handle, options.save_data_subchannels);
+						archiver::append_sector_data(extracted_sectors_vector, path, 0, cd::SECTOR_LENGTH, handle, options.save_data_subchannels);
 					} else {
-						copier::append_sector_data(extracted_sectors_vector, path, 0, cd::SECTOR_LENGTH, handle, options.save_audio_subchannels);
+						archiver::append_sector_data(extracted_sectors_vector, path, 0, cd::SECTOR_LENGTH, handle, options.save_audio_subchannels);
 					}
 				}
 			}  catch (...) {
-				copier::close_handle(handle);
+				archiver::close_handle(handle);
 				throw;
 			}
-			copier::close_handle(handle);
+			archiver::close_handle(handle);
 			return result;
 		}
 
@@ -104,7 +104,7 @@ namespace tasks {
 			auto path = path::create_path(options.path)
 				.with_extension(".mds")
 				.create_directories();
-			auto handle = copier::open_handle(path);
+			auto handle = archiver::open_handle(path);
 			auto tracks = disc::get_disc_tracks(disc);
 			auto points = disc::get_disc_points(disc);
 			auto absolute_offset_to_session_headers = sizeof(mds::FileHeader);

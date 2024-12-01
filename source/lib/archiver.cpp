@@ -1,4 +1,4 @@
-#include "copier.h"
+#include "archiver.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -13,7 +13,7 @@
 #include "string.h"
 
 namespace overdrive {
-namespace copier {
+namespace archiver {
 	auto read_audio_track(
 		const drive::Drive& drive,
 		const disc::TrackInfo& track,
@@ -313,7 +313,7 @@ namespace copier {
 		if (disc::is_data_track(track.type)) {
 			auto user_data_offset = disc::get_user_data_offset(track.type);
 			auto user_data_length = disc::get_user_data_length(track.type);
-			auto bad_sector_indices_per_path = copier::get_bad_sector_indices_per_path(drive, user_data_offset, user_data_length, bad_sector_indices);
+			auto bad_sector_indices_per_path = archiver::get_bad_sector_indices_per_path(drive, user_data_offset, user_data_length, bad_sector_indices);
 			if (bad_sector_indices_per_path) {
 				for (auto& entry : bad_sector_indices_per_path.value()) {
 					OVERDRIVE_LOG("File at path \"{}\" contains {} bad sectors!", std::filesystem::path(entry.first).string(), entry.second.size());
