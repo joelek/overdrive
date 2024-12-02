@@ -11,7 +11,7 @@ else
 	exit 1
 fi
 
-COMPILER_OPTIONS="-std=c++20 -static -pedantic -Wall -Wextra -Werror=return-type -O3 -D OVERDRIVE_VERSION=\"$OVERDRIVE_VERSION\""
+COMPILER_OPTIONS="-std=c++20 -pedantic -Wall -Wextra -Werror=return-type -O3 -D OVERDRIVE_VERSION=\"$OVERDRIVE_VERSION\""
 
 if [ $1 = "debug" ]; then
 	echo "[configuration: debug]"
@@ -98,7 +98,7 @@ echo "[phase: targets]"
 for i in ${TARGETS[@]}; do
 	echo "[compiling: source/$i]"
 	mkdir -p $(dirname "build/targets/$i")
-	gcc $COMPILER_OPTIONS ${OBJECTS[@]} source/$i -o build/targets/${i%.*} -l stdc++
+	gcc -static $COMPILER_OPTIONS ${OBJECTS[@]} source/$i -o build/targets/${i%.*} -l stdc++
 	RETURN_CODE=$?
 	if [ $RETURN_CODE -gt 0 ]; then
 		echo "[failure]"
