@@ -286,6 +286,23 @@ namespace tasks {
 			}
 			archiver::close_handle(handle);
 		}
+
+		auto write_toc(
+			const cdb::ReadTOCResponseNormalTOC& toc,
+			const CUEOptions& options
+		) -> void {
+			auto path = path::create_path(options.path)
+				.with_extension(".toc")
+				.create_directories();
+			auto handle = archiver::open_handle(path);
+			try {
+				std::fwrite(&toc, sizeof(toc), 1, handle);
+			} catch (...) {
+				archiver::close_handle(handle);
+				throw;
+			}
+			archiver::close_handle(handle);
+		}
 	}
 	}
 
@@ -305,6 +322,8 @@ namespace tasks {
 		}
 		auto tracks = disc::get_disc_tracks(disc_info, options.track_numbers);
 		internal::assert_image_compatibility(tracks);
+		auto toc = drive.read_normal_toc();
+		internal::write_toc(toc, options);
 		if (options.merge_tracks) {
 			internal::write_merged_bin(drive, tracks, options);
 			internal::write_merged_cue(tracks, options);
