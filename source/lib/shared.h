@@ -39,9 +39,9 @@ namespace shared {
 }
 }
 
-#define OVERDRIVE_HEXDUMP(var) std::fprintf(stderr, "%s\n", overdrive::shared::create_hex_dump(reinterpret_cast<const byte_t*>(&var), sizeof(var)).c_str())
+#define OVERDRIVE_HEXDUMP(var) std::fprintf(stderr, "%s\n", overdrive::shared::create_hex_dump(reinterpret_cast<const byte_t*>(&var), sizeof(var)).c_str()); std::fflush(stderr);
 
-#define OVERDRIVE_LOG(...) std::fprintf(stderr, "%s\n", std::format(__VA_ARGS__).c_str());
+#define OVERDRIVE_LOG(...) std::fprintf(stderr, "%s\n", std::format(__VA_ARGS__).c_str()); std::fflush(stderr);
 
 #ifndef OVERDRIVE_VERSION
 	#define OVERDRIVE_VERSION "?.?.?"
