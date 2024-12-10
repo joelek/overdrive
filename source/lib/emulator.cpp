@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <optional>
 #include <string>
 #include "byteswap.h"
 #include "cd.h"
@@ -167,24 +168,44 @@ namespace emulator {
 			if (cdb.format == cdb::ReadTOCFormat::FULL_TOC) {
 				auto point_table = cdb::ReadTOCResponseFullTOC();
 				auto point_count = image_adapter.read_point_table(handle, reinterpret_cast<byte_t*>(&point_table.entries), sizeof(point_table.entries));
+				auto first_track_index = std::optional<size_t>();
+				auto last_track_index = std::optional<size_t>();
+				auto lead_out_track_index = std::optional<size_t>();
+				for (auto point_index = size_t(0); point_index < point_count; point_index += 1) {
+					auto& entry = point_table.entries[point_index];
+					if (entry.adr == 1 && entry.point == cdb::ReadTOCResponseFullTOCPoint::FIRST_TRACK_IN_SESSION) {
+						first_track_index = point_index;
+						continue;
+					}
+					if (entry.adr == 1 && entry.point == cdb::ReadTOCResponseFullTOCPoint::LAST_TRACK_IN_SESSION) {
+						last_track_index = point_index;
+						continue;
+					}
+					if (entry.adr == 1 && entry.point == cdb::ReadTOCResponseFullTOCPoint::LEAD_OUT_TRACK_IN_SESSION) {
+						lead_out_track_index = point_index;
+						continue;
+					}
+				}
+				if (!first_track_index) {
+					throw exceptions::MissingValueException("first track index");
+				}
+				if (!last_track_index) {
+					throw exceptions::MissingValueException("last track index");
+				}
+				if (!lead_out_track_index) {
+					throw exceptions::MissingValueException("lead out track index");
+				}
 				auto size = sizeof(cdb::ReadTOCResponseFullTOC::header) + point_count * sizeof(cdb::ReadTOCResponseFullTOCEntry);
 				if (data_size < size) {
 					return scsi::StatusCode::CHECK_CONDITION;
 				}
 				auto& response = *reinterpret_cast<cdb::ReadTOCResponseFullTOC*>(data);
-				response = cdb::ReadTOCResponseFullTOC();
 				response.header.data_length_be = byteswap::byteswap16_on_little_endian_systems(size - sizeof(response.header.data_length_be));
+				response.header.first_track_or_session_number = point_table.entries[first_track_index.value()].session_number;
+				response.header.last_track_or_session_number = point_table.entries[last_track_index.value()].session_number;
 				for (auto point_index = size_t(0); point_index < point_count; point_index += 1) {
 					auto& entry = point_table.entries[point_index];
 					response.entries[point_index] = entry;
-					if (entry.point == cdb::ReadTOCResponseFullTOCPoint::FIRST_TRACK_IN_SESSION) {
-						response.header.first_track_or_session_number = entry.session_number;
-						continue;
-					}
-					if (entry.point == cdb::ReadTOCResponseFullTOCPoint::LAST_TRACK_IN_SESSION) {
-						response.header.last_track_or_session_number = entry.session_number;
-						continue;
-					}
 				}
 				return scsi::StatusCode::GOOD;
 			}
