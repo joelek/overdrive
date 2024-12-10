@@ -181,13 +181,13 @@ The `LOSSLESS_STEREO_AUDIO` compression method employs a mechanism for encoding 
 
 The left and right channels are spatially decorrelated by subtracting the left channel from the right channel. The channels are encoded independently in left, right order.
 
-Each channel uses one of four predictors for temporal decorrelation. The predictors are `NONE (0)`, `CONSTANT_EXTRAPOLATION (1)`, `LINEAR_EXRAPOLATION (2)` and `QUADRATIC_EXTRAPOLATION (3)`. Each predictor may use the previous three samples to predict the next sample for the channel in question through a linear equation. The first sample of each channel always uses the `NONE (0)` predictor and is also used to extrapolate the signal before its start.
+Each channel uses one of four predictors for temporal decorrelation. The predictors are `NONE (0)`, `CONSTANT_EXTRAPOLATION (1)`, `LINEAR_EXTRAPOLATION (2)` and `QUADRATIC_EXTRAPOLATION (3)`. Each predictor may use the previous three samples to predict the next sample for the channel in question through a linear equation. The first sample of each channel always uses the `NONE (0)` predictor and is also used to extrapolate the signal before its start.
 
 | Predictor               | Prediction                                  |
 | ----------------------- | ------------------------------------------- |
 | NONE                    | p(t) = 0 * p(t-1) + 0 * p(t-2) + 0 * p(t-3) |
 | CONSTANT_EXTRAPOLATION  | p(t) = 1 * p(t-1) + 0 * p(t-2) + 0 * p(t-3) |
-| LINEAR_EXRAPOLATION     | p(t) = 2 * p(t-1) - 1 * p(t-2) + 0 * p(t-3) |
+| LINEAR_EXTRAPOLATION     | p(t) = 2 * p(t-1) - 1 * p(t-2) + 0 * p(t-3) |
 | QUADRATIC_EXTRAPOLATION | p(t) = 3 * p(t-1) - 3 * p(t-2) + 1 * p(t-3) |
 
 The choice of predictor is encoded using two bits.
