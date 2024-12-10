@@ -165,16 +165,27 @@ namespace emulator {
 			size_t data_size
 		) -> scsi::StatusCode::type {
 			if (cdb.format == cdb::ReadTOCFormat::FULL_TOC) {
-				auto response = cdb::ReadTOCResponseFullTOC();
-				auto point_count = image_adapter.read_point_table(handle, reinterpret_cast<byte_t*>(&response.entries), sizeof(response.entries));
-				auto size = sizeof(response.header) + point_count * sizeof(cdb::ReadTOCResponseFullTOCEntry);
+				auto point_table = cdb::ReadTOCResponseFullTOC();
+				auto point_count = image_adapter.read_point_table(handle, reinterpret_cast<byte_t*>(&point_table.entries), sizeof(point_table.entries));
+				auto size = sizeof(cdb::ReadTOCResponseFullTOC::header) + point_count * sizeof(cdb::ReadTOCResponseFullTOCEntry);
 				if (data_size < size) {
 					return scsi::StatusCode::CHECK_CONDITION;
 				}
+				auto& response = *reinterpret_cast<cdb::ReadTOCResponseFullTOC*>(data);
+				response = cdb::ReadTOCResponseFullTOC();
 				response.header.data_length_be = byteswap::byteswap16_on_little_endian_systems(size - sizeof(response.header.data_length_be));
-				response.header.first_track_or_session_number = response.entries[0].session_number;
-				response.header.last_track_or_session_number = response.entries[point_count - 1].session_number;
-				std::memcpy(data, reinterpret_cast<byte_t*>(&response), size);
+				for (auto point_index = size_t(0); point_index < point_count; point_index += 1) {
+					auto& entry = point_table.entries[point_index];
+					response.entries[point_index] = entry;
+					if (entry.point == cdb::ReadTOCResponseFullTOCPoint::FIRST_TRACK_IN_SESSION) {
+						response.header.first_track_or_session_number = entry.session_number;
+						continue;
+					}
+					if (entry.point == cdb::ReadTOCResponseFullTOCPoint::LAST_TRACK_IN_SESSION) {
+						response.header.last_track_or_session_number = entry.session_number;
+						continue;
+					}
+				}
 				return scsi::StatusCode::GOOD;
 			}
 			return scsi::StatusCode::CHECK_CONDITION;
