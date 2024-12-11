@@ -212,14 +212,16 @@ namespace emulator {
 				response.header.last_track_or_session_number = point_table.entries[last_track_index.value()].paddress.m;
 				for (auto track_index = size_t(0); track_index < track_indices.size(); track_index += 1) {
 					auto& entry = point_table.entries[track_indices.at(track_index)];
-					response.entries[track_index].control = entry.control;
-					response.entries[track_index].adr = entry.adr;
-					response.entries[track_index].track_number = entry.point;
-					response.entries[track_index].track_start_address = entry.paddress;
+					auto response_entry = cdb::ReadTOCResponseNormalTOCEntry();
+					response_entry.control = entry.control;
+					response_entry.adr = entry.adr;
 					if (entry.adr == 1 && entry.point == cdb::ReadTOCResponseFullTOCPoint::LEAD_OUT_TRACK_IN_SESSION) {
-						response.entries[track_index].track_number = 0xAA;
-						continue;
+						response_entry.track_number = 0xAA;
+					} else {
+						response_entry.track_number = entry.point;
 					}
+					response_entry.track_start_address = entry.paddress;
+					response.entries[track_index] = response_entry;
 				}
 				return scsi::StatusCode::GOOD;
 			}
