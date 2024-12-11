@@ -187,7 +187,7 @@ Each channel uses one of four predictors for temporal decorrelation. The predict
 | ----------------------- | ------------------------------------------- |
 | NONE                    | p(t) = 0 * p(t-1) + 0 * p(t-2) + 0 * p(t-3) |
 | CONSTANT_EXTRAPOLATION  | p(t) = 1 * p(t-1) + 0 * p(t-2) + 0 * p(t-3) |
-| LINEAR_EXTRAPOLATION     | p(t) = 2 * p(t-1) - 1 * p(t-2) + 0 * p(t-3) |
+| LINEAR_EXTRAPOLATION    | p(t) = 2 * p(t-1) - 1 * p(t-2) + 0 * p(t-3) |
 | QUADRATIC_EXTRAPOLATION | p(t) = 3 * p(t-1) - 3 * p(t-2) + 1 * p(t-3) |
 
 The choice of predictor is encoded using two bits.
