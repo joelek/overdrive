@@ -5,24 +5,42 @@ source ./version.env
 APP_VERSION="$MAJOR.$MINOR.$PATCH"
 
 if [ $# -eq 1 ] && ([ $1 = "debug" ] || [ $1 = "release" ]); then
-	echo "[building]"
+	echo "[building: $APP_VERSION-$1]"
 else
 	echo "usage: make <debug|release>"
 	exit 1
 fi
 
-COMPILER="gcc"
-COMPILER_OPTIONS="-std=c++20 -pedantic -Wall -Wextra -Werror=return-type -O3 -D APP_VERSION=\"$APP_VERSION\""
-LINKER_OPTIONS="-static -l stdc++"
+COMPILER="g++"
+COMPILER_OPTIONS=(
+	"-std=c++20"
+	"-pedantic"
+	"-Wall"
+	"-Wextra"
+	"-Werror=return-type"
+	"-O3"
+	"-D APP_VERSION=\"$APP_VERSION\""
+)
+
+LINKER="g++"
+LINKER_OPTIONS=(
+	"-static"
+	"-l stdc++"
+)
 
 if [ $1 = "debug" ]; then
-	echo "[configuration: debug]"
-	COMPILER_OPTIONS+=" -D DEBUG"
+	COMPILER_OPTIONS+=(
+		"-D DEBUG"
+	)
 fi
 
 if [ $1 = "release" ]; then
-	echo "[configuration: release]"
-	COMPILER_OPTIONS+=" -Werror -s"
+	COMPILER_OPTIONS+=(
+		"-Werror"
+	)
+	LINKER_OPTIONS+=(
+		"-s"
+	)
 fi
 
 SOURCES=(
@@ -75,18 +93,13 @@ rm -rf build/*
 mkdir -p build/objects
 mkdir -p build/targets
 
-OBJECTS=()
+echo "[compiling]"
+echo "[compiler: $COMPILER ${COMPILER_OPTIONS[@]}]"
 
-for i in ${SOURCES[@]}; do
-	OBJECTS+=" build/objects/$i.o"
-done
-
-echo "[phase: sources]"
-
-for i in ${SOURCES[@]}; do
+for i in ${SOURCES[@]} ${TARGETS[@]}; do
 	echo "[compiling: source/$i]"
 	mkdir -p $(dirname "build/objects/$i.o")
-	$COMPILER $COMPILER_OPTIONS -c source/$i -o build/objects/$i.o
+	$COMPILER ${COMPILER_OPTIONS[@]} -c source/$i -o build/objects/$i.o
 	RETURN_CODE=$?
 	if [ $RETURN_CODE -gt 0 ]; then
 		echo "[failure]"
@@ -94,12 +107,21 @@ for i in ${SOURCES[@]}; do
 	fi
 done
 
-echo "[phase: targets]"
+OBJECTS=()
+
+for i in ${SOURCES[@]}; do
+	OBJECTS+=(
+		"build/objects/$i.o"
+	)
+done
+
+echo "[linking]"
+echo "[linker: $LINKER ${LINKER_OPTIONS[@]}]"
 
 for i in ${TARGETS[@]}; do
-	echo "[compiling: source/$i]"
+	echo "[linking: source/$i]"
 	mkdir -p $(dirname "build/targets/$i")
-	$COMPILER $COMPILER_OPTIONS ${OBJECTS[@]} source/$i -o build/targets/${i%.*} $LINKER_OPTIONS
+	$LINKER ${LINKER_OPTIONS[@]} ${OBJECTS[@]} build/objects/$i.o -o build/targets/${i%.*}
 	RETURN_CODE=$?
 	if [ $RETURN_CODE -gt 0 ]; then
 		echo "[failure]"
