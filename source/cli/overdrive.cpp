@@ -16,7 +16,7 @@ auto main(
 	ch08_t** argv
 ) -> si_t {
 	try {
-		OVERDRIVE_LOG("overdrive v{}", OVERDRIVE_VERSION);
+		OVERDRIVE_LOG("overdrive v{}", APP_VERSION);
 		OVERDRIVE_LOG("");
 		auto arguments = std::vector<std::string>(argv + std::min<size_t>(2, argc), argv + argc);
 		auto task = argc < 2 ? std::optional<std::string>() : std::string(argv[1]);

@@ -2,7 +2,7 @@
 
 source ./version.env
 
-OVERDRIVE_VERSION="$MAJOR.$MINOR.$PATCH"
+APP_VERSION="$MAJOR.$MINOR.$PATCH"
 
 if [ $# -eq 1 ] && ([ $1 = "debug" ] || [ $1 = "release" ]); then
 	echo "[building]"
@@ -11,7 +11,7 @@ else
 	exit 1
 fi
 
-COMPILER_OPTIONS="-std=c++20 -pedantic -Wall -Wextra -Werror=return-type -O3 -D OVERDRIVE_VERSION=\"$OVERDRIVE_VERSION\""
+COMPILER_OPTIONS="-std=c++20 -pedantic -Wall -Wextra -Werror=return-type -O3 -D APP_VERSION=\"$APP_VERSION\""
 
 if [ $1 = "debug" ]; then
 	echo "[configuration: debug]"

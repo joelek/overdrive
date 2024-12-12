@@ -43,6 +43,6 @@ namespace shared {
 
 #define OVERDRIVE_LOG(...) std::fprintf(stderr, "%s\n", std::format(__VA_ARGS__).c_str()); std::fflush(stderr);
 
-#ifndef OVERDRIVE_VERSION
-	#define OVERDRIVE_VERSION "?.?.?"
+#ifndef APP_VERSION
+	#define APP_VERSION "?.?.?"
 #endif
