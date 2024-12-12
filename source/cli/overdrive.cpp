@@ -23,22 +23,22 @@ auto main(
 		auto tasks = std::vector<task::Task>();
 		tasks.push_back(task::Task({
 			"cue",
-			"Backup discs using the BIN/CUE image format.",
+			"Archive disc using the BIN/CUE image format.",
 			tasks::cue
 		}));
 		tasks.push_back(task::Task({
 			"iso",
-			"Backup discs using the ISO image format.",
+			"Archive disc using the ISO image format.",
 			tasks::iso
 		}));
 		tasks.push_back(task::Task({
 			"mds",
-			"Backup discs using the MDF/MDS image format.",
+			"Archive disc using the MDF/MDS image format.",
 			tasks::mds
 		}));
 		tasks.push_back(task::Task({
 			"odi",
-			"Backup discs using the ODI image format.",
+			"Archive disc using the ODI image format.",
 			tasks::odi
 		}));
 		task::sort(tasks);
