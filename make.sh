@@ -11,7 +11,9 @@ else
 	exit 1
 fi
 
+COMPILER="gcc"
 COMPILER_OPTIONS="-std=c++20 -pedantic -Wall -Wextra -Werror=return-type -O3 -D APP_VERSION=\"$APP_VERSION\""
+LINKER_OPTIONS="-static -l stdc++"
 
 if [ $1 = "debug" ]; then
 	echo "[configuration: debug]"
@@ -84,7 +86,7 @@ echo "[phase: sources]"
 for i in ${SOURCES[@]}; do
 	echo "[compiling: source/$i]"
 	mkdir -p $(dirname "build/objects/$i.o")
-	gcc $COMPILER_OPTIONS -c source/$i -o build/objects/$i.o
+	$COMPILER $COMPILER_OPTIONS -c source/$i -o build/objects/$i.o
 	RETURN_CODE=$?
 	if [ $RETURN_CODE -gt 0 ]; then
 		echo "[failure]"
@@ -97,7 +99,7 @@ echo "[phase: targets]"
 for i in ${TARGETS[@]}; do
 	echo "[compiling: source/$i]"
 	mkdir -p $(dirname "build/targets/$i")
-	gcc -static $COMPILER_OPTIONS ${OBJECTS[@]} source/$i -o build/targets/${i%.*} -l stdc++
+	$COMPILER $COMPILER_OPTIONS ${OBJECTS[@]} source/$i -o build/targets/${i%.*} $LINKER_OPTIONS
 	RETURN_CODE=$?
 	if [ $RETURN_CODE -gt 0 ]; then
 		echo "[failure]"
