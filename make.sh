@@ -68,11 +68,10 @@ TARGETS=(
 	"cli/overdrive.cpp"
 )
 
+rm -rf build/*
+
 mkdir -p build/objects
 mkdir -p build/targets
-
-rm -rf build/objects/*
-rm -rf build/targets/*
 
 OBJECTS=()
 
