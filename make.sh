@@ -129,4 +129,10 @@ for i in ${TARGETS[@]}; do
 	fi
 done
 
+if [ $1 = "release" ]; then
+	rm -rf dist/*
+	mkdir -p dist
+	cp -R "build/targets/." "dist"
+fi
+
 echo "[success]"
