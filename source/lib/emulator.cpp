@@ -193,13 +193,13 @@ namespace emulator {
 					}
 				}
 				if (!first_track_index) {
-					throw exceptions::MissingValueException("first track index");
+					OVERDRIVE_THROW(exceptions::MissingValueException("first track index"));
 				}
 				if (!last_track_index) {
-					throw exceptions::MissingValueException("last track index");
+					OVERDRIVE_THROW(exceptions::MissingValueException("last track index"));
 				}
 				if (!lead_out_track_index) {
-					throw exceptions::MissingValueException("lead out track index");
+					OVERDRIVE_THROW(exceptions::MissingValueException("lead out track index"));
 				}
 				track_indices.push_back(lead_out_track_index.value());
 				auto size = sizeof(cdb::ReadTOCResponseNormalTOC::header) + track_indices.size() * sizeof(cdb::ReadTOCResponseNormalTOCEntry);
@@ -247,13 +247,13 @@ namespace emulator {
 					}
 				}
 				if (!first_track_index) {
-					throw exceptions::MissingValueException("first track index");
+					OVERDRIVE_THROW(exceptions::MissingValueException("first track index"));
 				}
 				if (!last_track_index) {
-					throw exceptions::MissingValueException("last track index");
+					OVERDRIVE_THROW(exceptions::MissingValueException("last track index"));
 				}
 				if (!lead_out_track_index) {
-					throw exceptions::MissingValueException("lead out track index");
+					OVERDRIVE_THROW(exceptions::MissingValueException("lead out track index"));
 				}
 				auto size = sizeof(cdb::ReadTOCResponseFullTOC::header) + point_count * sizeof(cdb::ReadTOCResponseFullTOCEntry);
 				if (data_size < size) {
