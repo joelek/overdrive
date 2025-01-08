@@ -266,7 +266,7 @@ namespace tasks {
 					auto& track = tracks.at(track_index);
 					auto file_tag = disc::is_data_track(track.type) ? "BINARY" : options.audio_file_format == "wav" ? "WAVE" : "BINARY";
 					auto track_tag = internal::get_track_tag(track.type, options.trim_data_tracks);
-					auto extension = options.audio_file_format == "wav" ? "wav" : "bin";
+					auto extension = disc::is_data_track(track.type) ? "bin" : options.audio_file_format == "wav" ? "wav" : "bin";
 					if (std::fprintf(handle, "%s\n", std::format("FILE \"{}\" {}", std::format("{}.{:0>2}.{}", path.fspath.stem().string(), track.number, extension), file_tag).c_str()) < 0) {
 						OVERDRIVE_THROW(exceptions::IOWriteException(path));
 					}
