@@ -184,6 +184,7 @@ namespace cd {
 			for (auto bit_index_1 = bit_index_0 + 1; bit_index_1 < SUBCHANNEL_LENGTH * 8; bit_index_1 += 1) {
 				auto& byte_1 = bytes[bit_index_1 >> 3];
 				auto bit_mask_1 = 1 << (7 - (bit_index_1 & 7));
+				byte_1 ^= bit_mask_1;
 				if (compute_subchannel_q_crc(q) == byteswap::byteswap16_on_little_endian_systems(q.crc_be)) {
 						OVERDRIVE_LOG("Successfully corrected subchannel Q using two bit flips.");
 					return;
