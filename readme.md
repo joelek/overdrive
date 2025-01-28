@@ -79,7 +79,6 @@ Ethereum contributions can be made to address `0xf1B63d95BEfEdAf70B3623B1A4Ba0D9
 * Add support for injecting files into ISO9660 file systems.
 	Requires software RSPC generation for raw image formats.
 * Reorganize exceptions so that enums and types can be re-used.
-* Improve copier to better extract subchannels.
 * Detect indices in audio tracks including index 00 in pregap.
 
 ## References
