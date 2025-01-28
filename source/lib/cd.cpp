@@ -1,5 +1,6 @@
 #include "cd.h"
 
+#include "byteswap.h"
 #include "crc.h"
 #include "exceptions.h"
 
@@ -160,6 +161,38 @@ namespace cd {
 	) -> ui16_t {
 		auto crc = crc::compute_crc16(reinterpret_cast<const byte_t*>(&q), offsetof(SubchannelQ, crc_be));
 		return crc;
+	}
+
+	auto correct_subchannel_q(
+		SubchannelQ& q
+	) -> void {
+		auto* bytes = reinterpret_cast<byte_t*>(&q);
+		for (auto bit_index_0 = size_t(0); bit_index_0 < SUBCHANNEL_LENGTH * 8; bit_index_0 += 1) {
+			auto& byte_0 = bytes[bit_index_0 >> 3];
+			auto bit_mask_0 = 1 << (7 - (bit_index_0 & 7));
+			byte_0 ^= bit_mask_0;
+			if (compute_subchannel_q_crc(q) == byteswap::byteswap16_on_little_endian_systems(q.crc_be)) {
+					OVERDRIVE_LOG("Successfully corrected subchannel Q using one bit flip.");
+				return;
+			}
+			byte_0 ^= bit_mask_0;
+		}
+		for (auto bit_index_0 = size_t(0); bit_index_0 < SUBCHANNEL_LENGTH * 8; bit_index_0 += 1) {
+			auto& byte_0 = bytes[bit_index_0 >> 3];
+			auto bit_mask_0 = 1 << (7 - (bit_index_0 & 7));
+			byte_0 ^= bit_mask_0;
+			for (auto bit_index_1 = bit_index_0 + 1; bit_index_1 < SUBCHANNEL_LENGTH * 8; bit_index_1 += 1) {
+				auto& byte_1 = bytes[bit_index_1 >> 3];
+				auto bit_mask_1 = 1 << (7 - (bit_index_1 & 7));
+				if (compute_subchannel_q_crc(q) == byteswap::byteswap16_on_little_endian_systems(q.crc_be)) {
+						OVERDRIVE_LOG("Successfully corrected subchannel Q using two bit flips.");
+					return;
+				}
+				byte_1 ^= bit_mask_1;
+			}
+			byte_0 ^= bit_mask_0;
+		}
+		OVERDRIVE_LOG("Subchannel Q correction failed!");
 	}
 }
 }

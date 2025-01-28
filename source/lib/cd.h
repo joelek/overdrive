@@ -194,5 +194,9 @@ namespace cd {
 	auto compute_subchannel_q_crc(
 		const SubchannelQ& q
 	) -> ui16_t;
+
+	auto correct_subchannel_q(
+		SubchannelQ& q
+	) -> void;
 }
 }
