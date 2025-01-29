@@ -214,13 +214,15 @@ namespace archiver {
 				}
 				if (success) {
 					extracted_sector_with_matching_data->counter += 1;
-					auto subchannels = cd::deinterleave_subchannels(*reinterpret_cast<cd::Subchannels*>(&sector.subchannels_data));
-					auto& q = *reinterpret_cast<cd::SubchannelQ*>(subchannels.channels[cd::SUBCHANNEL_Q_INDEX].data);
+					auto& subchannels = *reinterpret_cast<cd::Subchannels*>(&sector.subchannels_data);
+					auto deinterleaved_subchannels = cd::deinterleave_subchannels(subchannels);
+					auto& q = *reinterpret_cast<cd::SubchannelQ*>(deinterleaved_subchannels.channels[cd::SUBCHANNEL_Q_INDEX].data);
 					auto computed_crc = cd::compute_subchannel_q_crc(q);
 					auto expected_crc = byteswap::byteswap16_on_little_endian_systems(q.crc_be);
 					if (computed_crc != expected_crc) {
 						OVERDRIVE_LOG("Expected CRC for sector {} subchannel Q ({:0>4X}) to be {:0>4X}!", sector_index, computed_crc, expected_crc);
 						cd::correct_subchannel_q(q);
+						subchannels = cd::reinterleave_subchannels(deinterleaved_subchannels);
 					}
 				}
 			}
