@@ -200,6 +200,18 @@ namespace archiver {
 				if (!memory::test(&sector.c2_data, sizeof(sector.c2_data), 0)) {
 					OVERDRIVE_LOG("C2 errors occured for sector {}!", sector_index);
 				}
+				if (success) {
+					auto& subchannels = *reinterpret_cast<cd::Subchannels*>(&sector.subchannels_data);
+					auto deinterleaved_subchannels = cd::deinterleave_subchannels(subchannels);
+					auto& q = *reinterpret_cast<cd::SubchannelQ*>(deinterleaved_subchannels.channels[cd::SUBCHANNEL_Q_INDEX].data);
+					auto computed_crc = cd::compute_subchannel_q_crc(q);
+					auto expected_crc = byteswap::byteswap16_on_little_endian_systems(q.crc_be);
+					if (computed_crc != expected_crc) {
+						OVERDRIVE_LOG("Expected CRC for sector {} subchannel Q ({:0>4X}) to be {:0>4X}!", sector_index, computed_crc, expected_crc);
+						cd::correct_subchannel_q(q);
+						subchannels = cd::reinterleave_subchannels(deinterleaved_subchannels);
+					}
+				}
 				auto& extracted_sectors = extracted_sectors_vector.at(sector_index - first_sector);
 				auto extracted_sector_with_matching_data = pointer<ExtractedSector>(nullptr);
 				for (auto& extracted_sector : extracted_sectors) {
@@ -214,16 +226,6 @@ namespace archiver {
 				}
 				if (success) {
 					extracted_sector_with_matching_data->counter += 1;
-					auto& subchannels = *reinterpret_cast<cd::Subchannels*>(&sector.subchannels_data);
-					auto deinterleaved_subchannels = cd::deinterleave_subchannels(subchannels);
-					auto& q = *reinterpret_cast<cd::SubchannelQ*>(deinterleaved_subchannels.channels[cd::SUBCHANNEL_Q_INDEX].data);
-					auto computed_crc = cd::compute_subchannel_q_crc(q);
-					auto expected_crc = byteswap::byteswap16_on_little_endian_systems(q.crc_be);
-					if (computed_crc != expected_crc) {
-						OVERDRIVE_LOG("Expected CRC for sector {} subchannel Q ({:0>4X}) to be {:0>4X}!", sector_index, computed_crc, expected_crc);
-						cd::correct_subchannel_q(q);
-						subchannels = cd::reinterleave_subchannels(deinterleaved_subchannels);
-					}
 				}
 			}
 			auto number_of_identical_copies = get_number_of_identical_copies(extracted_sectors_vector);
