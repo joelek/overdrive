@@ -172,7 +172,7 @@ namespace cd {
 			auto bit_mask_0 = 1 << (7 - (bit_index_0 & 7));
 			byte_0 ^= bit_mask_0;
 			if (compute_subchannel_q_crc(q) == byteswap::byteswap16_on_little_endian_systems(q.crc_be)) {
-					OVERDRIVE_LOG("Successfully corrected subchannel Q using one bit flip.");
+				OVERDRIVE_LOG("Successfully corrected subchannel Q using one bit flip.");
 				return;
 			}
 			byte_0 ^= bit_mask_0;
@@ -186,7 +186,7 @@ namespace cd {
 				auto bit_mask_1 = 1 << (7 - (bit_index_1 & 7));
 				byte_1 ^= bit_mask_1;
 				if (compute_subchannel_q_crc(q) == byteswap::byteswap16_on_little_endian_systems(q.crc_be)) {
-						OVERDRIVE_LOG("Successfully corrected subchannel Q using two bit flips.");
+					OVERDRIVE_LOG("Successfully corrected subchannel Q using two bit flips.");
 					return;
 				}
 				byte_1 ^= bit_mask_1;
