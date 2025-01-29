@@ -215,7 +215,7 @@ namespace archiver {
 				auto& extracted_sectors = extracted_sectors_vector.at(sector_index - first_sector);
 				auto extracted_sector_with_matching_data = pointer<ExtractedSector>(nullptr);
 				for (auto& extracted_sector : extracted_sectors) {
-					if (extracted_sector.has_identical_sector_data(sector)) {
+					if (extracted_sector.has_identical_sector_data(sector) && extracted_sector.has_identical_subchannels_data(sector)) {
 						extracted_sector_with_matching_data = &extracted_sector;
 						break;
 					}
