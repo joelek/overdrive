@@ -197,43 +197,53 @@ namespace cd {
 
 	auto correct_subchannel(
 		Subchannel& subchannel,
+		si_t sector_index,
 		ch08_t name
 	) -> void;
 
 	auto correct_subchannel_p(
-		Subchannel& subchannel
+		Subchannel& subchannel,
+		si_t sector_index
 	) -> void;
 
 	auto correct_subchannel_q(
-		Subchannel& subchannel
+		Subchannel& subchannel,
+		si_t sector_index
 	) -> void;
 
 	auto correct_subchannel_r(
-		Subchannel& subchannel
+		Subchannel& subchannel,
+		si_t sector_index
 	) -> void;
 
 	auto correct_subchannel_s(
-		Subchannel& subchannel
+		Subchannel& subchannel,
+		si_t sector_index
 	) -> void;
 
 	auto correct_subchannel_t(
-		Subchannel& subchannel
+		Subchannel& subchannel,
+		si_t sector_index
 	) -> void;
 
 	auto correct_subchannel_u(
-		Subchannel& subchannel
+		Subchannel& subchannel,
+		si_t sector_index
 	) -> void;
 
 	auto correct_subchannel_v(
-		Subchannel& subchannel
+		Subchannel& subchannel,
+		si_t sector_index
 	) -> void;
 
 	auto correct_subchannel_w(
-		Subchannel& subchannel
+		Subchannel& subchannel,
+		si_t sector_index
 	) -> void;
 
 	auto correct_subchannels(
-		Subchannels& subchannels
+		Subchannels& subchannels,
+		si_t sector_index
 	) -> void;
 }
 }

@@ -166,6 +166,7 @@ namespace cd {
 
 	auto correct_subchannel(
 		Subchannel& subchannel,
+		si_t sector_index,
 		ch08_t name
 	) -> void {
 		if (memory::test(subchannel.data, sizeof(subchannel.data), 0b00000000)) {
@@ -176,7 +177,7 @@ namespace cd {
 			auto bit_mask_0 = 1 << (7 - (bit_index_0 & 7));
 			byte_0 ^= bit_mask_0;
 			if (memory::test(subchannel.data, sizeof(subchannel.data), 0b00000000)) {
-				OVERDRIVE_LOG("Successfully corrected subchannel {} using one bit flip.", name);
+				OVERDRIVE_LOG("Successfully corrected subchannel {} for sector {} using one bit flip.", name, sector_index);
 				return;
 			}
 			byte_0 ^= bit_mask_0;
@@ -190,18 +191,19 @@ namespace cd {
 				auto bit_mask_1 = 1 << (7 - (bit_index_1 & 7));
 				byte_1 ^= bit_mask_1;
 				if (memory::test(subchannel.data, sizeof(subchannel.data), 0b00000000)) {
-					OVERDRIVE_LOG("Successfully corrected subchannel {} using two bit flips.", name);
+					OVERDRIVE_LOG("Successfully corrected subchannel {} for sector {} using two bit flips.", name, sector_index);
 					return;
 				}
 				byte_1 ^= bit_mask_1;
 			}
 			byte_0 ^= bit_mask_0;
 		}
-		OVERDRIVE_LOG("Subchannel {} correction failed!", name);
+		OVERDRIVE_LOG("Subchannel {} correction failed for sector {}!", name, sector_index);
 	}
 
 	auto correct_subchannel_p(
-		Subchannel& subchannel
+		Subchannel& subchannel,
+		si_t sector_index
 	) -> void {
 		if (memory::test(subchannel.data, sizeof(subchannel.data), 0b00000000) || memory::test(subchannel.data, sizeof(subchannel.data), 0b11111111)) {
 			return;
@@ -211,7 +213,7 @@ namespace cd {
 			auto bit_mask_0 = 1 << (7 - (bit_index_0 & 7));
 			byte_0 ^= bit_mask_0;
 			if (memory::test(subchannel.data, sizeof(subchannel.data), 0b00000000) || memory::test(subchannel.data, sizeof(subchannel.data), 0b11111111)) {
-				OVERDRIVE_LOG("Successfully corrected subchannel P using one bit flip.");
+				OVERDRIVE_LOG("Successfully corrected subchannel P for sector {} using one bit flip.", sector_index);
 				return;
 			}
 			byte_0 ^= bit_mask_0;
@@ -225,18 +227,19 @@ namespace cd {
 				auto bit_mask_1 = 1 << (7 - (bit_index_1 & 7));
 				byte_1 ^= bit_mask_1;
 				if (memory::test(subchannel.data, sizeof(subchannel.data), 0b00000000) || memory::test(subchannel.data, sizeof(subchannel.data), 0b11111111)) {
-					OVERDRIVE_LOG("Successfully corrected subchannel P using two bit flips.");
+					OVERDRIVE_LOG("Successfully corrected subchannel P for sector {} using two bit flips.", sector_index);
 					return;
 				}
 				byte_1 ^= bit_mask_1;
 			}
 			byte_0 ^= bit_mask_0;
 		}
-		OVERDRIVE_LOG("Subchannel P correction failed!");
+		OVERDRIVE_LOG("Subchannel P correction failed for sector {}!", sector_index);
 	}
 
 	auto correct_subchannel_q(
-		Subchannel& subchannel
+		Subchannel& subchannel,
+		si_t sector_index
 	) -> void {
 		auto& q = *reinterpret_cast<cd::SubchannelQ*>(subchannel.data);
 		if (compute_subchannel_q_crc(q) == byteswap::byteswap16_on_little_endian_systems(q.crc_be)) {
@@ -247,7 +250,7 @@ namespace cd {
 			auto bit_mask_0 = 1 << (7 - (bit_index_0 & 7));
 			byte_0 ^= bit_mask_0;
 			if (compute_subchannel_q_crc(q) == byteswap::byteswap16_on_little_endian_systems(q.crc_be)) {
-				OVERDRIVE_LOG("Successfully corrected subchannel Q using one bit flip.");
+				OVERDRIVE_LOG("Successfully corrected subchannel Q for sector {} using one bit flip.", sector_index);
 				return;
 			}
 			byte_0 ^= bit_mask_0;
@@ -261,63 +264,70 @@ namespace cd {
 				auto bit_mask_1 = 1 << (7 - (bit_index_1 & 7));
 				byte_1 ^= bit_mask_1;
 				if (compute_subchannel_q_crc(q) == byteswap::byteswap16_on_little_endian_systems(q.crc_be)) {
-					OVERDRIVE_LOG("Successfully corrected subchannel Q using two bit flips.");
+					OVERDRIVE_LOG("Successfully corrected subchannel Q for sector {} using two bit flips.", sector_index);
 					return;
 				}
 				byte_1 ^= bit_mask_1;
 			}
 			byte_0 ^= bit_mask_0;
 		}
-		OVERDRIVE_LOG("Subchannel Q correction failed!");
+		OVERDRIVE_LOG("Subchannel Q correction failed for sector {}!", sector_index);
 	}
 
 	auto correct_subchannel_r(
-		Subchannel& subchannel
+		Subchannel& subchannel,
+		si_t sector_index
 	) -> void {
-		return correct_subchannel(subchannel, 'R');
+		return correct_subchannel(subchannel, sector_index, 'R');
 	}
 
 	auto correct_subchannel_s(
-		Subchannel& subchannel
+		Subchannel& subchannel,
+		si_t sector_index
 	) -> void {
-		return correct_subchannel(subchannel, 'S');
+		return correct_subchannel(subchannel, sector_index, 'S');
 	}
 
 	auto correct_subchannel_t(
-		Subchannel& subchannel
+		Subchannel& subchannel,
+		si_t sector_index
 	) -> void {
-		return correct_subchannel(subchannel, 'T');
+		return correct_subchannel(subchannel, sector_index, 'T');
 	}
 
 	auto correct_subchannel_u(
-		Subchannel& subchannel
+		Subchannel& subchannel,
+		si_t sector_index
 	) -> void {
-		return correct_subchannel(subchannel, 'U');
+		return correct_subchannel(subchannel, sector_index, 'U');
 	}
 
 	auto correct_subchannel_v(
-		Subchannel& subchannel
+		Subchannel& subchannel,
+		si_t sector_index
 	) -> void {
-		return correct_subchannel(subchannel, 'V');
+		return correct_subchannel(subchannel, sector_index, 'V');
 	}
 
 	auto correct_subchannel_w(
-		Subchannel& subchannel
+		Subchannel& subchannel,
+		si_t sector_index
 	) -> void {
-		return correct_subchannel(subchannel, 'W');
+		return correct_subchannel(subchannel, sector_index, 'W');
 	}
 
 	auto correct_subchannels(
-		Subchannels& subchannels
+		Subchannels& subchannels,
+		si_t sector_index
 	) -> void {
-		correct_subchannel_p(subchannels.channels[SUBCHANNEL_P_INDEX]);
-		correct_subchannel_q(subchannels.channels[SUBCHANNEL_Q_INDEX]);
-		correct_subchannel_r(subchannels.channels[SUBCHANNEL_R_INDEX]);
-		correct_subchannel_s(subchannels.channels[SUBCHANNEL_S_INDEX]);
-		correct_subchannel_t(subchannels.channels[SUBCHANNEL_T_INDEX]);
-		correct_subchannel_u(subchannels.channels[SUBCHANNEL_U_INDEX]);
-		correct_subchannel_v(subchannels.channels[SUBCHANNEL_V_INDEX]);
-		correct_subchannel_w(subchannels.channels[SUBCHANNEL_W_INDEX]);
+		correct_subchannel_p(subchannels.channels[SUBCHANNEL_P_INDEX], sector_index);
+		correct_subchannel_q(subchannels.channels[SUBCHANNEL_Q_INDEX], sector_index);
+		correct_subchannel_r(subchannels.channels[SUBCHANNEL_R_INDEX], sector_index);
+		correct_subchannel_s(subchannels.channels[SUBCHANNEL_S_INDEX], sector_index);
+		correct_subchannel_t(subchannels.channels[SUBCHANNEL_T_INDEX], sector_index);
+		correct_subchannel_u(subchannels.channels[SUBCHANNEL_U_INDEX], sector_index);
+		correct_subchannel_v(subchannels.channels[SUBCHANNEL_V_INDEX], sector_index);
+		correct_subchannel_w(subchannels.channels[SUBCHANNEL_W_INDEX], sector_index);
 	}
 }
 }

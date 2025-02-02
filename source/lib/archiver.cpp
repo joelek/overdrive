@@ -203,7 +203,7 @@ namespace archiver {
 				if (success) {
 					auto& subchannels = *reinterpret_cast<cd::Subchannels*>(&sector.subchannels_data);
 					subchannels = cd::deinterleave_subchannels(subchannels);
-					cd::correct_subchannels(subchannels);
+					cd::correct_subchannels(subchannels, sector_index);
 					subchannels = cd::reinterleave_subchannels(subchannels);
 				}
 				auto& extracted_sectors = extracted_sectors_vector.at(sector_index - first_sector);
