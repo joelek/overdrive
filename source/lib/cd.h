@@ -195,8 +195,45 @@ namespace cd {
 		const SubchannelQ& q
 	) -> ui16_t;
 
+	auto correct_subchannel(
+		Subchannel& subchannel,
+		ch08_t name
+	) -> void;
+
+	auto correct_subchannel_p(
+		Subchannel& subchannel
+	) -> void;
+
 	auto correct_subchannel_q(
-		SubchannelQ& q
+		Subchannel& subchannel
+	) -> void;
+
+	auto correct_subchannel_r(
+		Subchannel& subchannel
+	) -> void;
+
+	auto correct_subchannel_s(
+		Subchannel& subchannel
+	) -> void;
+
+	auto correct_subchannel_t(
+		Subchannel& subchannel
+	) -> void;
+
+	auto correct_subchannel_u(
+		Subchannel& subchannel
+	) -> void;
+
+	auto correct_subchannel_v(
+		Subchannel& subchannel
+	) -> void;
+
+	auto correct_subchannel_w(
+		Subchannel& subchannel
+	) -> void;
+
+	auto correct_subchannels(
+		Subchannels& subchannels
 	) -> void;
 }
 }

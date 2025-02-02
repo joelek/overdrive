@@ -3,6 +3,7 @@
 #include "byteswap.h"
 #include "crc.h"
 #include "exceptions.h"
+#include "memory.h"
 
 namespace overdrive {
 namespace cd {
@@ -163,12 +164,86 @@ namespace cd {
 		return crc;
 	}
 
-	auto correct_subchannel_q(
-		SubchannelQ& q
+	auto correct_subchannel(
+		Subchannel& subchannel,
+		ch08_t name
 	) -> void {
-		auto* bytes = reinterpret_cast<byte_t*>(&q);
+		if (memory::test(subchannel.data, sizeof(subchannel.data), 0b00000000)) {
+			return;
+		}
 		for (auto bit_index_0 = size_t(0); bit_index_0 < SUBCHANNEL_LENGTH * 8; bit_index_0 += 1) {
-			auto& byte_0 = bytes[bit_index_0 >> 3];
+			auto& byte_0 = subchannel.data[bit_index_0 >> 3];
+			auto bit_mask_0 = 1 << (7 - (bit_index_0 & 7));
+			byte_0 ^= bit_mask_0;
+			if (memory::test(subchannel.data, sizeof(subchannel.data), 0b00000000)) {
+				OVERDRIVE_LOG("Successfully corrected subchannel {} using one bit flip.", name);
+				return;
+			}
+			byte_0 ^= bit_mask_0;
+		}
+		for (auto bit_index_0 = size_t(0); bit_index_0 < SUBCHANNEL_LENGTH * 8; bit_index_0 += 1) {
+			auto& byte_0 = subchannel.data[bit_index_0 >> 3];
+			auto bit_mask_0 = 1 << (7 - (bit_index_0 & 7));
+			byte_0 ^= bit_mask_0;
+			for (auto bit_index_1 = bit_index_0 + 1; bit_index_1 < SUBCHANNEL_LENGTH * 8; bit_index_1 += 1) {
+				auto& byte_1 = subchannel.data[bit_index_1 >> 3];
+				auto bit_mask_1 = 1 << (7 - (bit_index_1 & 7));
+				byte_1 ^= bit_mask_1;
+				if (memory::test(subchannel.data, sizeof(subchannel.data), 0b00000000)) {
+					OVERDRIVE_LOG("Successfully corrected subchannel {} using two bit flips.", name);
+					return;
+				}
+				byte_1 ^= bit_mask_1;
+			}
+			byte_0 ^= bit_mask_0;
+		}
+		OVERDRIVE_LOG("Subchannel {} correction failed!", name);
+	}
+
+	auto correct_subchannel_p(
+		Subchannel& subchannel
+	) -> void {
+		if (memory::test(subchannel.data, sizeof(subchannel.data), 0b00000000) || memory::test(subchannel.data, sizeof(subchannel.data), 0b11111111)) {
+			return;
+		}
+		for (auto bit_index_0 = size_t(0); bit_index_0 < SUBCHANNEL_LENGTH * 8; bit_index_0 += 1) {
+			auto& byte_0 = subchannel.data[bit_index_0 >> 3];
+			auto bit_mask_0 = 1 << (7 - (bit_index_0 & 7));
+			byte_0 ^= bit_mask_0;
+			if (memory::test(subchannel.data, sizeof(subchannel.data), 0b00000000) || memory::test(subchannel.data, sizeof(subchannel.data), 0b11111111)) {
+				OVERDRIVE_LOG("Successfully corrected subchannel P using one bit flip.");
+				return;
+			}
+			byte_0 ^= bit_mask_0;
+		}
+		for (auto bit_index_0 = size_t(0); bit_index_0 < SUBCHANNEL_LENGTH * 8; bit_index_0 += 1) {
+			auto& byte_0 = subchannel.data[bit_index_0 >> 3];
+			auto bit_mask_0 = 1 << (7 - (bit_index_0 & 7));
+			byte_0 ^= bit_mask_0;
+			for (auto bit_index_1 = bit_index_0 + 1; bit_index_1 < SUBCHANNEL_LENGTH * 8; bit_index_1 += 1) {
+				auto& byte_1 = subchannel.data[bit_index_1 >> 3];
+				auto bit_mask_1 = 1 << (7 - (bit_index_1 & 7));
+				byte_1 ^= bit_mask_1;
+				if (memory::test(subchannel.data, sizeof(subchannel.data), 0b00000000) || memory::test(subchannel.data, sizeof(subchannel.data), 0b11111111)) {
+					OVERDRIVE_LOG("Successfully corrected subchannel P using two bit flips.");
+					return;
+				}
+				byte_1 ^= bit_mask_1;
+			}
+			byte_0 ^= bit_mask_0;
+		}
+		OVERDRIVE_LOG("Subchannel P correction failed!");
+	}
+
+	auto correct_subchannel_q(
+		Subchannel& subchannel
+	) -> void {
+		auto& q = *reinterpret_cast<cd::SubchannelQ*>(subchannel.data);
+		if (compute_subchannel_q_crc(q) == byteswap::byteswap16_on_little_endian_systems(q.crc_be)) {
+			return;
+		}
+		for (auto bit_index_0 = size_t(0); bit_index_0 < SUBCHANNEL_LENGTH * 8; bit_index_0 += 1) {
+			auto& byte_0 = subchannel.data[bit_index_0 >> 3];
 			auto bit_mask_0 = 1 << (7 - (bit_index_0 & 7));
 			byte_0 ^= bit_mask_0;
 			if (compute_subchannel_q_crc(q) == byteswap::byteswap16_on_little_endian_systems(q.crc_be)) {
@@ -178,11 +253,11 @@ namespace cd {
 			byte_0 ^= bit_mask_0;
 		}
 		for (auto bit_index_0 = size_t(0); bit_index_0 < SUBCHANNEL_LENGTH * 8; bit_index_0 += 1) {
-			auto& byte_0 = bytes[bit_index_0 >> 3];
+			auto& byte_0 = subchannel.data[bit_index_0 >> 3];
 			auto bit_mask_0 = 1 << (7 - (bit_index_0 & 7));
 			byte_0 ^= bit_mask_0;
 			for (auto bit_index_1 = bit_index_0 + 1; bit_index_1 < SUBCHANNEL_LENGTH * 8; bit_index_1 += 1) {
-				auto& byte_1 = bytes[bit_index_1 >> 3];
+				auto& byte_1 = subchannel.data[bit_index_1 >> 3];
 				auto bit_mask_1 = 1 << (7 - (bit_index_1 & 7));
 				byte_1 ^= bit_mask_1;
 				if (compute_subchannel_q_crc(q) == byteswap::byteswap16_on_little_endian_systems(q.crc_be)) {
@@ -194,6 +269,55 @@ namespace cd {
 			byte_0 ^= bit_mask_0;
 		}
 		OVERDRIVE_LOG("Subchannel Q correction failed!");
+	}
+
+	auto correct_subchannel_r(
+		Subchannel& subchannel
+	) -> void {
+		return correct_subchannel(subchannel, 'R');
+	}
+
+	auto correct_subchannel_s(
+		Subchannel& subchannel
+	) -> void {
+		return correct_subchannel(subchannel, 'S');
+	}
+
+	auto correct_subchannel_t(
+		Subchannel& subchannel
+	) -> void {
+		return correct_subchannel(subchannel, 'T');
+	}
+
+	auto correct_subchannel_u(
+		Subchannel& subchannel
+	) -> void {
+		return correct_subchannel(subchannel, 'U');
+	}
+
+	auto correct_subchannel_v(
+		Subchannel& subchannel
+	) -> void {
+		return correct_subchannel(subchannel, 'V');
+	}
+
+	auto correct_subchannel_w(
+		Subchannel& subchannel
+	) -> void {
+		return correct_subchannel(subchannel, 'W');
+	}
+
+	auto correct_subchannels(
+		Subchannels& subchannels
+	) -> void {
+		correct_subchannel_p(subchannels.channels[SUBCHANNEL_P_INDEX]);
+		correct_subchannel_q(subchannels.channels[SUBCHANNEL_Q_INDEX]);
+		correct_subchannel_r(subchannels.channels[SUBCHANNEL_R_INDEX]);
+		correct_subchannel_s(subchannels.channels[SUBCHANNEL_S_INDEX]);
+		correct_subchannel_t(subchannels.channels[SUBCHANNEL_T_INDEX]);
+		correct_subchannel_u(subchannels.channels[SUBCHANNEL_U_INDEX]);
+		correct_subchannel_v(subchannels.channels[SUBCHANNEL_V_INDEX]);
+		correct_subchannel_w(subchannels.channels[SUBCHANNEL_W_INDEX]);
 	}
 }
 }
