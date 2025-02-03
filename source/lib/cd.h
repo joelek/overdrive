@@ -195,6 +195,11 @@ namespace cd {
 		const SubchannelQ& q
 	) -> ui16_t;
 
+	auto is_securom_sector(
+		Subchannel& subchannel,
+		si_t sector_index
+	) -> bool_t;
+
 	auto correct_subchannel(
 		Subchannel& subchannel,
 		si_t sector_index,

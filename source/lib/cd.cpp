@@ -164,6 +164,32 @@ namespace cd {
 		return crc;
 	}
 
+	auto is_securom_sector(
+		Subchannel& subchannel,
+		si_t sector_index
+	) -> bool_t {
+		auto& q = *reinterpret_cast<SubchannelQ*>(subchannel.data);
+		for (auto bit_index_0 = size_t(24); bit_index_0 < size_t(48); bit_index_0 += 1) {
+			auto& byte_0 = subchannel.data[bit_index_0 >> 3];
+			auto bit_mask_0 = 1 << (7 - (bit_index_0 & 7));
+			byte_0 ^= bit_mask_0;
+			for (auto bit_index_1 = size_t(56); bit_index_1 < size_t(80); bit_index_1 += 1) {
+				auto& byte_1 = subchannel.data[bit_index_1 >> 3];
+				auto bit_mask_1 = 1 << (7 - (bit_index_1 & 7));
+				byte_1 ^= bit_mask_1;
+				if ((compute_subchannel_q_crc(q) ^ 0x8001) == byteswap::byteswap16_on_little_endian_systems(q.crc_be)) {
+					OVERDRIVE_LOG("Detected SecuROM sector at {}", sector_index);
+					byte_1 ^= bit_mask_1;
+					byte_0 ^= bit_mask_0;
+					return true;
+				}
+				byte_1 ^= bit_mask_1;
+			}
+			byte_0 ^= bit_mask_0;
+		}
+		return false;
+	}
+
 	auto correct_subchannel(
 		Subchannel& subchannel,
 		si_t sector_index,
