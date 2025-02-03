@@ -276,18 +276,15 @@ namespace cd {
 			}
 			byte_0 ^= bit_mask_0;
 		}
+		if (is_securom_sector(subchannel, sector_index)) {
+			return;
+		}
 		for (auto bit_index_0 = size_t(0); bit_index_0 < SUBCHANNEL_LENGTH * 8; bit_index_0 += 1) {
 			auto& byte_0 = subchannel.data[bit_index_0 >> 3];
 			auto bit_mask_0 = 1 << (7 - (bit_index_0 & 7));
 			byte_0 ^= bit_mask_0;
-			for (auto bit_index_1 = bit_index_0 + 1; bit_index_1 < SUBCHANNEL_LENGTH * 8; bit_index_1 += 1) {
-				auto& byte_1 = subchannel.data[bit_index_1 >> 3];
-				auto bit_mask_1 = 1 << (7 - (bit_index_1 & 7));
-				byte_1 ^= bit_mask_1;
-				if (compute_subchannel_q_crc(q) == byteswap::byteswap16_on_little_endian_systems(q.crc_be)) {
-					return;
-				}
-				byte_1 ^= bit_mask_1;
+			if (is_securom_sector(subchannel, sector_index)) {
+				return;
 			}
 			byte_0 ^= bit_mask_0;
 		}
