@@ -203,7 +203,6 @@ namespace cd {
 			auto bit_mask_0 = 1 << (7 - (bit_index_0 & 7));
 			byte_0 ^= bit_mask_0;
 			if (memory::test(subchannel.data, sizeof(subchannel.data), 0b00000000)) {
-				OVERDRIVE_LOG("Successfully corrected subchannel {} for sector {} using one bit flip.", name, sector_index);
 				return;
 			}
 			byte_0 ^= bit_mask_0;
@@ -217,7 +216,6 @@ namespace cd {
 				auto bit_mask_1 = 1 << (7 - (bit_index_1 & 7));
 				byte_1 ^= bit_mask_1;
 				if (memory::test(subchannel.data, sizeof(subchannel.data), 0b00000000)) {
-					OVERDRIVE_LOG("Successfully corrected subchannel {} for sector {} using two bit flips.", name, sector_index);
 					return;
 				}
 				byte_1 ^= bit_mask_1;
@@ -239,7 +237,6 @@ namespace cd {
 			auto bit_mask_0 = 1 << (7 - (bit_index_0 & 7));
 			byte_0 ^= bit_mask_0;
 			if (memory::test(subchannel.data, sizeof(subchannel.data), 0b00000000) || memory::test(subchannel.data, sizeof(subchannel.data), 0b11111111)) {
-				OVERDRIVE_LOG("Successfully corrected subchannel P for sector {} using one bit flip.", sector_index);
 				return;
 			}
 			byte_0 ^= bit_mask_0;
@@ -253,7 +250,6 @@ namespace cd {
 				auto bit_mask_1 = 1 << (7 - (bit_index_1 & 7));
 				byte_1 ^= bit_mask_1;
 				if (memory::test(subchannel.data, sizeof(subchannel.data), 0b00000000) || memory::test(subchannel.data, sizeof(subchannel.data), 0b11111111)) {
-					OVERDRIVE_LOG("Successfully corrected subchannel P for sector {} using two bit flips.", sector_index);
 					return;
 				}
 				byte_1 ^= bit_mask_1;
@@ -276,7 +272,6 @@ namespace cd {
 			auto bit_mask_0 = 1 << (7 - (bit_index_0 & 7));
 			byte_0 ^= bit_mask_0;
 			if (compute_subchannel_q_crc(q) == byteswap::byteswap16_on_little_endian_systems(q.crc_be)) {
-				OVERDRIVE_LOG("Successfully corrected subchannel Q for sector {} using one bit flip.", sector_index);
 				return;
 			}
 			byte_0 ^= bit_mask_0;
@@ -290,7 +285,6 @@ namespace cd {
 				auto bit_mask_1 = 1 << (7 - (bit_index_1 & 7));
 				byte_1 ^= bit_mask_1;
 				if (compute_subchannel_q_crc(q) == byteswap::byteswap16_on_little_endian_systems(q.crc_be)) {
-					OVERDRIVE_LOG("Successfully corrected subchannel Q for sector {} using two bit flips.", sector_index);
 					return;
 				}
 				byte_1 ^= bit_mask_1;
