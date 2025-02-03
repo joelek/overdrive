@@ -550,12 +550,14 @@ namespace drive {
 		for (auto pass_index = size_t(0); pass_index < MAX_AUTO_DETECT_SETTINGS_PASSES; pass_index += 1) {
 			try {
 				auto drive = Drive(handle, offsetof(cdb::ReadCDResponseDataA, sector_data), offsetof(cdb::ReadCDResponseDataA, subchannels_data), offsetof(cdb::ReadCDResponseDataA, c2_data), ioctl);
-				drive.detect_subchannel_timing_offset();
+				auto subchannel_timing_offset = drive.detect_subchannel_timing_offset();
+				OVERDRIVE_LOG("Detected subchannel timing offset {}", subchannel_timing_offset);
 				return drive;
 			} catch (const exceptions::AutoDetectFailureException& e) {}
 			try {
 				auto drive = Drive(handle, offsetof(cdb::ReadCDResponseDataB, sector_data), offsetof(cdb::ReadCDResponseDataB, subchannels_data), offsetof(cdb::ReadCDResponseDataB, c2_data), ioctl);
-				drive.detect_subchannel_timing_offset();
+				auto subchannel_timing_offset = drive.detect_subchannel_timing_offset();
+				OVERDRIVE_LOG("Detected subchannel timing offset {}", subchannel_timing_offset);
 				return drive;
 			} catch (const exceptions::AutoDetectFailureException& e) {}
 		}
