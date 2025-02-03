@@ -263,7 +263,7 @@ namespace cd {
 		Subchannel& subchannel,
 		si_t sector_index
 	) -> void {
-		auto& q = *reinterpret_cast<cd::SubchannelQ*>(subchannel.data);
+		auto& q = *reinterpret_cast<SubchannelQ*>(subchannel.data);
 		if (compute_subchannel_q_crc(q) == byteswap::byteswap16_on_little_endian_systems(q.crc_be)) {
 			return;
 		}
